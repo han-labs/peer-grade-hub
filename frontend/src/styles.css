@@ -1,0 +1,124 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #17202a;
+  background: #f7f8fa;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 32px;
+  background:
+    linear-gradient(120deg, rgba(34, 119, 96, 0.08), transparent 36%),
+    #f7f8fa;
+}
+
+.workspace {
+  width: min(960px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.title-block {
+  padding: 48px 0;
+}
+
+.eyebrow,
+.status-label {
+  margin: 0 0 8px;
+  color: #227760;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 6vw, 4.75rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.summary {
+  max-width: 560px;
+  margin: 20px 0 0;
+  color: #4f5f6f;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.status-panel {
+  min-height: 160px;
+  padding: 24px;
+  border: 1px solid #d8dee6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(23, 32, 42, 0.08);
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  border-radius: 999px;
+  background: #adb5bd;
+}
+
+.status-dot.online {
+  background: #198754;
+}
+
+.status-dot.offline {
+  background: #dc3545;
+}
+
+.status-message {
+  margin: 0;
+  color: #17202a;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.api-url {
+  margin: 12px 0 0;
+  color: #6a7785;
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 24px 18px;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .title-block {
+    padding: 24px 0 8px;
+  }
+}

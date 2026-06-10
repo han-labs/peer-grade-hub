@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: peergrade-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: peergradehub
+      POSTGRES_USER: peergrade
+      POSTGRES_PASSWORD: peergrade123
+    ports:
+      - "5432:5432"
+    volumes:
+      - peergrade_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  peergrade_postgres_data:
