@@ -12,18 +12,18 @@
 ### Prerequisites
 - Git, Java 17, Node.js 22+, npm, Docker Desktop
 
-### 1️⃣ Setup Environment
+### 1️ Setup Environment
 ```powershell
 copy .env.example .env
 # Edit .env if needed. Default values work locally.
 ```
 
-### 2️⃣ Start Database
+### 2️ Start Database
 ```powershell
 docker compose up -d postgres
 ```
 
-### 3️⃣ Start Backend
+### 3️ Start Backend
 ```powershell
 cd backend
 .\mvnw.cmd spring-boot:run
@@ -31,7 +31,7 @@ cd backend
 Backend runs at: `http://localhost:8080/api`  
 Health check: `GET http://localhost:8080/api/health`
 
-### 4️⃣ Start Frontend (new terminal)
+### 4️ Start Frontend (new terminal)
 ```powershell
 cd frontend
 npm install
