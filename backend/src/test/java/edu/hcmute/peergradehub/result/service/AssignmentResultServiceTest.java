@@ -1,9 +1,10 @@
 package edu.hcmute.peergradehub.result.service;
 
-import edu.hcmute.peergradehub.assignment.model.Assignment;
-import edu.hcmute.peergradehub.group.model.StudentGroup;
-import edu.hcmute.peergradehub.result.model.AssignmentResult;
-import edu.hcmute.peergradehub.result.repository.AssignmentResultRepository;
+import edu.hcmute.peergradehub.entity.Assignment;
+import edu.hcmute.peergradehub.entity.StudentGroup;
+import edu.hcmute.peergradehub.entity.AssignmentResult;
+import edu.hcmute.peergradehub.dao.AssignmentResultDao;
+import edu.hcmute.peergradehub.service.impl.AssignmentResultServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,10 +21,10 @@ import static org.mockito.Mockito.*;
 class AssignmentResultServiceTest {
 
     @Mock
-    private AssignmentResultRepository assignmentResultRepository;
+    private AssignmentResultDao assignmentResultRepository;
 
     @InjectMocks
-    private AssignmentResultService assignmentResultService;
+    private AssignmentResultServiceImpl assignmentResultService;
 
     @Test
     void saveResult_CreateSuccess() {

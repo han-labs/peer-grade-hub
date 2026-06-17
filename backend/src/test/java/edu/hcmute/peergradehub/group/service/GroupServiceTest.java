@@ -1,12 +1,13 @@
 package edu.hcmute.peergradehub.group.service;
 
-import edu.hcmute.peergradehub.course.model.Course;
-import edu.hcmute.peergradehub.group.model.GroupMember;
-import edu.hcmute.peergradehub.group.model.StudentGroup;
-import edu.hcmute.peergradehub.group.repository.GroupMemberRepository;
-import edu.hcmute.peergradehub.group.repository.StudentGroupRepository;
-import edu.hcmute.peergradehub.user.model.User;
-import edu.hcmute.peergradehub.user.model.UserRole;
+import edu.hcmute.peergradehub.entity.Course;
+import edu.hcmute.peergradehub.entity.GroupMember;
+import edu.hcmute.peergradehub.entity.StudentGroup;
+import edu.hcmute.peergradehub.dao.GroupMemberDao;
+import edu.hcmute.peergradehub.dao.StudentGroupDao;
+import edu.hcmute.peergradehub.entity.User;
+import edu.hcmute.peergradehub.enumeration.UserRole;
+import edu.hcmute.peergradehub.service.impl.GroupServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,13 +21,13 @@ import static org.mockito.Mockito.*;
 class GroupServiceTest {
 
     @Mock
-    private StudentGroupRepository studentGroupRepository;
+    private StudentGroupDao studentGroupRepository;
 
     @Mock
-    private GroupMemberRepository groupMemberRepository;
+    private GroupMemberDao groupMemberRepository;
 
     @InjectMocks
-    private GroupService groupService;
+    private GroupServiceImpl groupService;
 
     @Test
     void joinGroup_Success() {

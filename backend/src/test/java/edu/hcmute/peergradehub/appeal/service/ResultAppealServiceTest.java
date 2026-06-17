@@ -1,16 +1,17 @@
 package edu.hcmute.peergradehub.appeal.service;
 
-import edu.hcmute.peergradehub.appeal.model.AppealStatus;
-import edu.hcmute.peergradehub.appeal.model.ResultAppeal;
-import edu.hcmute.peergradehub.appeal.repository.ResultAppealRepository;
-import edu.hcmute.peergradehub.assignment.model.Assignment;
-import edu.hcmute.peergradehub.course.model.Course;
-import edu.hcmute.peergradehub.group.model.StudentGroup;
-import edu.hcmute.peergradehub.group.repository.GroupMemberRepository;
-import edu.hcmute.peergradehub.lesson.model.Lesson;
-import edu.hcmute.peergradehub.result.model.AssignmentResult;
-import edu.hcmute.peergradehub.user.model.User;
-import edu.hcmute.peergradehub.user.model.UserRole;
+import edu.hcmute.peergradehub.enumeration.AppealStatus;
+import edu.hcmute.peergradehub.entity.ResultAppeal;
+import edu.hcmute.peergradehub.dao.ResultAppealDao;
+import edu.hcmute.peergradehub.entity.Assignment;
+import edu.hcmute.peergradehub.entity.Course;
+import edu.hcmute.peergradehub.entity.StudentGroup;
+import edu.hcmute.peergradehub.dao.GroupMemberDao;
+import edu.hcmute.peergradehub.entity.Lesson;
+import edu.hcmute.peergradehub.entity.AssignmentResult;
+import edu.hcmute.peergradehub.entity.User;
+import edu.hcmute.peergradehub.enumeration.UserRole;
+import edu.hcmute.peergradehub.service.impl.ResultAppealServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,13 +25,13 @@ import static org.mockito.Mockito.*;
 class ResultAppealServiceTest {
 
     @Mock
-    private ResultAppealRepository resultAppealRepository;
+    private ResultAppealDao resultAppealRepository;
 
     @Mock
-    private GroupMemberRepository groupMemberRepository;
+    private GroupMemberDao groupMemberRepository;
 
     @InjectMocks
-    private ResultAppealService resultAppealService;
+    private ResultAppealServiceImpl resultAppealService;
 
     @Test
     void submitAppeal_Success() {
