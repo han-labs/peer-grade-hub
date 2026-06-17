@@ -1,7 +1,5 @@
 package edu.hcmute.peergradehub.entity;
 
-import edu.hcmute.peergradehub.entity.Course;
-import edu.hcmute.peergradehub.enumeration.GroupStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,9 +9,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-    name = "student_groups",
+    name = "course_enrollments",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_student_groups_course_name", columnNames = {"course_id", "group_name"})
+        @UniqueConstraint(name = "uk_course_enrollments_course_student", columnNames = {"course_id", "student_id"})
     }
 )
 @Getter
@@ -21,27 +19,24 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class StudentGroup {
+public class CourseEnrollment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "group_id")
+    @Column(name = "course_enrollment_id")
     private Long id;
-
-    @Column(name = "group_name", nullable = false, length = 100)
-    private String groupName;
-
-    @Column(name = "max_members", nullable = false)
-    private Integer maxMembers;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "group_status", nullable = false, length = 30)
-    @Builder.Default
-    private GroupStatus groupStatus = GroupStatus.FORMING;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "student_id", nullable = false)
+    private User student;
+
+    @CreationTimestamp
+    @Column(name = "enrolled_at", nullable = false, updatable = false)
+    private LocalDateTime enrolledAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

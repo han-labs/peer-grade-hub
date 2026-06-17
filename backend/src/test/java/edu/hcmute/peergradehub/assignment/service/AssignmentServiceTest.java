@@ -27,16 +27,16 @@ class AssignmentServiceTest {
     @Test
     void createAssignment_Success() {
         Lesson lesson = Lesson.builder().build();
-        LocalDateTime deadline = LocalDateTime.of(2026, 6, 10, 12, 0);
+        LocalDateTime submissionDeadline = LocalDateTime.of(2026, 6, 10, 12, 0);
         LocalDateTime reviewDeadline = LocalDateTime.of(2026, 6, 15, 12, 0);
 
         when(assignmentRepository.save(any(Assignment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Assignment result = assignmentService.createAssignment("Assg 1", "Desc", deadline, reviewDeadline, lesson);
+        Assignment result = assignmentService.createAssignment("Assg 1", "Desc", submissionDeadline, reviewDeadline, lesson);
 
         assertNotNull(result);
         assertEquals("Assg 1", result.getTitle());
-        assertEquals(deadline, result.getDeadline());
+        assertEquals(submissionDeadline, result.getSubmissionDeadline());
         assertEquals(reviewDeadline, result.getReviewDeadline());
         verify(assignmentRepository).save(any(Assignment.class));
     }
@@ -44,11 +44,11 @@ class AssignmentServiceTest {
     @Test
     void createAssignment_ThrowsException_WhenReviewDeadlineNotAfterDeadline() {
         Lesson lesson = Lesson.builder().build();
-        LocalDateTime deadline = LocalDateTime.of(2026, 6, 10, 12, 0);
+        LocalDateTime submissionDeadline = LocalDateTime.of(2026, 6, 10, 12, 0);
         LocalDateTime reviewDeadline = LocalDateTime.of(2026, 6, 10, 11, 59);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-            assignmentService.createAssignment("Assg 1", "Desc", deadline, reviewDeadline, lesson)
+            assignmentService.createAssignment("Assg 1", "Desc", submissionDeadline, reviewDeadline, lesson)
         );
         assertEquals("Review deadline must be after the submission deadline.", ex.getMessage());
         verify(assignmentRepository, never()).save(any());

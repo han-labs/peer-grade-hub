@@ -28,8 +28,8 @@ public class Assignment {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "deadline", nullable = false)
-    private LocalDateTime deadline;
+    @Column(name = "submission_deadline", nullable = false)
+    private LocalDateTime submissionDeadline;
 
     @Column(name = "review_deadline", nullable = false)
     private LocalDateTime reviewDeadline;
@@ -51,6 +51,6 @@ public class Assignment {
     private LocalDateTime updatedAt;
 
     public boolean hasValidReviewDeadline() {
-        return reviewDeadline != null && deadline != null && reviewDeadline.isAfter(deadline);
+        return reviewDeadline != null && submissionDeadline != null && reviewDeadline.isAfter(submissionDeadline);
     }
 }

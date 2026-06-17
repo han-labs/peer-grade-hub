@@ -19,15 +19,15 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     @Transactional
-    public Assignment createAssignment(String title, String description, LocalDateTime deadline,
+    public Assignment createAssignment(String title, String description, LocalDateTime submissionDeadline,
                                        LocalDateTime reviewDeadline, Lesson lesson) {
-        if (reviewDeadline == null || deadline == null || !reviewDeadline.isAfter(deadline)) {
+        if (reviewDeadline == null || submissionDeadline == null || !reviewDeadline.isAfter(submissionDeadline)) {
             throw new IllegalArgumentException("Review deadline must be after the submission deadline.");
         }
         Assignment assignment = Assignment.builder()
                 .title(title)
                 .description(description)
-                .deadline(deadline)
+                .submissionDeadline(submissionDeadline)
                 .reviewDeadline(reviewDeadline)
                 .lesson(lesson)
                 .build();
@@ -37,13 +37,13 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional
     public Assignment updateAssignment(Assignment assignment, String title, String description,
-                                       LocalDateTime deadline, LocalDateTime reviewDeadline) {
-        if (reviewDeadline == null || deadline == null || !reviewDeadline.isAfter(deadline)) {
+                                       LocalDateTime submissionDeadline, LocalDateTime reviewDeadline) {
+        if (reviewDeadline == null || submissionDeadline == null || !reviewDeadline.isAfter(submissionDeadline)) {
             throw new IllegalArgumentException("Review deadline must be after the submission deadline.");
         }
         assignment.setTitle(title);
         assignment.setDescription(description);
-        assignment.setDeadline(deadline);
+        assignment.setSubmissionDeadline(submissionDeadline);
         assignment.setReviewDeadline(reviewDeadline);
         return assignmentRepository.save(assignment);
     }

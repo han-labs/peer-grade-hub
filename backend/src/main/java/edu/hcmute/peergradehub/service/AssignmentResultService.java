@@ -7,5 +7,5 @@ import edu.hcmute.peergradehub.entity.StudentGroup;
 import java.math.BigDecimal;
 
 public interface AssignmentResultService {
-    AssignmentResult saveResult(Assignment assignment, StudentGroup group, BigDecimal score, String comments);
+    AssignmentResult saveResult(Assignment assignment, StudentGroup group, BigDecimal score, String finalComment);
 }

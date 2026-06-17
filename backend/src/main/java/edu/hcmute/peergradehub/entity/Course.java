@@ -1,6 +1,7 @@
 package edu.hcmute.peergradehub.entity;
 
 import edu.hcmute.peergradehub.entity.User;
+import edu.hcmute.peergradehub.enumeration.CourseStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -28,6 +29,9 @@ public class Course {
     @Column(name = "class_code", nullable = false, unique = true, length = 50)
     private String classCode;
 
+    @Column(name = "invitation_code", unique = true, length = 50)
+    private String invitationCode;
+
     @Column(name = "semester", nullable = false, length = 50)
     private String semester;
 
@@ -37,6 +41,14 @@ public class Course {
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "group_formation_deadline")
+    private LocalDateTime groupFormationDeadline;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "course_status", nullable = false, length = 30)
+    @Builder.Default
+    private CourseStatus courseStatus = CourseStatus.ACTIVE;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

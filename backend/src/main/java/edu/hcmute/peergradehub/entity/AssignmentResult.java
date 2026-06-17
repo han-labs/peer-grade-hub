@@ -37,11 +37,36 @@ public class AssignmentResult {
     @JoinColumn(name = "group_id", nullable = false)
     private StudentGroup group;
 
-    @Column(name = "comments", columnDefinition = "TEXT")
-    private String comments;
+    @Column(name = "final_comment", columnDefinition = "TEXT")
+    private String finalComment;
 
     @Column(name = "score", nullable = false, precision = 5, scale = 2)
     private BigDecimal score;
+
+    @Column(name = "is_published", nullable = false)
+    @Builder.Default
+    private Boolean published = false;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "published_by_id")
+    private User publishedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "graded_by_id")
+    private User gradedBy;
+
+    @Column(name = "graded_at")
+    private LocalDateTime gradedAt;
+
+    @Column(name = "unpublished_at")
+    private LocalDateTime unpublishedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unpublished_by_id")
+    private User unpublishedBy;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

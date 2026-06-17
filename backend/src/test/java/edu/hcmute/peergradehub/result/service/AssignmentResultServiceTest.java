@@ -41,7 +41,7 @@ class AssignmentResultServiceTest {
         assertEquals(assignment, result.getAssignment());
         assertEquals(group, result.getGroup());
         assertEquals(score, result.getScore());
-        assertEquals("Great work!", result.getComments());
+        assertEquals("Great work!", result.getFinalComment());
         verify(assignmentResultRepository).save(any(AssignmentResult.class));
     }
 
@@ -51,7 +51,7 @@ class AssignmentResultServiceTest {
         StudentGroup group = StudentGroup.builder().id(2L).build();
         BigDecimal oldScore = BigDecimal.valueOf(80.0);
         BigDecimal newScore = BigDecimal.valueOf(90.0);
-        AssignmentResult existing = AssignmentResult.builder().id(100L).assignment(assignment).group(group).score(oldScore).comments("Old").build();
+        AssignmentResult existing = AssignmentResult.builder().id(100L).assignment(assignment).group(group).score(oldScore).finalComment("Old").build();
 
         when(assignmentResultRepository.findByAssignmentIdAndGroupId(1L, 2L)).thenReturn(Optional.of(existing));
         when(assignmentResultRepository.save(any(AssignmentResult.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -61,7 +61,7 @@ class AssignmentResultServiceTest {
         assertNotNull(result);
         assertEquals(existing.getId(), result.getId());
         assertEquals(newScore, result.getScore());
-        assertEquals("Updated", result.getComments());
+        assertEquals("Updated", result.getFinalComment());
         verify(assignmentResultRepository).save(any(AssignmentResult.class));
     }
 

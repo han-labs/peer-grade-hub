@@ -8,7 +8,7 @@ spring:
     name: peergradehub
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:peergradehub}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:peergradehub}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
     username: ${DB_USERNAME:peergrade}
     password: ${DB_PASSWORD:peergrade123}
 

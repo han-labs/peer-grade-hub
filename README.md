@@ -3,9 +3,9 @@
 **Peer review assessment management system for HCM-UTE courses.**
 
 **Tech Stack:**
-- Backend: Java 17, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway, PostgreSQL
+- Backend: Java 17, Spring Boot 3.5, Spring Security, Spring Data JPA, Flyway, MySQL
 - Frontend: React 19, Vite
-- Database: PostgreSQL 16 (Docker Compose)
+- Database: MySQL 8.0 (Docker Compose)
 
 ## Quick Start
 
@@ -20,7 +20,7 @@ copy .env.example .env
 
 ### 2️. Start Database
 ```powershell
-docker compose up -d postgres
+docker compose up -d mysql
 ```
 
 ### 3️. Start Backend
@@ -42,7 +42,7 @@ Frontend runs at: `http://localhost:5173`
 ## Key Commands
 
 ```powershell
-# Backend tests (no PostgreSQL needed, uses H2)
+# Backend tests (no MySQL needed, uses H2 in MySQL mode)
 cd backend
 .\mvnw.cmd test
 
@@ -77,7 +77,7 @@ Flyway manages schema at: `backend/src/main/resources/db/migration`
 - Keep `spring.jpa.hibernate.ddl-auto=validate`
 
 ## Timezone ⏰
-Always use `Asia/Ho_Chi_Minh` (NOT `Asia/Saigon` — PostgreSQL 16 rejects it)
+Always use `Asia/Ho_Chi_Minh`.
 
 ## Team Workflow
 
@@ -103,4 +103,3 @@ git push origin feature/short-description
 See `deployment/` folder for details (moved to later phase).
 
 ---
-

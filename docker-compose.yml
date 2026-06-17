@@ -1,16 +1,18 @@
 services:
-  postgres:
-    image: postgres:16
-    container_name: peergrade-postgres
+  mysql:
+    image: mysql:8.0
+    container_name: peergrade-mysql
     restart: unless-stopped
     environment:
-      POSTGRES_DB: peergradehub
-      POSTGRES_USER: peergrade
-      POSTGRES_PASSWORD: peergrade123
+      MYSQL_DATABASE: peergradehub
+      MYSQL_USER: peergrade
+      MYSQL_PASSWORD: peergrade123
+      MYSQL_ROOT_PASSWORD: peergrade_root123
+      TZ: Asia/Ho_Chi_Minh
     ports:
-      - "5432:5432"
+      - "3307:3306"
     volumes:
-      - peergrade_postgres_data:/var/lib/postgresql/data
+      - peergrade_mysql_data:/var/lib/mysql
 
 volumes:
-  peergrade_postgres_data:
+  peergrade_mysql_data:
