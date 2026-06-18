@@ -8,7 +8,7 @@ spring:
     name: peergradehub
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:peergradehub}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:peergradehub}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
     username: ${DB_USERNAME:peergrade}
     password: ${DB_PASSWORD:peergrade123}
 
@@ -29,6 +29,7 @@ app:
   jwt:
     secret: ${JWT_SECRET:change-this-secret-in-real-env}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+    remember-me-expiration-ms: ${JWT_REMEMBER_ME_EXPIRATION_MS:604800000}
 
   file:
     upload-dir: ${UPLOAD_DIR:uploads}
