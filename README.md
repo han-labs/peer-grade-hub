@@ -3,28 +3,6 @@
 PeerGrade Hub is a peer review assessment management system for courses.
 The current project focus is the backend foundation and use-case-based implementation.
 
-## Current Status
-
-Implemented:
-
-* Spring Boot backend foundation
-* MySQL 8.0 database with Flyway migrations
-* DAO-style layered architecture
-* Shared API response and error response format
-* UC-01 Login API with JWT authentication
-* Backend tests for the current implemented features
-
-Not implemented yet:
-
-* React UI
-* Full dashboards
-* Complete APIs for other use cases
-* Full frontend-backend flow for use cases other than UC-01
-
-Other use cases currently have database/entity/DAO foundation only. They must be implemented use case by use case.
-
----
-
 ## Tech Stack
 
 Backend:
