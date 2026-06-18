@@ -26,7 +26,7 @@ Tools:
 
 Frontend:
 
-* React is planned, but it is not the current focus yet.
+* React
 
 ---
 
