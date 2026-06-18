@@ -5,7 +5,6 @@ import edu.hcmute.peergradehub.dto.request.auth.LoginRequest;
 import edu.hcmute.peergradehub.dto.response.auth.CurrentUserResponse;
 import edu.hcmute.peergradehub.dto.response.auth.LoginResponse;
 import edu.hcmute.peergradehub.entity.User;
-import edu.hcmute.peergradehub.enumeration.UserStatus;
 import edu.hcmute.peergradehub.exception.BadRequestException;
 import edu.hcmute.peergradehub.exception.ForbiddenException;
 import edu.hcmute.peergradehub.exception.UnauthorizedException;
@@ -50,11 +49,11 @@ public class AuthServiceImpl implements edu.hcmute.peergradehub.service.AuthServ
             throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
         }
 
-        if (user.getStatus() != UserStatus.ACTIVE) {
+        if (!user.isActiveAccount()) {
             throw new ForbiddenException(LOCKED_OR_INACTIVE_MESSAGE);
         }
 
-        if (user.getUserRole() == null) {
+        if (!user.hasAssignedRole()) {
             throw new ForbiddenException(NO_ROLE_MESSAGE);
         }
 

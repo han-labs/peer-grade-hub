@@ -22,7 +22,13 @@ public class AssignmentResultServiceImpl implements AssignmentResultService {
     @Override
     @Transactional
     public AssignmentResult saveResult(Assignment assignment, StudentGroup group, BigDecimal score, String finalComment) {
-        if (score == null || score.compareTo(BigDecimal.ZERO) < 0 || score.compareTo(BigDecimal.valueOf(100)) > 0) {
+        AssignmentResult resultCandidate = AssignmentResult.builder()
+                .assignment(assignment)
+                .group(group)
+                .score(score)
+                .finalComment(finalComment)
+                .build();
+        if (!resultCandidate.hasValidScore()) {
             throw new IllegalArgumentException("Score must be between 0 and 100.");
         }
 
@@ -35,12 +41,7 @@ public class AssignmentResultServiceImpl implements AssignmentResultService {
             result.setScore(score);
             result.setFinalComment(finalComment);
         } else {
-            result = AssignmentResult.builder()
-                    .assignment(assignment)
-                    .group(group)
-                    .score(score)
-                    .finalComment(finalComment)
-                    .build();
+            result = resultCandidate;
         }
 
         return assignmentResultRepository.save(result);

@@ -50,4 +50,8 @@ public class StudentGroup {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public boolean hasCapacity(int currentMemberCount) {
+        return maxMembers != null && currentMemberCount >= 0 && currentMemberCount < maxMembers;
+    }
 }

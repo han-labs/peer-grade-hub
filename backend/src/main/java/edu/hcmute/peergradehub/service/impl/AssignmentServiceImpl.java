@@ -21,9 +21,6 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Transactional
     public Assignment createAssignment(String title, String description, LocalDateTime submissionDeadline,
                                        LocalDateTime reviewDeadline, Lesson lesson) {
-        if (reviewDeadline == null || submissionDeadline == null || !reviewDeadline.isAfter(submissionDeadline)) {
-            throw new IllegalArgumentException("Review deadline must be after the submission deadline.");
-        }
         Assignment assignment = Assignment.builder()
                 .title(title)
                 .description(description)
@@ -31,6 +28,7 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .reviewDeadline(reviewDeadline)
                 .lesson(lesson)
                 .build();
+        validateReviewDeadline(assignment);
         return assignmentRepository.save(assignment);
     }
 
@@ -38,9 +36,12 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Transactional
     public Assignment updateAssignment(Assignment assignment, String title, String description,
                                        LocalDateTime submissionDeadline, LocalDateTime reviewDeadline) {
-        if (reviewDeadline == null || submissionDeadline == null || !reviewDeadline.isAfter(submissionDeadline)) {
-            throw new IllegalArgumentException("Review deadline must be after the submission deadline.");
-        }
+        Assignment deadlineCandidate = Assignment.builder()
+                .submissionDeadline(submissionDeadline)
+                .reviewDeadline(reviewDeadline)
+                .build();
+        validateReviewDeadline(deadlineCandidate);
+
         assignment.setTitle(title);
         assignment.setDescription(description);
         assignment.setSubmissionDeadline(submissionDeadline);
@@ -53,5 +54,11 @@ public class AssignmentServiceImpl implements AssignmentService {
     public Assignment setShowcaseMode(Assignment assignment, boolean showcaseMode) {
         assignment.setShowcaseMode(showcaseMode);
         return assignmentRepository.save(assignment);
+    }
+
+    private void validateReviewDeadline(Assignment assignment) {
+        if (!assignment.hasValidReviewDeadline()) {
+            throw new IllegalArgumentException("Review deadline must be after the submission deadline.");
+        }
     }
 }

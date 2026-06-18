@@ -55,7 +55,15 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    public boolean isActive() {
+    public boolean isActiveAccount() {
         return status == UserStatus.ACTIVE;
+    }
+
+    public boolean isActive() {
+        return isActiveAccount();
+    }
+
+    public boolean hasAssignedRole() {
+        return userRole != null;
     }
 }

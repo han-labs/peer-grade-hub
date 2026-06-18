@@ -47,8 +47,8 @@ public class GroupServiceImpl implements GroupService {
         }
 
         // Check if group is full
-        long currentMembersCount = groupMemberRepository.countByGroupId(group.getId());
-        if (currentMembersCount >= group.getMaxMembers()) {
+        int currentMembersCount = Math.toIntExact(groupMemberRepository.countByGroupId(group.getId()));
+        if (!group.hasCapacity(currentMembersCount)) {
             throw new IllegalArgumentException("Group has reached its maximum capacity.");
         }
 
