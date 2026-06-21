@@ -1,65 +1,56 @@
-import { useEffect, useState } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import ProtectedRoute from './auth/ProtectedRoute.jsx'
+import { useAuth } from './auth/useAuth.js'
+import LoadingScreen from './components/LoadingScreen.jsx'
+import HomePage from './pages/HomePage.jsx'
+import LoginPage from './pages/LoginPage.jsx'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
+function PublicOnlyRoute({ children }) {
+  const { user, isInitializing } = useAuth()
+
+  if (isInitializing) {
+    return <LoadingScreen label="Restoring your session" />
+  }
+
+  return user ? <Navigate to="/dashboard" replace /> : children
+}
+
+function RouteFallback() {
+  const { user, isInitializing } = useAuth()
+
+  if (isInitializing) {
+    return <LoadingScreen label="Loading PeerGrade Hub" />
+  }
+
+  return <Navigate to={user ? '/dashboard' : '/login'} replace />
+}
 
 function App() {
-  const [health, setHealth] = useState({
-    status: 'checking',
-    message: 'Checking backend connection...',
-  })
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    fetch(`${apiBaseUrl}/health`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        return response.json()
-      })
-      .then((data) => {
-        setHealth({
-          status: 'online',
-          message: `${data.service ?? 'Backend API'} is ${data.status ?? 'UP'}`,
-        })
-      })
-      .catch((error) => {
-        if (error.name === 'AbortError') {
-          return
-        }
-
-        setHealth({
-          status: 'offline',
-          message: 'Backend is not reachable yet',
-        })
-      })
-
-    return () => controller.abort()
-  }, [])
-
   return (
-    <main className="app-shell">
-      <section className="workspace">
-        <div className="title-block">
-          <p className="eyebrow">Peer review assessment management</p>
-          <h1>PeerGrade Hub</h1>
-          <p className="summary">
-            A starter workspace for HCM-UTE course peer grading workflows.
-          </p>
-        </div>
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          <PublicOnlyRoute>
+            <LoginPage />
+          </PublicOnlyRoute>
+        }
+      />
 
-        <div className="status-panel">
-          <span className={`status-dot ${health.status}`} aria-hidden="true" />
-          <div>
-            <p className="status-label">Backend status</p>
-            <p className="status-message">{health.message}</p>
-            <p className="api-url">{apiBaseUrl}</p>
-          </div>
-        </div>
-      </section>
-    </main>
+      {['/dashboard', '/student', '/lecturer', '/admin'].map((path) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+      ))}
+
+      <Route path="*" element={<RouteFallback />} />
+    </Routes>
   )
 }
 
