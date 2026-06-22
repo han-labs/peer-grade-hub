@@ -5,6 +5,7 @@ import LoadingScreen from './components/LoadingScreen.jsx'
 import AssignPeerReviewPage from './pages/AssignPeerReviewPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import MonitorProgressPage from './pages/MonitorProgressPage.jsx'
 
 function PublicOnlyRoute({ children }) {
   const { user, isInitializing } = useAuth()
@@ -55,6 +56,15 @@ function App() {
         element={
           <ProtectedRoute>
             <AssignPeerReviewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/lecturer/courses/:courseId/assignments/:assignmentId/progress"
+        element={
+          <ProtectedRoute>
+            <MonitorProgressPage />
           </ProtectedRoute>
         }
       />

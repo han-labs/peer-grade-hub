@@ -112,28 +112,58 @@ function HomePage() {
         </section>
 
         {user.role === 'LECTURER' && (
-          <section className="demo-feature" aria-labelledby="uc14-demo-title">
-            <div className="demo-feature__icon">
-              <ClipboardCheck size={23} aria-hidden="true" />
-            </div>
-            <div className="demo-feature__copy">
-              <div className="demo-feature__meta">
-                <span>UC-14 demo</span>
-                <small>Assignment #1</small>
+          <section className="lecturer-demo-section" aria-labelledby="demo-workspaces-title">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Current demo data</p>
+                <h2 id="demo-workspaces-title">Use-case workspaces</h2>
               </div>
-              <h2 id="uc14-demo-title">Coordinate peer review assignments</h2>
-              <p>
-                Pair reviewer and target groups, check course coverage, and manage active review tasks.
-              </p>
             </div>
-            <button
-              className="demo-feature__action"
-              type="button"
-              onClick={() => navigate('/lecturer/assignments/1/peer-review-assignments')}
-            >
-              Open UC-14 Assign Peer Review
-              <ArrowUpRight size={18} aria-hidden="true" />
-            </button>
+            <div className="lecturer-demo-grid">
+              <article className="demo-feature" aria-labelledby="uc14-demo-title">
+                <div className="demo-feature__icon">
+                  <ClipboardCheck size={23} aria-hidden="true" />
+                </div>
+                <div className="demo-feature__copy">
+                  <div className="demo-feature__meta">
+                    <span>UC-14 demo</span>
+                    <small>Assignment #1</small>
+                  </div>
+                  <h2 id="uc14-demo-title">Assign peer reviews</h2>
+                  <p>Pair reviewer and target groups, then check review coverage.</p>
+                </div>
+                <button
+                  className="demo-feature__action"
+                  type="button"
+                  onClick={() => navigate('/lecturer/assignments/1/peer-review-assignments')}
+                >
+                  Open UC-14
+                  <ArrowUpRight size={18} aria-hidden="true" />
+                </button>
+              </article>
+
+              <article className="demo-feature demo-feature--progress" aria-labelledby="uc08-demo-title">
+                <div className="demo-feature__icon">
+                  <Activity size={23} aria-hidden="true" />
+                </div>
+                <div className="demo-feature__copy">
+                  <div className="demo-feature__meta">
+                    <span>UC-08 demo</span>
+                    <small>Course #2 · Assignment #2</small>
+                  </div>
+                  <h2 id="uc08-demo-title">Monitor Progress</h2>
+                  <p>Review submission and peer review progress across all course groups.</p>
+                </div>
+                <button
+                  className="demo-feature__action"
+                  type="button"
+                  onClick={() => navigate('/lecturer/courses/2/assignments/2/progress')}
+                >
+                  Open Monitor Progress
+                  <ArrowUpRight size={18} aria-hidden="true" />
+                </button>
+              </article>
+            </div>
           </section>
         )}
 

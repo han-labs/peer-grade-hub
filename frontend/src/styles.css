@@ -984,16 +984,49 @@ button:disabled {
 
 /* Lecturer demo entry */
 
+.lecturer-demo-section {
+  margin-top: 40px;
+}
+
+.lecturer-demo-section > .section-heading h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.lecturer-demo-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
 .demo-feature {
-  margin-top: 24px;
+  margin-top: 0;
   padding: 22px 24px;
   border: 1px solid #cfe0d8;
   border-radius: 12px;
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
   gap: 18px;
   background: #edf5f1;
+}
+
+.demo-feature--progress {
+  border-color: #ccddea;
+  background: #eef5fa;
+}
+
+.demo-feature--progress .demo-feature__icon {
+  color: var(--blue);
+}
+
+.demo-feature--progress .demo-feature__meta {
+  color: var(--blue);
+}
+
+.demo-feature--progress .demo-feature__meta span {
+  background: var(--blue-soft);
 }
 
 .demo-feature__icon {
@@ -1051,6 +1084,11 @@ button:disabled {
   gap: 8px;
   font-size: 0.76rem;
   font-weight: 700;
+}
+
+.demo-feature__action {
+  grid-column: 1 / -1;
+  width: fit-content;
 }
 
 .demo-feature__action,
@@ -1714,6 +1752,10 @@ button:disabled {
 
   .review-assignment-card {
     grid-template-columns: minmax(240px, 0.9fr) minmax(260px, 1fr) 38px;
+  }
+
+  .lecturer-demo-grid {
+    grid-template-columns: 1fr;
   }
 }
 
