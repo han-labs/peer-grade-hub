@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './auth/ProtectedRoute.jsx'
 import { useAuth } from './auth/useAuth.js'
 import LoadingScreen from './components/LoadingScreen.jsx'
+import AssignPeerReviewPage from './pages/AssignPeerReviewPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 
@@ -48,6 +49,15 @@ function App() {
           }
         />
       ))}
+
+      <Route
+        path="/lecturer/assignments/:assignmentId/peer-review-assignments"
+        element={
+          <ProtectedRoute>
+            <AssignPeerReviewPage />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="*" element={<RouteFallback />} />
     </Routes>

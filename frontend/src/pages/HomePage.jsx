@@ -6,16 +6,14 @@ import {
   ClipboardCheck,
   GraduationCap,
   LayoutDashboard,
-  LogOut,
   Mail,
   ShieldCheck,
   UserRound,
   UsersRound,
 } from 'lucide-react'
-import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
-import BrandMark from '../components/BrandMark.jsx'
+import DashboardTopbar from '../components/DashboardTopbar.jsx'
 
 const ROLE_CONTENT = {
   STUDENT: {
@@ -74,47 +72,13 @@ function formatDate(date) {
 }
 
 function HomePage() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const roleContent = ROLE_CONTENT[user.role] ?? ROLE_CONTENT.STUDENT
-  const initials = useMemo(
-    () =>
-      user.fullName
-        .split(' ')
-        .map((part) => part[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase(),
-    [user.fullName],
-  )
-
-  function handleLogout() {
-    logout()
-    navigate('/login', { replace: true })
-  }
 
   return (
     <div className="dashboard-shell">
-      <header className="topbar">
-        <BrandMark compact />
-        <nav className="topbar__nav" aria-label="Primary navigation">
-          <span className="topbar__active">
-            <LayoutDashboard size={18} aria-hidden="true" />
-            Overview
-          </span>
-        </nav>
-        <div className="topbar__account">
-          <span className={`user-avatar user-avatar--${roleContent.accent}`}>{initials}</span>
-          <span className="topbar__identity">
-            <strong>{user.fullName}</strong>
-            <small>@{user.username}</small>
-          </span>
-          <button className="logout-button" onClick={handleLogout} type="button">
-            <LogOut size={18} aria-hidden="true" />
-            <span>Log out</span>
-          </button>
-        </div>
-      </header>
+      <DashboardTopbar icon={LayoutDashboard} label="Overview" />
 
       <main className="dashboard-main">
         <section className="welcome-band">
@@ -147,6 +111,32 @@ function HomePage() {
           ))}
         </section>
 
+        {user.role === 'LECTURER' && (
+          <section className="demo-feature" aria-labelledby="uc14-demo-title">
+            <div className="demo-feature__icon">
+              <ClipboardCheck size={23} aria-hidden="true" />
+            </div>
+            <div className="demo-feature__copy">
+              <div className="demo-feature__meta">
+                <span>UC-14 demo</span>
+                <small>Assignment #1</small>
+              </div>
+              <h2 id="uc14-demo-title">Coordinate peer review assignments</h2>
+              <p>
+                Pair reviewer and target groups, check course coverage, and manage active review tasks.
+              </p>
+            </div>
+            <button
+              className="demo-feature__action"
+              type="button"
+              onClick={() => navigate('/lecturer/assignments/1/peer-review-assignments')}
+            >
+              Open UC-14 Assign Peer Review
+              <ArrowUpRight size={18} aria-hidden="true" />
+            </button>
+          </section>
+        )}
+
         <section className="dashboard-grid">
           <div className="workspace-section">
             <div className="section-heading">
@@ -176,7 +166,12 @@ function HomePage() {
           <aside className="profile-panel" aria-labelledby="profile-heading">
             <div className="profile-panel__heading">
               <span className={`user-avatar user-avatar--large user-avatar--${roleContent.accent}`}>
-                {initials}
+                {user.fullName
+                  .split(' ')
+                  .map((part) => part[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()}
               </span>
               <div>
                 <p className="eyebrow">Signed-in profile</p>
