@@ -53,4 +53,8 @@ public class Assignment {
     public boolean hasValidReviewDeadline() {
         return reviewDeadline != null && submissionDeadline != null && reviewDeadline.isAfter(submissionDeadline);
     }
+
+    public boolean isReviewOpen(LocalDateTime now) {
+        return reviewDeadline != null && now != null && now.isBefore(reviewDeadline);
+    }
 }

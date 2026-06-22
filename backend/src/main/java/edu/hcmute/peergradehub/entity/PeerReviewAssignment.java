@@ -65,4 +65,16 @@ public class PeerReviewAssignment {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public boolean isSelfReview() {
+        if (reviewerGroup == null || revieweeGroup == null) {
+            return false;
+        }
+        if (reviewerGroup == revieweeGroup) {
+            return true;
+        }
+
+        Long reviewerGroupId = reviewerGroup.getId();
+        return reviewerGroupId != null && reviewerGroupId.equals(revieweeGroup.getId());
+    }
 }
