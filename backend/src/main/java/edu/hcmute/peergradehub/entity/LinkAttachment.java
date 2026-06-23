@@ -12,7 +12,7 @@ import lombok.Setter;
 @DiscriminatorValue("LINK")
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class LinkAttachment extends LessonMaterial {
 
     @Column(name = "url", columnDefinition = "TEXT")
