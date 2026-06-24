@@ -6,6 +6,7 @@ import AssignPeerReviewPage from './pages/AssignPeerReviewPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import ManageCoursesPage from './pages/ManageCoursesPage.jsx'
+import CourseWorkspacePage from './pages/CourseWorkspacePage.jsx'
 import MonitorProgressPage from './pages/MonitorProgressPage.jsx'
 
 function PublicOnlyRoute({ children }) {
@@ -57,6 +58,15 @@ function App() {
         element={
           <ProtectedRoute>
             <ManageCoursesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/lecturer/courses/:courseId/workspace"
+        element={
+          <ProtectedRoute>
+            <CourseWorkspacePage />
           </ProtectedRoute>
         }
       />

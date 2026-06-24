@@ -51,6 +51,12 @@ function ManageCoursesPage() {
   const handleCreateCourse = async (e) => {
     e.preventDefault()
     setCreateError(null)
+
+    if (!courseName.trim() || !classCode.trim() || !semester.trim()) {
+      setCreateError('Course Name, Class Code, and Semester are required. Please do not leave them empty.')
+      return
+    }
+
     setCreateLoading(true)
     
     try {
@@ -184,7 +190,6 @@ function ManageCoursesPage() {
               <label className="form-field">
                 Course Name *
                 <input
-                  required
                   type="text"
                   placeholder="e.g. Object-Oriented Software Engineering"
                   value={courseName}
@@ -196,7 +201,6 @@ function ManageCoursesPage() {
               <label className="form-field">
                 Class Code *
                 <input
-                  required
                   type="text"
                   placeholder="e.g. OOSE-2026"
                   value={classCode}
@@ -208,7 +212,6 @@ function ManageCoursesPage() {
               <label className="form-field">
                 Semester *
                 <input
-                  required
                   type="text"
                   placeholder="e.g. Fall 2026"
                   value={semester}
