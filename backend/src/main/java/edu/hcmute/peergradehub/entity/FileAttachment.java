@@ -12,7 +12,7 @@ import lombok.Setter;
 @DiscriminatorValue("FILE")
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class FileAttachment extends LessonMaterial {
 
     @Column(name = "file_name", length = 255)
