@@ -1,0 +1,588 @@
+{
+  "info": {
+    "name": "PeerGrade Hub - UC-09 Manage Final Grades",
+    "description": "API Collection for UC-09 Manage Final Grades\n\nMain Flow:\n1. Get grading data (GET /api/grades/assignment/{assignmentId})\n2. Publish grades (POST /api/grades/publish)\n3. Toggle Showcase Mode (POST /api/grades/showcase)\n\nAlternate Flows:\n- Save draft (POST /api/grades/draft)\n- Unpublish grade (POST /api/grades/unpublish)\n\nException Flows:\n- Invalid grade format (0-100)\n- Comment exceeds 2000 characters\n- No group selected\n- Group has no submission (Group C)\n- Group has no peer review - warning only (Group D)\n- System error",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "assignmentId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "groupId1",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "groupId2",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "groupId3",
+      "value": "3",
+      "type": "string"
+    },
+    {
+      "key": "groupId4",
+      "value": "4",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Login - Lecturer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has data', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property('accessToken');",
+              "    pm.expect(jsonData.data).to.have.property('userRole', 'LECTURER');",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "if (jsonData.data && jsonData.data.accessToken) {",
+              "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+              "    console.log('Access token saved:', jsonData.data.accessToken);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"usernameOrEmail\": \"lecturer01\",\n    \"password\": \"Lecturer@123\",\n    \"rememberMe\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Login - Student",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Student should NOT have LECTURER role', function () {",
+              "    pm.expect(jsonData.data.userRole).to.not.equal('LECTURER');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"usernameOrEmail\": \"student01\",\n    \"password\": \"Student@123\",\n    \"rememberMe\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Get Grading Data - Main Flow Step 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has grading data', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property('assignmentId');",
+              "    pm.expect(jsonData.data).to.have.property('assignmentTitle');",
+              "    pm.expect(jsonData.data).to.have.property('groups');",
+              "    pm.expect(jsonData.data.groups).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('Each group has required fields', function () {",
+              "    var jsonData = pm.response.json();",
+              "    var groups = jsonData.data.groups;",
+              "    if (groups.length > 0) {",
+              "        var group = groups[0];",
+              "        pm.expect(group).to.have.property('groupId');",
+              "        pm.expect(group).to.have.property('groupName');",
+              "        pm.expect(group).to.have.property('hasSubmission');",
+              "        pm.expect(group).to.have.property('hasPeerReview');",
+              "        pm.expect(group).to.have.property('isPublished');",
+              "        pm.expect(group).to.have.property('canPublish');",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/grades/assignment/{{assignmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "assignment", "{{assignmentId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. Save Draft - Alternate Flow 2a",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response indicates draft saved', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property('isPublished', false);",
+              "    pm.expect(jsonData.data).to.have.property('message');",
+              "    pm.expect(jsonData.data.message).to.include('draft');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupId\": {{groupId1}},\n    \"score\": 85.5,\n    \"comment\": \"Good work! Some areas need improvement, but overall solid effort.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/draft",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "draft"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Publish Grade - Exception 2.1: Invalid Score (>100)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupIds\": [{{groupId1}}],\n    \"grades\": [\n        {\n            \"groupId\": {{groupId1}},\n            \"score\": 105,\n            \"comment\": \"Invalid score\"\n        }\n    ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/publish",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "publish"]
+        }
+      },
+      "response": [
+        {
+          "name": "Exception 2.1 - Invalid Score",
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"message\": \"Invalid grade format. Please enter a valid grade within the allowed grading scale (0-100).\",\n    \"code\": \"GRADE_VALIDATION_ERROR\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "6. Publish Grade - Exception 2.2: Comment Too Long",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupIds\": [{{groupId1}}],\n    \"grades\": [\n        {\n            \"groupId\": {{groupId1}},\n            \"score\": 85,\n            \"comment\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\"\n        }\n    ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/publish",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "publish"]
+        }
+      },
+      "response": [
+        {
+          "name": "Exception 2.2 - Comment Too Long",
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"message\": \"Final comment exceeds the maximum allowed length (2000 characters). Please shorten your comment.\",\n    \"code\": \"COMMENT_TOO_LONG\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "7. Publish Grade - Exception 2.3: No Group Selected",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupIds\": [],\n    \"grades\": []\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/publish",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "publish"]
+        }
+      },
+      "response": [
+        {
+          "name": "Exception 2.3 - No Group Selected",
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"message\": \"Please select at least one group to publish grades for.\",\n    \"code\": \"NO_GROUP_SELECTED\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "8. Publish Grade - Success (Main Flow Step 2)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response indicates success', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property('publishedGroups');",
+              "    pm.expect(jsonData.data.publishedGroups).to.be.an('array');",
+              "    pm.expect(jsonData.data).to.have.property('totalPublished');",
+              "});",
+              "",
+              "pm.test('Published groups have correct status', function () {",
+              "    var jsonData = pm.response.json();",
+              "    var groups = jsonData.data.publishedGroups;",
+              "    if (groups.length > 0) {",
+              "        var group = groups[0];",
+              "        pm.expect(group).to.have.property('success', true);",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupIds\": [{{groupId1}}],\n    \"grades\": [\n        {\n            \"groupId\": {{groupId1}},\n            \"score\": 85.5,\n            \"comment\": \"Excellent work! Clear structure and thorough analysis.\"\n        }\n    ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/publish",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "publish"]
+        }
+      },
+      "response": [
+        {
+          "name": "Publish Success",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": true,\n    \"data\": {\n        \"assignmentId\": 1,\n        \"assignmentTitle\": \"Assignment 1\",\n        \"publishedGroups\": [\n            {\n                \"groupId\": 1,\n                \"groupName\": \"Group A\",\n                \"score\": 85.5,\n                \"comment\": \"Excellent work! Clear structure and thorough analysis.\",\n                \"success\": true,\n                \"warning\": null,\n                \"error\": null\n            }\n        ],\n        \"publishedAt\": \"2026-06-23T10:30:00\",\n        \"publishedBy\": \"Lecturer 01\",\n        \"totalPublished\": 1,\n        \"totalWithWarning\": 0\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "9. Unpublish Grade - Alternate Flow 3b",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupId\": {{groupId1}}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/unpublish",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "unpublish"]
+        }
+      },
+      "response": [
+        {
+          "name": "Unpublish Success",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": true,\n    \"data\": {\n        \"assignmentId\": 1,\n        \"assignmentTitle\": \"Assignment 1\",\n        \"groupId\": 1,\n        \"groupName\": \"Group A\",\n        \"score\": 85.5,\n        \"comment\": \"Excellent work!\",\n        \"savedAt\": \"2026-06-23T10:31:00\",\n        \"isPublished\": false,\n        \"unpublishedAt\": \"2026-06-23T10:31:00\",\n        \"unpublishedBy\": \"Lecturer 01\",\n        \"message\": \"Grade has been unpublished. Students can no longer view it.\"\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "10. Toggle Showcase Mode ON - Main Flow Step 3",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Showcase mode enabled', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property('enabled', true);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"enabled\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/showcase",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "showcase"]
+        }
+      },
+      "response": [
+        {
+          "name": "Showcase Enabled",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": true,\n    \"data\": {\n        \"assignmentId\": 1,\n        \"assignmentTitle\": \"Assignment 1\",\n        \"enabled\": true,\n        \"message\": \"Showcase status updated\",\n        \"updatedAt\": \"2026-06-23T10:32:00\",\n        \"updatedBy\": \"Lecturer 01\",\n        \"updatedById\": 2\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "11. Toggle Showcase Mode OFF - Main Flow Step 4",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"enabled\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/showcase",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "showcase"]
+        }
+      },
+      "response": [
+        {
+          "name": "Showcase Disabled",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": true,\n    \"data\": {\n        \"assignmentId\": 1,\n        \"assignmentTitle\": \"Assignment 1\",\n        \"enabled\": false,\n        \"message\": \"Showcase status updated\",\n        \"updatedAt\": \"2026-06-23T10:33:00\",\n        \"updatedBy\": \"Lecturer 01\",\n        \"updatedById\": 2\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "12. Publish Grade - Exception 3.1: No Submission",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 400 Bad Request', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('Response has NO_SUBMISSION error', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.code).to.equal('NO_SUBMISSION');",
+              "    pm.expect(jsonData.message).to.include('not submitted');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupIds\": [{{groupId3}}],\n    \"grades\": [\n        {\n            \"groupId\": {{groupId3}},\n            \"score\": 75,\n            \"comment\": \"No submission test\"\n        }\n    ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/publish",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "publish"]
+        }
+      },
+      "response": [
+        {
+          "name": "Exception 3.1 - No Submission",
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": false,\n    \"code\": \"NO_SUBMISSION\",\n    \"message\": \"Cannot publish grade for [Group C] because the group has not submitted the assignment.\",\n    \"path\": \"/api/grades/publish\",\n    \"timestamp\": \"2026-06-23T...\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "13. Publish Grade - Exception 3.2: No Peer Review (Warning)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has warning for no peer review', function () {",
+              "    var jsonData = pm.response.json();",
+              "    var group = jsonData.data.publishedGroups[0];",
+              "    pm.expect(group.warning).to.include('has not received any peer review');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupIds\": [{{groupId4}}],\n    \"grades\": [\n        {\n            \"groupId\": {{groupId4}},\n            \"score\": 80,\n            \"comment\": \"No peer review test\"\n        }\n    ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/publish",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "publish"]
+        }
+      },
+      "response": [
+        {
+          "name": "Exception 3.2 - No Peer Review (Warning)",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n    \"success\": true,\n    \"data\": {\n        \"assignmentId\": 1,\n        \"assignmentTitle\": \"Test Assignment\",\n        \"publishedGroups\": [\n            {\n                \"groupId\": 4,\n                \"groupName\": \"Group D\",\n                \"score\": 80,\n                \"comment\": \"No peer review test\",\n                \"success\": true,\n                \"warning\": \"[Group D] has not received any peer review. Do you still want to publish the grade?\",\n                \"error\": null\n            }\n        ],\n        \"totalPublished\": 1,\n        \"totalWithWarning\": 1\n    }\n}"
+        }
+      ]
+    }
+  ]
+}

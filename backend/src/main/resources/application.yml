@@ -34,3 +34,8 @@ app:
   file:
     upload-dir: ${UPLOAD_DIR:uploads}
     max-file-size-mb: ${MAX_FILE_SIZE_MB:20}
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.boot.autoconfigure: DEBUG
+    edu.hcmute.peergradehub: DEBUG
