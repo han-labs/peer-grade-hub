@@ -120,6 +120,28 @@ function HomePage() {
               </div>
             </div>
             <div className="lecturer-demo-grid">
+              <article className="demo-feature" aria-labelledby="uc02-demo-title">
+                <div className="demo-feature__icon">
+                  <BookOpen size={23} aria-hidden="true" />
+                </div>
+                <div className="demo-feature__copy">
+                  <div className="demo-feature__meta">
+                    <span>UC-02</span>
+                    <small>Manage Courses</small>
+                  </div>
+                  <h2 id="uc02-demo-title">Course Management</h2>
+                  <p>Create and manage your courses, view course details, and access course workspaces.</p>
+                </div>
+                <button
+                  className="demo-feature__action"
+                  type="button"
+                  onClick={() => navigate('/lecturer/courses')}
+                >
+                  Manage Courses
+                  <ArrowUpRight size={18} aria-hidden="true" />
+                </button>
+              </article>
+
               <article className="demo-feature" aria-labelledby="uc14-demo-title">
                 <div className="demo-feature__icon">
                   <ClipboardCheck size={23} aria-hidden="true" />
