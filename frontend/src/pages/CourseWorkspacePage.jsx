@@ -19,6 +19,7 @@ import {
   Plus,
   Link as LinkIcon,
   File,
+  Users,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
@@ -492,8 +493,15 @@ function CourseWorkspacePage() {
                 >
                   <Edit2 size={16} /> Edit Course Details
                 </button>
+                <button 
+                  className="logout-button" 
+                  style={{ width: '100%', justifyContent: 'flex-start', minHeight: '44px' }}
+                  onClick={() => navigate(`/lecturer/courses/${courseId}/groups`)}
+                >
+                  <Users size={16} /> Manage Groups
+                </button>
                 <div style={{ padding: '16px', background: 'var(--page-bg)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--neutral-text)' }}>
-                  Groups and assignments configuration will be available in upcoming modules.
+                  Assignments configuration will be available in upcoming modules.
                 </div>
               </div>
             </aside>
