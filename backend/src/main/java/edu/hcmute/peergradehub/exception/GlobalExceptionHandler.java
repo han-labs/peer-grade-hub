@@ -91,6 +91,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+        @ExceptionHandler(NoSubmissionException.class)
+    public ResponseEntity<ErrorResponse> handleNoSubmission(
+            NoSubmissionException exception,
+            HttpServletRequest request
+    ) {
+        ErrorResponse response = ErrorResponse.of(
+                "NO_SUBMISSION",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception exception, HttpServletRequest request) {
         ErrorResponse response = ErrorResponse.of(
