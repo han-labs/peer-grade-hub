@@ -9,6 +9,7 @@ import ManageCoursesPage from './pages/ManageCoursesPage.jsx'
 import CourseWorkspacePage from './pages/CourseWorkspacePage.jsx'
 import GroupManagementPage from './pages/GroupManagementPage.jsx'
 import MonitorProgressPage from './pages/MonitorProgressPage.jsx'
+import PeerReviewPage from './pages/PeerReviewPage.jsx'
 
 function PublicOnlyRoute({ children }) {
   const { user, isInitializing } = useAuth()
@@ -99,9 +100,19 @@ function App() {
         }
       />
 
+      <Route
+        path="/peer-reviews/tasks/:id"
+        element={
+          <ProtectedRoute>
+            <PeerReviewPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="*" element={<RouteFallback />} />
     </Routes>
   )
 }
 
 export default App
+

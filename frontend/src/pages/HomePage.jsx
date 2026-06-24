@@ -189,6 +189,41 @@ function HomePage() {
           </section>
         )}
 
+        {user.role === 'STUDENT' && (
+          <section className="lecturer-demo-section" aria-labelledby="demo-workspaces-title">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Current demo data</p>
+                <h2 id="demo-workspaces-title">Use-case workspaces</h2>
+              </div>
+            </div>
+            <div className="lecturer-demo-grid">
+              <article className="demo-feature" aria-labelledby="uc07-demo-title">
+                <div className="demo-feature__icon">
+                  <ClipboardCheck size={23} aria-hidden="true" />
+                </div>
+                <div className="demo-feature__copy">
+                  <div className="demo-feature__meta">
+                    <span>UC-07 demo</span>
+                    <small>Task #1</small>
+                  </div>
+                  <h2 id="uc07-demo-title">Submit Peer Review</h2>
+                  <p>Open assigned peer review task #1, grade the submission, and submit feedback.</p>
+                </div>
+                <button
+                  className="demo-feature__action"
+                  type="button"
+                  onClick={() => navigate('/peer-reviews/tasks/1')}
+                >
+                  Open UC-07
+                  <ArrowUpRight size={18} aria-hidden="true" />
+                </button>
+              </article>
+            </div>
+          </section>
+        )}
+
+
         <section className="dashboard-grid">
           <div className="workspace-section">
             <div className="section-heading">
