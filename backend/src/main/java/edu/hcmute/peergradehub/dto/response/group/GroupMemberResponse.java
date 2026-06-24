@@ -1,13 +1,14 @@
 package edu.hcmute.peergradehub.dto.response.group;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 public record GroupMemberResponse(
-        Long groupMemberId,
-        Long userId,
-        String username,
-        String fullName,
-        String email,
-        LocalDateTime joinedAt
+        @JsonProperty("groupMemberId") Long groupMemberId,
+        @JsonProperty("userId") Long userId,
+        @JsonProperty("username") String username,
+        @JsonProperty("fullName") String fullName,
+        @JsonProperty("email") String email,
+        @JsonProperty("joinedAt") LocalDateTime joinedAt
 ) {
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getCourseGroups, generateGroups, updateGroupDeadline, lockAllGroups, unlockGroups } from '../api/groupApi.js'
+import { getCourseGroups, generateGroups, updateGroupDeadline, lockAllGroups, unlockGroups, removeGroupMember } from '../api/groupApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 import {
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Lock,
   Unlock,
+  Trash2,
 } from 'lucide-react'
 
 function GroupManagementPage() {
@@ -39,6 +40,9 @@ function GroupManagementPage() {
 
   const [lockUnlockLoading, setLockUnlockLoading] = useState(false)
   const [lockUnlockError, setLockUnlockError] = useState(null)
+
+  const [removingMemberId, setRemovingMemberId] = useState(null)
+  const [memberActionError, setMemberActionError] = useState(null)
 
   const fetchGroups = async () => {
     try {
@@ -168,6 +172,32 @@ function GroupManagementPage() {
     }
   }
 
+  const handleRemoveMember = async (groupId, memberId) => {
+    if (!groupId) {
+      setMemberActionError('Cannot remove this member because the group ID is missing from the response.')
+      return
+    }
+    if (!memberId) {
+      setMemberActionError('Cannot remove this member because the group member ID is missing from the response.')
+      return
+    }
+    if (!window.confirm('Remove this student from the group?')) return
+    setMemberActionError(null)
+    setSuccessMessage(null)
+    setRemovingMemberId(memberId)
+    try {
+      await removeGroupMember(courseId, groupId, memberId, token)
+      setSuccessMessage('Group member removed successfully.')
+      await fetchGroups()
+    } catch (err) {
+      // Better error extraction for payload/message structures natively matching ApiError design
+      const msg = err.payload?.message || err.message || 'An unexpected error occurred.'
+      setMemberActionError(msg)
+    } finally {
+      setRemovingMemberId(null)
+    }
+  }
+
   if (user.role !== 'LECTURER') {
     return (
       <div className="dashboard-shell">
@@ -229,10 +259,20 @@ function GroupManagementPage() {
                 </div>
               </div>
 
+              {memberActionError && (
+                <div className="form-alert" style={{ marginBottom: '24px' }}>
+                  <AlertCircle size={18} />
+                  <span>{memberActionError}</span>
+                </div>
+              )}
+
               {groups.length > 0 ? (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-                  {groups.map((group) => (
-                    <article key={group.id} className="demo-feature" style={{ padding: '20px' }}>
+                  {groups.map((group) => {
+                    const isLocked = group.groupStatus === 'LOCKED'
+                    const gId = group.groupId || group.id
+                    return (
+                    <article key={gId || Math.random()} className="demo-feature" style={{ padding: '20px' }}>
                       <div className="demo-feature__copy" style={{ marginBottom: '16px' }}>
                         <div className="demo-feature__meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <span className="status-badge" style={{ margin: 0 }}>
@@ -246,23 +286,51 @@ function GroupManagementPage() {
                       
                       <div style={{ background: 'var(--page-bg)', padding: '12px', borderRadius: '8px', border: '1px solid #eef0eb' }}>
                         <h4 style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--neutral-text)' }}>Members</h4>
+                        {isLocked && (
+                          <div style={{ marginBottom: '8px', padding: '6px 8px', background: 'var(--yellow-soft)', color: 'var(--yellow)', borderRadius: '4px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Lock size={12} />
+                            <span>Groups are locked. Roster modifications are not allowed.</span>
+                          </div>
+                        )}
                         {group.members && group.members.length > 0 ? (
                           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '6px' }}>
-                            {group.members.map((member) => (
-                              <li key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                                <div style={{ background: 'var(--blue-soft)', color: 'var(--blue)', width: '24px', height: '24px', borderRadius: '50%', display: 'grid', placeItems: 'center' }}>
-                                  <User size={12} />
+                            {group.members.map((member) => {
+                              const mId = member.groupMemberId
+                              const mName = member.studentName || member.fullName || member.username || `Student ${member.userId}`
+                              const mSub = member.userId || member.email
+                              
+                              return (
+                              <li key={mId || Math.random()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+                                  <div style={{ background: 'var(--blue-soft)', color: 'var(--blue)', width: '24px', height: '24px', borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                                    <User size={12} />
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontWeight: 500 }}>{mName}</span>
+                                    {mSub && <span style={{ fontSize: '0.7rem', color: 'var(--neutral-text)' }}>{mSub}</span>}
+                                  </div>
                                 </div>
-                                <span>{member.studentName || `Student ${member.studentId}`}</span>
+                                {!isLocked && (
+                                  <button
+                                    type="button"
+                                    className="icon-button"
+                                    style={{ color: 'var(--danger)', opacity: removingMemberId === mId ? 0.5 : 1 }}
+                                    onClick={() => handleRemoveMember(gId, mId)}
+                                    disabled={removingMemberId !== null}
+                                    title="Remove Member"
+                                  >
+                                    {removingMemberId === mId ? <Loader2 size={16} className="button-spinner" /> : <Trash2 size={16} />}
+                                  </button>
+                                )}
                               </li>
-                            ))}
+                            )})}
                           </ul>
                         ) : (
                           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--neutral-text)', fontStyle: 'italic' }}>No members yet</p>
                         )}
                       </div>
                     </article>
-                  ))}
+                  )})}
                 </div>
               ) : (
                 <div style={{ padding: '60px 20px', textAlign: 'center', background: 'var(--card-bg)', borderRadius: '12px', border: '1px dashed #cbd4d0' }}>
