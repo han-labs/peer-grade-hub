@@ -20,8 +20,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
+import edu.hcmute.peergradehub.entity.Assignment; 
+import edu.hcmute.peergradehub.mapper.LessonMapper;
+import java.util.List;
 import java.util.Collections;
+import edu.hcmute.peergradehub.dto.response.lesson.LessonAssignmentsResponse;
+import edu.hcmute.peergradehub.dao.AssignmentDao;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +36,8 @@ public class LessonServiceImpl implements LessonService {
     private final UserDao userDao;
     private final CourseDao courseDao;
     private final CourseMapper courseMapper;
-
+    private final AssignmentDao assignmentDao; 
+    private final LessonMapper lessonMapper;
     @Override
     @Transactional
     public Lesson createLesson(String title, Course course) {
@@ -73,4 +78,30 @@ public class LessonServiceImpl implements LessonService {
 
         return courseMapper.toLessonResponse(savedLesson, Collections.emptyList());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LessonAssignmentsResponse getLessonAssignments(Long lessonId, Long actorId) {
+        // 1. Lấy lesson
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new NotFoundException("Lesson not found"));
+
+        // 2. Lấy course từ lesson
+        Course course = lesson.getCourse();
+        if (course == null) {
+            throw new NotFoundException("Course not found for this lesson");
+        }
+
+        // 3. Kiểm tra lecturer có quyền với course này không
+        if (!course.getLecturer().getId().equals(actorId)) {
+            throw new ForbiddenException("You are not authorized to view this lesson");
+        }
+
+        // 4. Lấy assignments của lesson
+        List<Assignment> assignments = assignmentDao.findByLessonId(lessonId);
+
+        // 5. Map sang response
+        return lessonMapper.toLessonAssignmentsResponse(lesson, course, assignments);
+    }
+
 }

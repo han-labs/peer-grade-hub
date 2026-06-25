@@ -72,7 +72,7 @@ export default function CourseLessonsPage() {
       <DashboardTopbar icon={FileText} label="Course Lessons" />
 
       <main className="lessons-page">
-        <button className="back-link" type="button" onClick={() => navigate('/lecturer/courses')}>
+        <button className="back-link" type="button" onClick={() => navigate('/lecturer/my-courses')}>
           <ArrowLeft size={17} aria-hidden="true" />
           Back to courses
         </button>

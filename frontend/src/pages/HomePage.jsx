@@ -121,6 +121,7 @@ function HomePage() {
               </div>
             </div>
             <div className="lecturer-demo-grid">
+              {/* UC-09: Manage Final Grades */}
               <article className="demo-feature demo-feature--grade" aria-labelledby="uc09-demo-title">
                 <div className="demo-feature__icon">
                   <Gauge size={23} aria-hidden="true" />
@@ -136,18 +137,42 @@ function HomePage() {
                 <button
                   className="demo-feature__action"
                   type="button"
-                  onClick={() => navigate('/lecturer/courses')}  // Đi đến danh sách courses
+                  onClick={() => navigate('/lecturer/my-courses')}
                 >
                   Go to Courses
                   <ArrowUpRight size={18} aria-hidden="true" />
                 </button>
               </article>
+
+              {/* UC-02: Manage Courses */}
+              <article className="demo-feature" aria-labelledby="uc02-demo-title">
+                <div className="demo-feature__icon">
+                  <BookOpen size={23} aria-hidden="true" />
+                </div>
+                <div className="demo-feature__copy">
+                  <div className="demo-feature__meta">
+                    <span>UC-02</span>
+                    <small>Manage Courses</small>
+                  </div>
+                  <h2 id="uc02-demo-title">Course Management</h2>
+                  <p>Create and manage your courses, view course details, and access course workspaces.</p>
+                </div>
+                <button
+                  className="demo-feature__action"
+                  type="button"
+                  onClick={() => navigate('/lecturer/courses')}
+                >
+                  Manage Courses
+                  <ArrowUpRight size={18} aria-hidden="true" />
+                </button>
+              </article>
+
+              {/* UC-14: Assign Peer Review */}
               <article className="demo-feature" aria-labelledby="uc14-demo-title">
                 <div className="demo-feature__icon">
                   <ClipboardCheck size={23} aria-hidden="true" />
                 </div>
                 <div className="demo-feature__copy">
-
                   <div className="demo-feature__meta">
                     <span>UC-14 demo</span>
                     <small>Assignment #1</small>
@@ -165,6 +190,7 @@ function HomePage() {
                 </button>
               </article>
 
+              {/* UC-08: Monitor Progress */}
               <article className="demo-feature demo-feature--progress" aria-labelledby="uc08-demo-title">
                 <div className="demo-feature__icon">
                   <Activity size={23} aria-hidden="true" />
@@ -189,6 +215,41 @@ function HomePage() {
             </div>
           </section>
         )}
+
+        {user.role === 'STUDENT' && (
+          <section className="lecturer-demo-section" aria-labelledby="demo-workspaces-title">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Current demo data</p>
+                <h2 id="demo-workspaces-title">Use-case workspaces</h2>
+              </div>
+            </div>
+            <div className="lecturer-demo-grid">
+              <article className="demo-feature" aria-labelledby="uc07-demo-title">
+                <div className="demo-feature__icon">
+                  <ClipboardCheck size={23} aria-hidden="true" />
+                </div>
+                <div className="demo-feature__copy">
+                  <div className="demo-feature__meta">
+                    <span>UC-07 demo</span>
+                    <small>Task #1</small>
+                  </div>
+                  <h2 id="uc07-demo-title">Submit Peer Review</h2>
+                  <p>Open assigned peer review task #1, grade the submission, and submit feedback.</p>
+                </div>
+                <button
+                  className="demo-feature__action"
+                  type="button"
+                  onClick={() => navigate('/peer-reviews/tasks/1')}
+                >
+                  Open UC-07
+                  <ArrowUpRight size={18} aria-hidden="true" />
+                </button>
+              </article>
+            </div>
+          </section>
+        )}
+
 
         <section className="dashboard-grid">
           <div className="workspace-section">

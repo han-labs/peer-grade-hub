@@ -27,7 +27,7 @@ public class SaveDraftGradeRequest {
     @NotNull(message = "Group ID is required")
     private Long groupId;
 
-    @NotNull(message = "Score is required")
+    
     @DecimalMin(value = "0.0", message = "Score must be at least 0")
     @DecimalMax(value = "100.0", message = "Score must not exceed 100")
     private BigDecimal score;

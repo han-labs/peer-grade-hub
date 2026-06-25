@@ -1,14 +1,27 @@
 package edu.hcmute.peergradehub.entity;
 
-import edu.hcmute.peergradehub.entity.Assignment;
-import edu.hcmute.peergradehub.entity.StudentGroup;
-import jakarta.persistence.*;
-import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(
@@ -40,7 +53,7 @@ public class AssignmentResult {
     @Column(name = "final_comment", columnDefinition = "TEXT")
     private String finalComment;
 
-    @Column(name = "score", nullable = false, precision = 5, scale = 2)
+    @Column(name = "score", nullable = true, precision = 5, scale = 2)
     private BigDecimal score;
 
     @Column(name = "is_published", nullable = false)

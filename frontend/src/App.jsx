@@ -5,11 +5,16 @@ import LoadingScreen from './components/LoadingScreen.jsx'
 import AssignPeerReviewPage from './pages/AssignPeerReviewPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import ManageCoursesPage from './pages/ManageCoursesPage.jsx'
+import CourseWorkspacePage from './pages/CourseWorkspacePage.jsx'
+import GroupManagementPage from './pages/GroupManagementPage.jsx'
 import MonitorProgressPage from './pages/MonitorProgressPage.jsx'
-import GradingPage from './pages/grade/GradingPage' 
-import LecturerCoursesPage from './pages/LecturerCoursesPage'
-import CourseLessonsPage from './pages/CourseLessonsPage'
-import LessonAssignmentsPage from './pages/LessonAssignmentsPage'
+import GradingPage from './pages/grade/GradingPage.jsx'
+import LecturerCoursesPage from './pages/LecturerCoursesPage.jsx'
+import CourseLessonsPage from './pages/CourseLessonsPage.jsx'
+import LessonAssignmentsPage from './pages/LessonAssignmentsPage.jsx'
+import PeerReviewPage from './pages/PeerReviewPage.jsx'
+
 function PublicOnlyRoute({ children }) {
   const { user, isInitializing } = useAuth()
 
@@ -54,6 +59,35 @@ function App() {
         />
       ))}
 
+      {/* UC-02: Manage Courses */}
+      <Route
+        path="/lecturer/courses"
+        element={
+          <ProtectedRoute>
+            <ManageCoursesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/lecturer/courses/:courseId/workspace"
+        element={
+          <ProtectedRoute>
+            <CourseWorkspacePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/lecturer/courses/:courseId/groups"
+        element={
+          <ProtectedRoute>
+            <GroupManagementPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* UC-14: Assign Peer Review */}
       <Route
         path="/lecturer/assignments/:assignmentId/peer-review-assignments"
         element={
@@ -62,43 +96,63 @@ function App() {
           </ProtectedRoute>
         }
       />
-      
-      <Route path="/lecturer/assignments/:assignmentId/grading" element={
-            <ProtectedRoute allowedRoles={['LECTURER']}>
-              <GradingPage />
-            </ProtectedRoute>
-          } />
 
-        <Route
-        path="/lecturer/courses"
+      {/* UC-09: Manage Final Grades */}
+      <Route
+        path="/lecturer/assignments/:assignmentId/grading"
+        element={
+          <ProtectedRoute allowedRoles={['LECTURER']}>
+            <GradingPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* UC-09: Lecturer Courses (Navigation) */}
+      <Route
+        path="/lecturer/my-courses"
         element={
           <ProtectedRoute allowedRoles={['LECTURER']}>
             <LecturerCoursesPage />
           </ProtectedRoute>
         }
       />
+
+      {/* UC-09: Course Lessons */}
       <Route
-          path="/lecturer/courses/:courseId/lessons"
-          element={
-              <ProtectedRoute allowedRoles={['LECTURER']}>
-                  <CourseLessonsPage />
-              </ProtectedRoute>
-          }
-      />
-      <Route
-      path="/lecturer/courses/:courseId/lessons/:lessonId/assignments"
-      element={
+        path="/lecturer/courses/:courseId/lessons"
+        element={
           <ProtectedRoute allowedRoles={['LECTURER']}>
-              <LessonAssignmentsPage />
+            <CourseLessonsPage />
           </ProtectedRoute>
-      }
-  />
-      
+        }
+      />
+
+      {/* UC-09: Lesson Assignments */}
+      <Route
+        path="/lecturer/courses/:courseId/lessons/:lessonId/assignments"
+        element={
+          <ProtectedRoute allowedRoles={['LECTURER']}>
+            <LessonAssignmentsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* UC-08: Monitor Progress */}
       <Route
         path="/lecturer/courses/:courseId/assignments/:assignmentId/progress"
         element={
           <ProtectedRoute>
             <MonitorProgressPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* UC-07: Submit Peer Review */}
+      <Route
+        path="/peer-reviews/tasks/:id"
+        element={
+          <ProtectedRoute>
+            <PeerReviewPage />
           </ProtectedRoute>
         }
       />

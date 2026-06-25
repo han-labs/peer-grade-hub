@@ -36,3 +36,18 @@ export async function deletePeerReviewAssignment(peerReviewAssignmentId, token) 
     token,
   })
 }
+
+export async function getReviewTask(taskId, token) {
+  const response = await apiRequest(`/peer-reviews/tasks/${taskId}`, { token })
+  return response.data
+}
+
+export async function submitReview(taskId, payload, token) {
+  const response = await apiRequest(`/peer-reviews/tasks/${taskId}`, {
+    method: 'PUT',
+    token,
+    body: JSON.stringify(payload),
+  })
+  return response
+}
+

@@ -25,6 +25,8 @@ import edu.hcmute.peergradehub.dto.request.grade.ToggleShowcaseRequest;
 import edu.hcmute.peergradehub.dto.request.grade.UnpublishGradeRequest;
 import edu.hcmute.peergradehub.dto.response.grade.GradeDraftResponse;
 import edu.hcmute.peergradehub.dto.response.grade.GradingDataResponse;
+import edu.hcmute.peergradehub.dto.response.grade.GradingEvidenceResponse;
+import edu.hcmute.peergradehub.dto.response.grade.PeerReviewEvidenceResponse;
 import edu.hcmute.peergradehub.dto.response.grade.PublishGradeResponse;
 import edu.hcmute.peergradehub.dto.response.grade.ShowcaseStatusResponse;
 import edu.hcmute.peergradehub.entity.Assignment;
@@ -42,8 +44,6 @@ import edu.hcmute.peergradehub.mapper.GradeMapper;
 import edu.hcmute.peergradehub.service.GradeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import edu.hcmute.peergradehub.dto.response.grade.GradingEvidenceResponse;
-import edu.hcmute.peergradehub.dto.response.grade.PeerReviewEvidenceResponse;
 
 /**
  * Implementation of GradeService for UC-09 Manage Final Grades.
@@ -269,68 +269,63 @@ public GradingDataResponse getGradingData(Long assignmentId, Long lecturerId) {
     // ============================================================
 
     @Override
-    @Transactional
-    public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturerId) {
-        log.info("Saving grade draft for assignment: {}, group: {} by lecturer: {}", 
-                request.getAssignmentId(), request.getGroupId(), lecturerId);
+@Transactional
+public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturerId) {
+    log.info("Saving grade draft for assignment: {}, group: {} by lecturer: {}", 
+            request.getAssignmentId(), request.getGroupId(), lecturerId);
 
-        // 1. Validate lecturer permission
-        Assignment assignment = validateLecturerPermission(request.getAssignmentId(), lecturerId);
+    // 1. Validate lecturer permission
+    Assignment assignment = validateLecturerPermission(request.getAssignmentId(), lecturerId);
 
-        // 2. Validate grade format (Exception 2.1)
-        if (!validateGradeFormat(request.getScore())) {
-            throw GradeValidationException.invalidScore();
-        }
-
-        // 3. Validate comment length (Exception 2.2)
-        if (!validateCommentLength(request.getComment())) {
-            throw GradeValidationException.commentTooLong();
-        }
-
-        // 4. Get group
-        StudentGroup group = studentGroupDao.findById(request.getGroupId())
-                .orElseThrow(() -> new NotFoundException("Group not found"));
-
-        // 5. Save or update draft
-        Optional<AssignmentResult> existingResult = assignmentResultDao
-                .findByAssignmentIdAndGroupId(request.getAssignmentId(), request.getGroupId());
-
-        AssignmentResult result;
-        if (existingResult.isPresent()) {
-            result = existingResult.get();
-            result.setScore(request.getScore());
-            result.setFinalComment(request.getComment());
-            result.setPublished(false);
-            result.setPublishedAt(null);
-            result.setPublishedBy(null);
-            result.setGradedAt(LocalDateTime.now());
-            result.setGradedBy(userDao.findById(lecturerId).orElse(null));
-            result = assignmentResultDao.save(result);
-        } else {
-            result = AssignmentResult.builder()
-                    .assignment(assignment)
-                    .group(group)
-                    .score(request.getScore())
-                    .finalComment(request.getComment())
-                    .published(false)
-                    .gradedAt(LocalDateTime.now())
-                    .gradedBy(userDao.findById(lecturerId).orElse(null))
-                    .build();
-            result = assignmentResultDao.save(result);
-        }
-
-        return gradeMapper.toGradeDraftResponse(
-                request.getAssignmentId(),
-                assignment.getTitle(),
-                request.getGroupId(),
-                group.getGroupName(),
-                result.getScore(),
-                result.getFinalComment(),
-                false,
-                "Grades have been saved as draft. Students cannot view them until they are published."
-        );
+    // 2. Validate comment length (Exception 2.2)
+    if (!validateCommentLength(request.getComment())) {
+        throw GradeValidationException.commentTooLong();
     }
 
+    // 3. Get group
+    StudentGroup group = studentGroupDao.findById(request.getGroupId())
+            .orElseThrow(() -> new NotFoundException("Group not found"));
+
+    // 4. Save or update draft
+    Optional<AssignmentResult> existingResult = assignmentResultDao
+            .findByAssignmentIdAndGroupId(request.getAssignmentId(), request.getGroupId());
+
+    AssignmentResult result;
+    if (existingResult.isPresent()) {
+        result = existingResult.get();
+        // Nếu score rỗng/null thì set null, không set 0
+        result.setScore(request.getScore());  // Nếu null thì lưu null
+        result.setFinalComment(request.getComment());
+        result.setPublished(false);
+        result.setPublishedAt(null);
+        result.setPublishedBy(null);
+        result.setGradedAt(LocalDateTime.now());
+        result.setGradedBy(userDao.findById(lecturerId).orElse(null));
+        result = assignmentResultDao.save(result);
+    } else {
+        result = AssignmentResult.builder()
+                .assignment(assignment)
+                .group(group)
+                .score(request.getScore())  // Nếu null thì lưu null
+                .finalComment(request.getComment())
+                .published(false)
+                .gradedAt(LocalDateTime.now())
+                .gradedBy(userDao.findById(lecturerId).orElse(null))
+                .build();
+        result = assignmentResultDao.save(result);
+    }
+
+    return gradeMapper.toGradeDraftResponse(
+            request.getAssignmentId(),
+            assignment.getTitle(),
+            request.getGroupId(),
+            group.getGroupName(),
+            result.getScore(),
+            result.getFinalComment(),
+            false,
+            "Grades have been saved as draft. Students cannot view them until they are published."
+    );
+}
     @Override
     @Transactional
     public GradeDraftResponse unpublishGrade(UnpublishGradeRequest request, Long lecturerId) {
