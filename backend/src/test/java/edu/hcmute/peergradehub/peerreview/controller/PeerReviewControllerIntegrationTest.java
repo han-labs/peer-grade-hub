@@ -151,6 +151,21 @@ class PeerReviewControllerIntegrationTest {
     }
 
     @Test
+    void getReviewTasks_ReturnsList_Success() throws Exception {
+        String token = loginAndGetToken("student01", "Student@123");
+
+        mockMvc.perform(get("/peer-reviews/tasks")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].id").value(reviewAssignment.getId()))
+                .andExpect(jsonPath("$.data[0].assignmentTitle").value("Peer Review Task"))
+                .andExpect(jsonPath("$.data[0].revieweeGroupName").value("Reviewees"))
+                .andExpect(jsonPath("$.data[0].submitted").value(false));
+    }
+
+    @Test
     void getReviewTask_ReturnsDetails_Success() throws Exception {
         String token = loginAndGetToken("student01", "Student@123");
 

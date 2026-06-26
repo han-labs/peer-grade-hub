@@ -17,10 +17,14 @@ import LecturerGroupsPage from './pages/LecturerGroupsPage.jsx'
 import CourseLessonsPage from './pages/CourseLessonsPage.jsx'
 import LessonAssignmentsPage from './pages/LessonAssignmentsPage.jsx'
 import PeerReviewPage from './pages/PeerReviewPage.jsx'
+<<<<<<< HEAD
 import ViewResultsPage from './pages/result/ViewResultsPage';
 import StudentCoursesPage from './pages/student/StudentCoursesPage';
 import StudentCourseDetailPage from './pages/student/StudentCourseDetailPage';
 import StudentAssignmentsPage from './pages/student/StudentAssignmentsPage';
+=======
+import PeerReviewTasksPage from './pages/PeerReviewTasksPage.jsx'
+>>>>>>> 5abb507 (fix: Update UC07 peer review backend and frontend implementation)
 
 function PublicOnlyRoute({ children }) {
   const { user, isInitializing } = useAuth()
@@ -217,6 +221,15 @@ function App() {
       />
 
       {/* UC-07: Submit Peer Review */}
+      <Route
+        path="/peer-reviews"
+        element={
+          <ProtectedRoute>
+            <PeerReviewTasksPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/peer-reviews/tasks/:id"
         element={

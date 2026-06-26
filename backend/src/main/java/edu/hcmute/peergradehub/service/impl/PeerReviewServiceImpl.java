@@ -3,6 +3,7 @@ package edu.hcmute.peergradehub.service.impl;
 import edu.hcmute.peergradehub.dao.*;
 import edu.hcmute.peergradehub.dto.request.peerreview.SubmitPeerReviewRequest;
 import edu.hcmute.peergradehub.dto.response.peerreview.PeerReviewDetailResponse;
+import edu.hcmute.peergradehub.dto.response.peerreview.PeerReviewTaskResponse;
 import edu.hcmute.peergradehub.dto.response.peerreview.SubmitPeerReviewResponse;
 import edu.hcmute.peergradehub.entity.*;
 import edu.hcmute.peergradehub.enumeration.ReviewAssignmentStatus;
@@ -118,6 +119,25 @@ public class PeerReviewServiceImpl implements PeerReviewService {
                 saved.getSubmittedAt()
         );
     }
+
+    @Override
+    public List<PeerReviewTaskResponse> getReviewTasks(Long studentId) {
+        User student = requireStudent(studentId);
+        List<PeerReviewAssignment> tasks = peerReviewAssignmentDao.findActiveTasksByStudentId(
+                student.getId(),
+                LocalDateTime.now()
+        );
+        return tasks.stream()
+                .map(task -> new PeerReviewTaskResponse(
+                        task.getId(),
+                        task.getAssignment().getTitle(),
+                        task.getRevieweeGroup().getGroupName(),
+                        task.getDueAt(),
+                        task.getReviewAssignmentStatus() == ReviewAssignmentStatus.SUBMITTED
+                ))
+                .toList();
+    }
+
 
     private User requireStudent(Long studentId) {
         if (studentId == null) {

@@ -1409,6 +1409,17 @@ button:disabled {
   color: #8a928e;
 }
 
+.focus-row--clickable {
+  cursor: pointer;
+  transition: background-color 150ms ease, padding-left 150ms ease, padding-right 150ms ease;
+}
+
+.focus-row--clickable:hover {
+  background: #faf8f4;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
 .focus-row__icon {
   width: 44px;
   height: 44px;
@@ -2812,6 +2823,25 @@ button:disabled {
   .confirm-dialog__actions {
     align-items: stretch;
     flex-direction: column-reverse;
+  }
+}
+
+.peer-review-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+@media (max-width: 1024px) {
+  .peer-review-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .peer-review-grid {
+    grid-template-columns: 1fr;
   }
 }
 

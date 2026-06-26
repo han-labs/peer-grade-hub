@@ -1,6 +1,7 @@
 package edu.hcmute.peergradehub.dao;
 
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -35,6 +36,18 @@ public interface PeerReviewAssignmentDao extends JpaRepository<PeerReviewAssignm
     Optional<PeerReviewAssignment> findByIdWithAssignmentCourseAndLecturer(
             @Param("peerReviewAssignmentId") Long peerReviewAssignmentId
     );
+
+    @EntityGraph(attributePaths = {"assignment", "revieweeGroup"})
+    @Query("SELECT pra FROM PeerReviewAssignment pra " +
+           "JOIN GroupMember gm ON pra.reviewerGroup.id = gm.group.id " +
+           "WHERE gm.user.id = :studentId " +
+           "AND (pra.dueAt IS NULL OR pra.dueAt >= :now) " +
+           "ORDER BY pra.dueAt ASC")
+    List<PeerReviewAssignment> findActiveTasksByStudentId(
+            @Param("studentId") Long studentId,
+            @Param("now") LocalDateTime now
+    );
+
 
     // ===== NEW FOR UC-09: Count peer reviews for a reviewee group =====
     

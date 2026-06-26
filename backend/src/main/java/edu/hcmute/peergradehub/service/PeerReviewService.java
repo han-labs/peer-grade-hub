@@ -2,7 +2,10 @@ package edu.hcmute.peergradehub.service;
 
 import edu.hcmute.peergradehub.dto.request.peerreview.SubmitPeerReviewRequest;
 import edu.hcmute.peergradehub.dto.response.peerreview.PeerReviewDetailResponse;
+import edu.hcmute.peergradehub.dto.response.peerreview.PeerReviewTaskResponse;
 import edu.hcmute.peergradehub.dto.response.peerreview.SubmitPeerReviewResponse;
+
+import java.util.List;
 
 public interface PeerReviewService {
 
@@ -13,4 +16,6 @@ public interface PeerReviewService {
             SubmitPeerReviewRequest request,
             Long studentId
     );
+
+    List<PeerReviewTaskResponse> getReviewTasks(Long studentId);
 }

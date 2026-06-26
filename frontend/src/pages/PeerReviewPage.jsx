@@ -118,7 +118,7 @@ function PeerReviewPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (!isFormValid || isSubmitting || submitted) return
+    if (!isFormValid || isSubmitting) return
 
     setIsSubmitting(true)
     setFeedback(null)
@@ -138,17 +138,12 @@ function PeerReviewPage() {
         message: response.message || 'Peer review submitted successfully.',
       })
 
-      setSubmitted(true)
-      // Update local task state to reflect successful submission
-      setTask((prev) => {
-        if (!prev) return null
-        return {
-          ...prev,
-          submitted: true,
-          score: parseInt(score, 10),
-          comment: comment.trim(),
-        }
-      })
+      // Re-fetch task to refresh details state from the server
+      const refreshedTask = await getReviewTask(id, token)
+      setTask(refreshedTask)
+      setSubmitted(refreshedTask.submitted ?? false)
+      if (refreshedTask.score !== null && refreshedTask.score !== undefined) setScore(String(refreshedTask.score))
+      if (refreshedTask.comment !== null && refreshedTask.comment !== undefined) setComment(refreshedTask.comment)
     } catch (error) {
       handleApiError(error)
     } finally {
@@ -176,9 +171,9 @@ function PeerReviewPage() {
         <AccessRestricted />
       ) : (
         <main className="peer-review-main">
-          <button className="back-link" type="button" onClick={() => navigate('/dashboard')}>
+          <button className="back-link" type="button" onClick={() => navigate('/peer-reviews')}>
             <ArrowLeft size={17} aria-hidden="true" />
-            Dashboard
+            Back to peer reviews
           </button>
 
           {isLoading ? (
@@ -433,15 +428,15 @@ function PeerReviewPage() {
                     >
                       <ClipboardCheck size={21} aria-hidden="true" />
                     </span>
-                    <div>
-                      <p className="eyebrow">Evaluation</p>
-                      <h2>Peer Review Form</h2>
-                      <p>
-                        {submitted
-                          ? 'Review already submitted'
-                          : 'Provide your score and feedback.'}
-                      </p>
-                    </div>
+                      <div>
+                        <p className="eyebrow">Evaluation</p>
+                        <h2>Peer Review Form</h2>
+                        <p>
+                          {submitted
+                            ? 'Update your score and feedback.'
+                            : 'Provide your score and feedback.'}
+                        </p>
+                      </div>
                   </div>
 
                   <form
@@ -455,7 +450,7 @@ function PeerReviewPage() {
                         min="0"
                         max="100"
                         required
-                        disabled={isSubmitting || submitted}
+                        disabled={isSubmitting}
                         value={score}
                         onChange={(e) => setScore(e.target.value)}
                         placeholder="Enter integer score"
@@ -465,7 +460,7 @@ function PeerReviewPage() {
                           padding: '0 12px',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '10px',
-                          background: submitted ? '#f5f5f5' : '#ffffff',
+                          background: isSubmitting ? '#f5f5f5' : '#ffffff',
                         }}
                       />
                     </label>
@@ -475,7 +470,7 @@ function PeerReviewPage() {
                       <textarea
                         required
                         maxLength={1000}
-                        disabled={isSubmitting || submitted}
+                        disabled={isSubmitting}
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="Explain your evaluation..."
@@ -485,7 +480,7 @@ function PeerReviewPage() {
                           padding: '12px',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '10px',
-                          background: submitted ? '#f5f5f5' : '#ffffff',
+                          background: isSubmitting ? '#f5f5f5' : '#ffffff',
                           resize: 'vertical',
                           fontFamily: 'inherit',
                           fontSize: '0.84rem',
@@ -504,23 +499,21 @@ function PeerReviewPage() {
                       </div>
                     </label>
 
-                    {!submitted && (
-                      <button
-                        type="submit"
-                        className="primary-button"
-                        disabled={isSubmitting || !isFormValid}
-                        style={{ marginTop: '8px' }}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <span className="button-spinner" aria-hidden="true" />
-                            Submitting...
-                          </>
-                        ) : (
-                          'Submit Review'
-                        )}
-                      </button>
-                    )}
+                    <button
+                      type="submit"
+                      className="primary-button"
+                      disabled={isSubmitting || !isFormValid}
+                      style={{ marginTop: '8px' }}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="button-spinner" aria-hidden="true" />
+                          {submitted ? 'Updating...' : 'Submitting...'}
+                        </>
+                      ) : (
+                        submitted ? 'Update Review' : 'Submit Review'
+                      )}
+                    </button>
                   </form>
                 </aside>
               </section>

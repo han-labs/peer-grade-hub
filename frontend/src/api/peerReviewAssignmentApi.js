@@ -42,6 +42,11 @@ export async function getReviewTask(taskId, token) {
   return response.data
 }
 
+export async function getReviewTasks(token) {
+  const response = await apiRequest('/peer-reviews/tasks', { token })
+  return response.data
+}
+
 export async function submitReview(taskId, payload, token) {
   const response = await apiRequest(`/peer-reviews/tasks/${taskId}`, {
     method: 'PUT',

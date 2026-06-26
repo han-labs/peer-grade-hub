@@ -3,6 +3,7 @@ package edu.hcmute.peergradehub.controller.peerreview;
 import edu.hcmute.peergradehub.common.response.ApiResponse;
 import edu.hcmute.peergradehub.dto.request.peerreview.SubmitPeerReviewRequest;
 import edu.hcmute.peergradehub.dto.response.peerreview.PeerReviewDetailResponse;
+import edu.hcmute.peergradehub.dto.response.peerreview.PeerReviewTaskResponse;
 import edu.hcmute.peergradehub.dto.response.peerreview.SubmitPeerReviewResponse;
 import edu.hcmute.peergradehub.exception.UnauthorizedException;
 import edu.hcmute.peergradehub.security.CustomUserPrincipal;
@@ -11,12 +12,23 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/peer-reviews/tasks")
 public class PeerReviewController {
 
     private final PeerReviewService peerReviewService;
+
+    @GetMapping("")
+    public ApiResponse<List<PeerReviewTaskResponse>> getReviewTasks(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        return ApiResponse.success(
+                peerReviewService.getReviewTasks(currentUserId(principal))
+        );
+    }
 
     @GetMapping("/{id}")
     public ApiResponse<PeerReviewDetailResponse> getReviewTask(
