@@ -35,4 +35,14 @@ public class LessonController {
         }
         return principal.getId();
     }
+
+    @DeleteMapping("/courses/{courseId}/lessons/{lessonId}")
+    public ApiResponse<Void> deleteLesson(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        lessonService.deleteLesson(courseId, lessonId, currentUserId(principal));
+        return ApiResponse.success("Lesson deleted successfully.", null);
+    }
 }

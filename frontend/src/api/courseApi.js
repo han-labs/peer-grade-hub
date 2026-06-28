@@ -105,3 +105,18 @@ export const deleteLessonMaterial = async (courseId, lessonId, materialId, token
     );
     return response;
 };
+
+/**
+ * Delete a lesson
+ * DELETE /api/courses/{courseId}/lessons/{lessonId}
+ */
+export const deleteLesson = async (courseId, lessonId, token) => {
+    const response = await apiRequest(
+        `/courses/${courseId}/lessons/${lessonId}`,
+        {
+            method: 'DELETE',
+            token,
+        }
+    );
+    return response;
+};

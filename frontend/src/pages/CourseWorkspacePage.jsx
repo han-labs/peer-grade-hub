@@ -6,6 +6,7 @@ import {
   createLesson,
   createLessonMaterial,
   deleteLessonMaterial,
+  deleteLesson,
 } from '../api/courseApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
@@ -51,6 +52,7 @@ function CourseWorkspacePage() {
   const [lessonTitle, setLessonTitle] = useState('')
   const [lessonLoading, setLessonLoading] = useState(false)
   const [lessonError, setLessonError] = useState(null)
+  const [deletingLessonId, setDeletingLessonId] = useState(null)
 
   // Add Material State (lessonId -> form state)
   const [addingMaterialForLesson, setAddingMaterialForLesson] = useState(null)
@@ -196,6 +198,20 @@ function CourseWorkspacePage() {
       setMaterialError(err.message || 'Failed to delete material')
     } finally {
       setDeletingMaterialId(null)
+    }
+  }
+
+  const handleDeleteLesson = async (lessonId) => {
+    if (!window.confirm('Delete this lesson? This will also remove its materials.')) return
+    setLessonError(null)
+    setDeletingLessonId(lessonId)
+    try {
+      await deleteLesson(courseId, lessonId, token)
+      await fetchWorkspace()
+    } catch (err) {
+      setLessonError(err.message || 'Failed to delete lesson')
+    } finally {
+      setDeletingLessonId(null)
     }
   }
 
@@ -365,16 +381,27 @@ function CourseWorkspacePage() {
                     <div key={lesson.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-subtle)', borderRadius: '12px', overflow: 'hidden' }}>
                       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafbf9' }}>
                         <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{lesson.title}</h3>
-                        <button 
-                          className="logout-button" 
-                          style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
-                          onClick={() => {
-                            setAddingMaterialForLesson(addingMaterialForLesson === lesson.id ? null : lesson.id)
-                            setMaterialError(null)
-                          }}
-                        >
-                          <Plus size={14} /> Add Material
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            className="icon-button" 
+                            style={{ color: 'var(--danger)' }}
+                            onClick={() => handleDeleteLesson(lesson.id)}
+                            disabled={deletingLessonId === lesson.id}
+                            title="Delete lesson"
+                          >
+                            {deletingLessonId === lesson.id ? <Loader2 size={14} className="button-spinner" /> : <Trash2 size={14} />}
+                          </button>
+                          <button 
+                            className="logout-button" 
+                            style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
+                            onClick={() => {
+                              setAddingMaterialForLesson(addingMaterialForLesson === lesson.id ? null : lesson.id)
+                              setMaterialError(null)
+                            }}
+                          >
+                            <Plus size={14} /> Add Material
+                          </button>
+                        </div>
                       </div>
 
                       {addingMaterialForLesson === lesson.id && (

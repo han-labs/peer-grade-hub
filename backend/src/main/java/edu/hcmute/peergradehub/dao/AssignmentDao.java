@@ -16,6 +16,7 @@ import edu.hcmute.peergradehub.entity.Assignment;
 @Repository
 public interface AssignmentDao extends JpaRepository<Assignment, Long> {
     List<Assignment> findByLessonId(Long lessonId);
+    boolean existsByLessonId(Long lessonId);
 
     @EntityGraph(attributePaths = {"lesson.course.lecturer"})
     @Query("select assignment from Assignment assignment where assignment.id = :assignmentId")

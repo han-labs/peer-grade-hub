@@ -9,4 +9,5 @@ public interface LessonService {
     Lesson createLesson(String title, Course course);
     LessonResponse createLesson(Long courseId, CreateLessonRequest request, Long actorId);
     LessonAssignmentsResponse getLessonAssignments(Long lessonId, Long actorId);
+    void deleteLesson(Long courseId, Long lessonId, Long actorId);
 }
