@@ -1,7 +1,7 @@
 // frontend/src/pages/CourseLessonsPage.jsx
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, BookOpen, FileText, ChevronRight, Calendar } from 'lucide-react'
+import { ArrowLeft, BookOpen, FileText, ChevronRight } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
 import { getCourseWorkspace } from '../api/courseApi'
 import { ApiError } from '../api/httpClient'
@@ -18,11 +18,7 @@ export default function CourseLessonsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchCourseData()
-  }, [courseId])
-
-  const fetchCourseData = async () => {
+  const fetchCourseData = useCallback(async () => {
     try {
       setLoading(true)
       const response = await getCourseWorkspace(courseId, token)
@@ -41,7 +37,12 @@ export default function CourseLessonsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [courseId, logout, navigate, token])
+
+  useEffect(() => {
+    const timer = window.setTimeout(fetchCourseData, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchCourseData])
 
   const handleSelectLesson = (lessonId) => {
     navigate(`/lecturer/courses/${courseId}/lessons/${lessonId}/assignments`)

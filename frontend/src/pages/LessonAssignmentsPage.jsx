@@ -1,12 +1,11 @@
 // frontend/src/pages/LessonAssignmentsPage.jsx
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { 
   ArrowLeft, 
   ClipboardList, 
   CalendarClock, 
   ChevronRight,
-  BookOpen,
   Clock,
   FileText
 } from 'lucide-react'
@@ -26,11 +25,7 @@ export default function LessonAssignmentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchAssignments()
-  }, [lessonId])
-
-  const fetchAssignments = async () => {
+  const fetchAssignments = useCallback(async () => {
     try {
       setLoading(true)
       const response = await getLessonAssignments(lessonId, token)
@@ -46,7 +41,12 @@ export default function LessonAssignmentsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [lessonId, logout, navigate, token])
+
+  useEffect(() => {
+    const timer = window.setTimeout(fetchAssignments, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchAssignments])
 
   const handleSelectAssignment = (assignmentId) => {
     navigate(`/lecturer/assignments/${assignmentId}/grading`,{

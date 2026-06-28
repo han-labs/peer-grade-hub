@@ -1,5 +1,4 @@
 // frontend/src/components/grade/ShowcaseToggle.jsx
-import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 
 export default function ShowcaseToggle({ enabled, onToggle, isLoading }) {

@@ -47,7 +47,7 @@ function App() {
         }
       />
 
-      {['/dashboard', '/student', '/lecturer', '/admin'].map((path) => (
+      {['/dashboard', '/student', '/student/dashboard', '/lecturer', '/lecturer/dashboard', '/admin', '/admin/dashboard'].map((path) => (
         <Route
           key={path}
           path={path}

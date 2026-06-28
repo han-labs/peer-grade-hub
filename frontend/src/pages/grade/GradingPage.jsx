@@ -18,7 +18,7 @@ export default function GradingPage() {
   const { assignmentId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()  // useLocation phải ở trong component
-  const { user, token, logout } = useAuth()
+  const { token, logout } = useAuth()
 
   // Lấy courseId và lessonId từ location.state
   const { courseId, lessonId } = location.state || {}
@@ -82,7 +82,8 @@ export default function GradingPage() {
   }, [assignmentId, token, logout, navigate])
 
   useEffect(() => {
-    fetchGradingData()
+    const timer = window.setTimeout(fetchGradingData, 0)
+    return () => window.clearTimeout(timer)
   }, [fetchGradingData])
 
   const handleGradeChange = (groupId, field, value) => {

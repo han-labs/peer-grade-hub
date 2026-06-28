@@ -86,7 +86,8 @@ function CourseWorkspacePage() {
 
   useEffect(() => {
     if (user.role !== 'LECTURER') return
-    fetchWorkspace()
+    const timer = window.setTimeout(fetchWorkspace, 0)
+    return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, user.role, token])
 
