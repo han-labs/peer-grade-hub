@@ -36,4 +36,15 @@ public class LessonMaterialController {
         }
         return principal.getId();
     }
+
+    @DeleteMapping("/courses/{courseId}/lessons/{lessonId}/materials/{materialId}")
+    public ApiResponse<Void> deleteLessonMaterial(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId,
+            @PathVariable Long materialId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        lessonMaterialService.deleteLessonMaterial(courseId, lessonId, materialId, currentUserId(principal));
+        return ApiResponse.success("Lesson material deleted successfully.", null);
+    }
 }

@@ -5,6 +5,7 @@ import {
   updateCourse,
   createLesson,
   createLessonMaterial,
+  deleteLessonMaterial,
 } from '../api/courseApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
@@ -22,6 +23,7 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from 'lucide-react'
 
 function CourseWorkspacePage() {
@@ -62,6 +64,7 @@ function CourseWorkspacePage() {
   const [materialFileType, setMaterialFileType] = useState('')
   const [materialLoading, setMaterialLoading] = useState(false)
   const [materialError, setMaterialError] = useState(null)
+  const [deletingMaterialId, setDeletingMaterialId] = useState(null)
 
   const [copySuccess, setCopySuccess] = useState('')
 
@@ -69,13 +72,14 @@ function CourseWorkspacePage() {
     try {
       setLoading(true)
       setError(null)
-      const data = await getCourseWorkspace(courseId, token)
+      const response = await getCourseWorkspace(courseId, token)
+      const data = response.data || response
       setWorkspace(data)
       setEditCourseData({
-        courseName: data.course.courseName,
-        classCode: data.course.classCode,
-        semester: data.course.semester,
-        description: data.course.description || '',
+        courseName: data?.course?.courseName || '',
+        classCode: data?.course?.classCode || '',
+        semester: data?.course?.semester || '',
+        description: data?.course?.description || '',
       })
     } catch (err) {
       setError(err.message || 'Failed to load course workspace')
@@ -181,6 +185,20 @@ function CourseWorkspacePage() {
     }
   }
 
+  const handleDeleteMaterial = async (lessonId, materialId) => {
+    if (!window.confirm('Delete this material?')) return
+    setMaterialError(null)
+    setDeletingMaterialId(materialId)
+    try {
+      await deleteLessonMaterial(courseId, lessonId, materialId, token)
+      await fetchWorkspace()
+    } catch (err) {
+      setMaterialError(err.message || 'Failed to delete material')
+    } finally {
+      setDeletingMaterialId(null)
+    }
+  }
+
   if (user.role !== 'LECTURER') {
     return (
       <div className="dashboard-shell">
@@ -218,7 +236,7 @@ function CourseWorkspacePage() {
             <AlertCircle size={18} />
             <span>{error}</span>
           </div>
-        ) : workspace ? (
+        ) : workspace && workspace.course ? (
           <div className="dashboard-grid">
             <div className="workspace-section">
               <div className="section-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -459,6 +477,15 @@ function CourseWorkspacePage() {
                                     </div>
                                   )}
                                 </div>
+                                <button 
+                                  className="icon-button" 
+                                  style={{ marginLeft: 'auto', color: 'var(--danger)' }}
+                                  onClick={() => handleDeleteMaterial(lesson.id, material.id)}
+                                  disabled={deletingMaterialId === material.id}
+                                  title="Delete material"
+                                >
+                                  {deletingMaterialId === material.id ? <Loader2 size={16} className="button-spinner" /> : <Trash2 size={16} />}
+                                </button>
                               </li>
                             ))}
                           </ul>

@@ -10,6 +10,7 @@ import edu.hcmute.peergradehub.entity.Course;
 import edu.hcmute.peergradehub.entity.FileAttachment;
 import edu.hcmute.peergradehub.entity.Lesson;
 import edu.hcmute.peergradehub.entity.LinkAttachment;
+import edu.hcmute.peergradehub.entity.LessonMaterial;
 import edu.hcmute.peergradehub.entity.User;
 import edu.hcmute.peergradehub.enumeration.CourseStatus;
 import edu.hcmute.peergradehub.enumeration.UserRole;
@@ -132,5 +133,33 @@ public class LessonMaterialServiceImpl implements LessonMaterialService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    @Transactional
+    public void deleteLessonMaterial(Long courseId, Long lessonId, Long materialId, Long actorId) {
+        User actor = userDao.findById(actorId)
+                .orElseThrow(() -> new NotFoundException("Actor not found."));
+
+        if (actor.getUserRole() != UserRole.LECTURER || actor.getStatus() != UserStatus.ACTIVE) {
+            throw new ForbiddenException("You are not authorized to perform this action.");
+        }
+
+        Course course = courseDao.findByIdAndLecturerId(courseId, actorId)
+                .orElseThrow(() -> new ForbiddenException("You are not authorized to manage this course."));
+
+        if (course.getCourseStatus() != CourseStatus.ACTIVE) {
+            throw new BadRequestException("This course is archived and cannot be modified.");
+        }
+
+        LessonMaterial material = lessonMaterialDao.findById(materialId)
+                .orElseThrow(() -> new NotFoundException("Lesson material not found."));
+
+        if (material.getLesson() == null || !material.getLesson().getId().equals(lessonId) 
+                || !material.getLesson().getCourse().getId().equals(courseId)) {
+            throw new ForbiddenException("You are not authorized to delete this material.");
+        }
+
+        lessonMaterialDao.delete(material);
     }
 }
