@@ -1,12 +1,12 @@
 // frontend/src/pages/LecturerCoursesPage.jsx
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { getActiveCourses } from '../api/courseApi' 
 import { ApiError } from '../api/httpClient'
 import DashboardTopbar from '../components/DashboardTopbar'
 import LoadingScreen from '../components/LoadingScreen'
-import { BookOpen, ArrowRight, Users, Calendar } from 'lucide-react'
+import { BookOpen, ArrowRight } from 'lucide-react'
 
 export default function LecturerCoursesPage() {
   const { token, logout } = useAuth()
@@ -15,11 +15,7 @@ export default function LecturerCoursesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchCourses()
-  }, [])
-
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     try {
       setLoading(true)
       const response = await getActiveCourses(token) 
@@ -34,7 +30,12 @@ export default function LecturerCoursesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [logout, navigate, token])
+
+  useEffect(() => {
+    const timer = window.setTimeout(fetchCourses, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchCourses])
 
   const handleSelectCourse = (courseId) => {
     navigate(`/lecturer/courses/${courseId}/lessons`)

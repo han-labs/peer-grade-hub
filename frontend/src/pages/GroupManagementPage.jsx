@@ -67,7 +67,8 @@ function GroupManagementPage() {
 
   useEffect(() => {
     if (user.role !== 'LECTURER') return
-    fetchGroups()
+    const timer = window.setTimeout(fetchGroups, 0)
+    return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, user.role, token])
 
@@ -272,7 +273,7 @@ function GroupManagementPage() {
                     const isLocked = group.groupStatus === 'LOCKED'
                     const gId = group.groupId || group.id
                     return (
-                    <article key={gId || Math.random()} className="demo-feature" style={{ padding: '20px' }}>
+                    <article key={gId || group.groupName} className="demo-feature" style={{ padding: '20px' }}>
                       <div className="demo-feature__copy" style={{ marginBottom: '16px' }}>
                         <div className="demo-feature__meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <span className="status-badge" style={{ margin: 0 }}>
@@ -300,7 +301,7 @@ function GroupManagementPage() {
                               const mSub = member.userId || member.email
                               
                               return (
-                              <li key={mId || Math.random()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                              <li key={mId || `${gId}-${mName}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
                                   <div style={{ background: 'var(--blue-soft)', color: 'var(--blue)', width: '24px', height: '24px', borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                                     <User size={12} />

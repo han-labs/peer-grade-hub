@@ -104,7 +104,7 @@ function ManageCoursesPage() {
       <main className="dashboard-main">
         <section className="welcome-band">
           <div>
-            <p className="dashboard-date">UC-02 Manage Courses</p>
+            <p className="dashboard-date">Course management</p>
             <h1>Course Portfolio</h1>
             <p>Create and manage your courses. Open a course workspace to configure groups and assignments.</p>
           </div>
