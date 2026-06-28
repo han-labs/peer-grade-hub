@@ -68,4 +68,11 @@ public class CourseController {
         }
         return principal.getId();
     }
+
+    @GetMapping("/courses/active")
+    public ApiResponse<List<CourseSummaryResponse>> getActiveCourses(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        return ApiResponse.success(courseService.getActiveCourses(currentUserId(principal)));
+    }
 }
