@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getCourseGroups, generateGroups, updateGroupDeadline, lockAllGroups, unlockGroups, removeGroupMember, addGroups, updateMaxGroupSize } from '../api/groupApi.js'
+import { getCourseGroups, generateGroups, updateGroupDeadline, lockAllGroups, unlockGroups, removeGroupMember, addGroups, updateMaxGroupSize, deleteGroup } from '../api/groupApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 import {
@@ -52,6 +52,8 @@ function GroupManagementPage() {
   const [updateSizeMaxMembers, setUpdateSizeMaxMembers] = useState('')
   const [updateSizeLoading, setUpdateSizeLoading] = useState(false)
   const [updateSizeError, setUpdateSizeError] = useState(null)
+
+  const [deletingGroupId, setDeletingGroupId] = useState(null)
 
   const fetchGroups = async () => {
     try {
@@ -266,6 +268,24 @@ function GroupManagementPage() {
     }
   }
 
+  const handleDeleteGroup = async (groupId) => {
+    if (!window.confirm('Delete this empty group?')) return
+    setMemberActionError(null)
+    setSuccessMessage(null)
+    setDeletingGroupId(groupId)
+
+    try {
+      await deleteGroup(courseId, groupId, token)
+      setSuccessMessage('Group deleted successfully.')
+      await fetchGroups()
+    } catch (err) {
+      const msg = err.payload?.message || err.message || 'Failed to delete group'
+      setMemberActionError(msg)
+    } finally {
+      setDeletingGroupId(null)
+    }
+  }
+
   if (user.role !== 'LECTURER') {
     return (
       <div className="dashboard-shell">
@@ -339,6 +359,9 @@ function GroupManagementPage() {
                   {groups.map((group) => {
                     const isLocked = group.groupStatus === 'LOCKED'
                     const gId = group.groupId || group.id
+                    const isEmpty = !group.members || group.members.length === 0
+                    const canDelete = isEmpty && !isLocked && courseDetails?.courseStatus !== 'ARCHIVED'
+                    
                     return (
                     <article key={gId || group.groupName} className="demo-feature" style={{ padding: '20px' }}>
                       <div className="demo-feature__copy" style={{ marginBottom: '16px' }}>
@@ -347,7 +370,21 @@ function GroupManagementPage() {
                             <span aria-hidden="true" />
                             {group.groupStatus}
                           </span>
-                          <small>{group.memberCount} / {group.maxMembers} members</small>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <small>{group.memberCount} / {group.maxMembers} members</small>
+                            {canDelete && (
+                              <button
+                                type="button"
+                                className="icon-button"
+                                style={{ color: 'var(--danger)', opacity: deletingGroupId === gId ? 0.5 : 1, padding: 0 }}
+                                onClick={() => handleDeleteGroup(gId)}
+                                disabled={deletingGroupId !== null}
+                                title="Delete Group"
+                              >
+                                {deletingGroupId === gId ? <Loader2 size={16} className="button-spinner" /> : <Trash2 size={16} />}
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <h3 style={{ margin: '0 0 12px 0', fontSize: '1.2rem' }}>{group.groupName}</h3>
                       </div>

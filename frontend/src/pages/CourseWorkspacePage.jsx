@@ -39,6 +39,7 @@ function CourseWorkspacePage() {
   const [workspace, setWorkspace] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [successMessage, setSuccessMessage] = useState(null)
 
   // Edit Course State
   const [isEditingCourse, setIsEditingCourse] = useState(false)
@@ -195,9 +196,11 @@ function CourseWorkspacePage() {
   const handleDeleteMaterial = async (lessonId, materialId) => {
     if (!window.confirm('Delete this material?')) return
     setMaterialError(null)
+    setSuccessMessage(null)
     setDeletingMaterialId(materialId)
     try {
       await deleteLessonMaterial(courseId, lessonId, materialId, token)
+      setSuccessMessage('Lesson material deleted successfully.')
       await fetchWorkspace()
     } catch (err) {
       setMaterialError(err.message || 'Failed to delete material')
@@ -209,9 +212,11 @@ function CourseWorkspacePage() {
   const handleDeleteLesson = async (lessonId) => {
     if (!window.confirm('Delete this lesson? This will also remove its materials.')) return
     setLessonError(null)
+    setSuccessMessage(null)
     setDeletingLessonId(lessonId)
     try {
       await deleteLesson(courseId, lessonId, token)
+      setSuccessMessage('Lesson deleted successfully.')
       await fetchWorkspace()
     } catch (err) {
       setLessonError(err.message || 'Failed to delete lesson')
@@ -224,8 +229,10 @@ function CourseWorkspacePage() {
     if (!window.confirm('Archive this course? Editing will be disabled until it is reactivated.')) return
     setIsStatusChanging(true)
     setError(null)
+    setSuccessMessage(null)
     try {
       await archiveCourse(courseId, token)
+      setSuccessMessage('Course archived successfully.')
       await fetchWorkspace()
     } catch (err) {
       setError(err.message || 'Failed to archive course')
@@ -238,8 +245,10 @@ function CourseWorkspacePage() {
     if (!window.confirm('Reactivate this course?')) return
     setIsStatusChanging(true)
     setError(null)
+    setSuccessMessage(null)
     try {
       await unarchiveCourse(courseId, token)
+      setSuccessMessage('Course reactivated successfully.')
       await fetchWorkspace()
     } catch (err) {
       setError(err.message || 'Failed to reactivate course')
@@ -286,8 +295,15 @@ function CourseWorkspacePage() {
             <span>{error}</span>
           </div>
         ) : workspace && workspace.course ? (
-          <div className="dashboard-grid">
-            <div className="workspace-section">
+          <>
+            {successMessage && (
+              <div className="form-alert" style={{ marginBottom: '24px', background: 'var(--positive-bg)', color: 'var(--positive-text)', border: '1px solid #c3e6cb' }}>
+                <CheckCircle2 size={18} />
+                <span>{successMessage}</span>
+              </div>
+            )}
+            <div className="dashboard-grid">
+              <div className="workspace-section">
               <div className="section-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <p className="eyebrow">Course Details</p>
@@ -625,6 +641,7 @@ function CourseWorkspacePage() {
               </div>
             </aside>
           </div>
+          </>
         ) : null}
       </main>
     </div>

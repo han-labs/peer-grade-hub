@@ -101,6 +101,16 @@ public class GroupController {
         return ApiResponse.success(response.message(), response.groupManagement());
     }
 
+    @DeleteMapping("/{groupId}")
+    public ApiResponse<GroupManagementResponse> deleteGroup(
+            @PathVariable Long courseId,
+            @PathVariable Long groupId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        GroupActionResponse response = groupService.deleteGroup(courseId, groupId, currentUserId(principal));
+        return ApiResponse.success(response.message(), response.groupManagement());
+    }
+
     private Long currentUserId(CustomUserPrincipal principal) {
         if (principal == null) {
             throw new UnauthorizedException();

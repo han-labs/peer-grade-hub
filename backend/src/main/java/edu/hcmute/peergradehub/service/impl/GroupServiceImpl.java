@@ -2,6 +2,9 @@ package edu.hcmute.peergradehub.service.impl;
 
 import edu.hcmute.peergradehub.dao.GroupMemberDao;
 import edu.hcmute.peergradehub.dao.StudentGroupDao;
+import edu.hcmute.peergradehub.dao.AssignmentSubmissionDao;
+import edu.hcmute.peergradehub.dao.AssignmentResultDao;
+import edu.hcmute.peergradehub.dao.PeerReviewAssignmentDao;
 import edu.hcmute.peergradehub.entity.Course;
 import edu.hcmute.peergradehub.entity.GroupMember;
 import edu.hcmute.peergradehub.entity.StudentGroup;
@@ -43,6 +46,9 @@ public class GroupServiceImpl implements GroupService {
     private final UserDao userDao;
     private final CourseDao courseDao;
     private final GroupMapper groupMapper;
+    private final AssignmentSubmissionDao assignmentSubmissionDao;
+    private final AssignmentResultDao assignmentResultDao;
+    private final PeerReviewAssignmentDao peerReviewAssignmentDao;
 
     @Override
     @Transactional
@@ -327,5 +333,39 @@ public class GroupServiceImpl implements GroupService {
         studentGroupRepository.saveAll(existingGroups);
 
         return groupMapper.toActionResponse("Max group size updated successfully.", buildManagementResponse(course));
+    }
+
+    @Override
+    @Transactional
+    public GroupActionResponse deleteGroup(Long courseId, Long groupId, Long actorId) {
+        Course course = validateActorAndCourseForGroupManagement(courseId, actorId);
+        ensureCourseModifiable(course);
+
+        StudentGroup group = studentGroupRepository.findById(groupId)
+                .orElseThrow(() -> new NotFoundException("Group not found"));
+
+        if (!group.getCourse().getId().equals(courseId)) {
+            throw new BadRequestException("Group does not belong to the specified course.");
+        }
+
+        List<StudentGroup> existingGroups = studentGroupRepository.findByCourseId(courseId);
+        if (!existingGroups.isEmpty() && existingGroups.get(0).getGroupStatus() == GroupStatus.LOCKED) {
+            throw new BadRequestException("Groups are locked. Please unlock groups before modifying group configuration.");
+        }
+
+        long memberCount = groupMemberRepository.countByGroupId(groupId);
+        if (memberCount > 0) {
+            throw new BadRequestException("Only empty groups can be deleted.");
+        }
+
+        if (assignmentSubmissionDao.existsByGroupId(groupId) ||
+            assignmentResultDao.existsByGroupId(groupId) ||
+            peerReviewAssignmentDao.existsByReviewerGroupId(groupId) ||
+            peerReviewAssignmentDao.existsByRevieweeGroupId(groupId)) {
+            throw new BadRequestException("This group cannot be deleted because it has related assessment data.");
+        }
+
+        studentGroupRepository.delete(group);
+        return groupMapper.toActionResponse("Group deleted successfully.", buildManagementResponse(course));
     }
 }

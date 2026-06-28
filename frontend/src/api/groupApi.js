@@ -67,3 +67,11 @@ export async function updateMaxGroupSize(courseId, request, token) {
   })
   return response
 }
+
+export async function deleteGroup(courseId, groupId, token) {
+  const response = await apiRequest(`/courses/${courseId}/groups/${groupId}`, {
+    method: 'DELETE',
+    token,
+  })
+  return response
+}

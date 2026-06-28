@@ -33,4 +33,6 @@ public interface GroupService {
     GroupActionResponse addGroups(Long courseId, AddGroupsRequest request, Long actorId);
 
     GroupActionResponse updateMaxGroupSize(Long courseId, UpdateMaxGroupSizeRequest request, Long actorId);
+
+    GroupActionResponse deleteGroup(Long courseId, Long groupId, Long actorId);
 }
