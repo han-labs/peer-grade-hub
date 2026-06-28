@@ -25,4 +25,18 @@ public interface StudentGroupDao extends JpaRepository<StudentGroup, Long> {
     
     @Query("SELECT g FROM StudentGroup g WHERE g.id = :id")
     Optional<StudentGroup> findByIdWithMembers(@Param("id") Long id);
+
+    // ===== UC-10 METHODS =====
+    
+    /**
+     * Find the group that a student belongs to in a specific course.
+     * Used for UC-10 to determine which group the student is in.
+     */
+    @Query("SELECT gm.group FROM GroupMember gm " +
+           "WHERE gm.user.id = :studentId " +
+           "AND gm.group.course.id = :courseId")
+    Optional<StudentGroup> findGroupByStudentAndCourse(
+            @Param("studentId") Long studentId,
+            @Param("courseId") Long courseId
+    );
 }
