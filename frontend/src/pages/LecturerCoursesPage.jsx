@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
-import { getMyCourses } from '../api/courseApi'  
+import { getActiveCourses } from '../api/courseApi' 
 import { ApiError } from '../api/httpClient'
 import DashboardTopbar from '../components/DashboardTopbar'
 import LoadingScreen from '../components/LoadingScreen'
@@ -22,7 +22,7 @@ export default function LecturerCoursesPage() {
   const fetchCourses = async () => {
     try {
       setLoading(true)
-      const response = await getMyCourses(token) 
+      const response = await getActiveCourses(token) 
       setCourses(response.data || [])
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
