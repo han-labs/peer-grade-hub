@@ -75,4 +75,20 @@ public class CourseController {
     ) {
         return ApiResponse.success(courseService.getActiveCourses(currentUserId(principal)));
     }
+
+    @PutMapping("/courses/{courseId}/archive")
+    public ApiResponse<CourseWorkspaceResponse> archiveCourse(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        return ApiResponse.success("Course archived successfully.", courseService.archiveCourse(courseId, currentUserId(principal)));
+    }
+
+    @PutMapping("/courses/{courseId}/unarchive")
+    public ApiResponse<CourseWorkspaceResponse> unarchiveCourse(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        return ApiResponse.success("Course reactivated successfully.", courseService.unarchiveCourse(courseId, currentUserId(principal)));
+    }
 }

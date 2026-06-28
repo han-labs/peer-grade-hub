@@ -49,14 +49,34 @@ export const createCourse = async (request, token) => {
     return response;
 };
 
-/**
- * Update a course
- * PUT /api/courses/{courseId}
- */
 export const updateCourse = async (courseId, request, token) => {
     const response = await apiRequest(`/courses/${courseId}`, {
         method: 'PUT',
         body: JSON.stringify(request),
+        token,
+    });
+    return response;
+};
+
+/**
+ * Archive a course
+ * PUT /api/courses/{courseId}/archive
+ */
+export const archiveCourse = async (courseId, token) => {
+    const response = await apiRequest(`/courses/${courseId}/archive`, {
+        method: 'PUT',
+        token,
+    });
+    return response;
+};
+
+/**
+ * Unarchive a course
+ * PUT /api/courses/{courseId}/unarchive
+ */
+export const unarchiveCourse = async (courseId, token) => {
+    const response = await apiRequest(`/courses/${courseId}/unarchive`, {
+        method: 'PUT',
         token,
     });
     return response;

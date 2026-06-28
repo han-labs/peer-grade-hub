@@ -7,6 +7,8 @@ import {
   createLessonMaterial,
   deleteLessonMaterial,
   deleteLesson,
+  archiveCourse,
+  unarchiveCourse,
 } from '../api/courseApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
@@ -25,6 +27,8 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
+  Archive,
+  RotateCcw,
 } from 'lucide-react'
 
 function CourseWorkspacePage() {
@@ -67,6 +71,7 @@ function CourseWorkspacePage() {
   const [materialLoading, setMaterialLoading] = useState(false)
   const [materialError, setMaterialError] = useState(null)
   const [deletingMaterialId, setDeletingMaterialId] = useState(null)
+  const [isStatusChanging, setIsStatusChanging] = useState(false)
 
   const [copySuccess, setCopySuccess] = useState('')
 
@@ -215,6 +220,34 @@ function CourseWorkspacePage() {
     }
   }
 
+  const handleArchiveCourse = async () => {
+    if (!window.confirm('Archive this course? Editing will be disabled until it is reactivated.')) return
+    setIsStatusChanging(true)
+    setError(null)
+    try {
+      await archiveCourse(courseId, token)
+      await fetchWorkspace()
+    } catch (err) {
+      setError(err.message || 'Failed to archive course')
+    } finally {
+      setIsStatusChanging(false)
+    }
+  }
+
+  const handleUnarchiveCourse = async () => {
+    if (!window.confirm('Reactivate this course?')) return
+    setIsStatusChanging(true)
+    setError(null)
+    try {
+      await unarchiveCourse(courseId, token)
+      await fetchWorkspace()
+    } catch (err) {
+      setError(err.message || 'Failed to reactivate course')
+    } finally {
+      setIsStatusChanging(false)
+    }
+  }
+
   if (user.role !== 'LECTURER') {
     return (
       <div className="dashboard-shell">
@@ -261,14 +294,43 @@ function CourseWorkspacePage() {
                   <h2>{workspace.course.courseName}</h2>
                   <p style={{ marginTop: '8px', color: 'var(--neutral-text)' }}>{workspace.course.description}</p>
                 </div>
-                <button 
-                  className="icon-button" 
-                  onClick={() => setIsEditingCourse(!isEditingCourse)}
-                  title="Edit Course"
-                >
-                  <Edit2 size={18} />
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {workspace.course.courseStatus === 'ACTIVE' ? (
+                    <button 
+                      className="logout-button" 
+                      onClick={handleArchiveCourse}
+                      disabled={isStatusChanging}
+                      style={{ background: 'var(--neutral-text)', color: '#fff', borderColor: 'var(--neutral-text)' }}
+                    >
+                      {isStatusChanging ? <Loader2 size={16} className="button-spinner" /> : <Archive size={16} />} Archive
+                    </button>
+                  ) : (
+                    <button 
+                      className="primary-button" 
+                      onClick={handleUnarchiveCourse}
+                      disabled={isStatusChanging}
+                    >
+                      {isStatusChanging ? <Loader2 size={16} className="button-spinner" /> : <RotateCcw size={16} />} Reactivate
+                    </button>
+                  )}
+                  {workspace.course.courseStatus === 'ACTIVE' && (
+                    <button 
+                      className="icon-button" 
+                      onClick={() => setIsEditingCourse(!isEditingCourse)}
+                      title="Edit Course"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {workspace.course.courseStatus === 'ARCHIVED' && (
+                <div className="form-alert" style={{ marginBottom: '24px', background: 'var(--yellow-soft)', color: '#8a6d3b', borderColor: '#faebcc' }}>
+                  <AlertCircle size={18} />
+                  <span>This course is archived. Editing is disabled until the course is reactivated.</span>
+                </div>
+              )}
 
               {isEditingCourse ? (
                 <form className="login-form" onSubmit={handleUpdateCourse} style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-subtle)', marginBottom: '32px' }}>
@@ -339,16 +401,14 @@ function CourseWorkspacePage() {
 
               <div className="section-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '40px' }}>
                 <div>
-                  <p className="eyebrow">Course Content</p>
+                  <p className="eyebrow">Content</p>
                   <h2>Lessons</h2>
                 </div>
-                <button 
-                  className="logout-button" 
-                  onClick={() => setIsAddingLesson(!isAddingLesson)}
-                  style={{ gap: '6px' }}
-                >
-                  <Plus size={16} /> Add Lesson
-                </button>
+                {workspace.course.courseStatus === 'ACTIVE' && (
+                  <button className="primary-button" onClick={() => setIsAddingLesson(!isAddingLesson)}>
+                    <Plus size={16} /> Add Lesson
+                  </button>
+                )}
               </div>
 
               {isAddingLesson && (
@@ -381,27 +441,29 @@ function CourseWorkspacePage() {
                     <div key={lesson.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-subtle)', borderRadius: '12px', overflow: 'hidden' }}>
                       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafbf9' }}>
                         <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{lesson.title}</h3>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button 
-                            className="icon-button" 
-                            style={{ color: 'var(--danger)' }}
-                            onClick={() => handleDeleteLesson(lesson.id)}
-                            disabled={deletingLessonId === lesson.id}
-                            title="Delete lesson"
-                          >
-                            {deletingLessonId === lesson.id ? <Loader2 size={14} className="button-spinner" /> : <Trash2 size={14} />}
-                          </button>
-                          <button 
-                            className="logout-button" 
-                            style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
-                            onClick={() => {
-                              setAddingMaterialForLesson(addingMaterialForLesson === lesson.id ? null : lesson.id)
-                              setMaterialError(null)
-                            }}
-                          >
-                            <Plus size={14} /> Add Material
-                          </button>
-                        </div>
+                        {workspace.course.courseStatus === 'ACTIVE' && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              className="icon-button" 
+                              style={{ color: 'var(--danger)' }}
+                              onClick={() => handleDeleteLesson(lesson.id)}
+                              disabled={deletingLessonId === lesson.id}
+                              title="Delete lesson"
+                            >
+                              {deletingLessonId === lesson.id ? <Loader2 size={14} className="button-spinner" /> : <Trash2 size={14} />}
+                            </button>
+                            <button 
+                              className="logout-button" 
+                              style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
+                              onClick={() => {
+                                setAddingMaterialForLesson(addingMaterialForLesson === lesson.id ? null : lesson.id)
+                                setMaterialError(null)
+                              }}
+                            >
+                              <Plus size={14} /> Add Material
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {addingMaterialForLesson === lesson.id && (
@@ -504,15 +566,17 @@ function CourseWorkspacePage() {
                                     </div>
                                   )}
                                 </div>
-                                <button 
-                                  className="icon-button" 
-                                  style={{ marginLeft: 'auto', color: 'var(--danger)' }}
-                                  onClick={() => handleDeleteMaterial(lesson.id, material.id)}
-                                  disabled={deletingMaterialId === material.id}
-                                  title="Delete material"
-                                >
-                                  {deletingMaterialId === material.id ? <Loader2 size={16} className="button-spinner" /> : <Trash2 size={16} />}
-                                </button>
+                                {workspace.course.courseStatus === 'ACTIVE' && (
+                                  <button 
+                                    className="icon-button" 
+                                    style={{ marginLeft: 'auto', color: 'var(--danger)' }}
+                                    onClick={() => handleDeleteMaterial(lesson.id, material.id)}
+                                    disabled={deletingMaterialId === material.id}
+                                    title="Delete material"
+                                  >
+                                    {deletingMaterialId === material.id ? <Loader2 size={16} className="button-spinner" /> : <Trash2 size={16} />}
+                                  </button>
+                                )}
                               </li>
                             ))}
                           </ul>
