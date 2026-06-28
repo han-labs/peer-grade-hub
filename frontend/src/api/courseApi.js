@@ -10,8 +10,8 @@ const COURSE_BASE = '/courses';
  * GET /api/courses
  */
 
-export const getMyCourses = (token) => {
-    return apiRequest(`${COURSE_BASE}`, { token });
+export const getActiveCourses = (token) => {
+    return apiRequest(`${COURSE_BASE}/active`, { token });
 };
 export async function getLecturerCourses(token) {
     const response = await apiRequest('/courses', { token });
