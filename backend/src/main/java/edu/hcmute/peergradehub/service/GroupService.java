@@ -1,7 +1,9 @@
 package edu.hcmute.peergradehub.service;
 
+import edu.hcmute.peergradehub.dto.request.group.AddGroupsRequest;
 import edu.hcmute.peergradehub.dto.request.group.GenerateGroupsRequest;
 import edu.hcmute.peergradehub.dto.request.group.UpdateGroupDeadlineRequest;
+import edu.hcmute.peergradehub.dto.request.group.UpdateMaxGroupSizeRequest;
 import edu.hcmute.peergradehub.dto.response.group.GroupActionResponse;
 import edu.hcmute.peergradehub.dto.response.group.GroupManagementResponse;
 import edu.hcmute.peergradehub.entity.Course;
@@ -27,4 +29,8 @@ public interface GroupService {
     GroupActionResponse lockAllGroups(Long courseId, Long actorId);
 
     GroupActionResponse unlockGroups(Long courseId, Long actorId);
+
+    GroupActionResponse addGroups(Long courseId, AddGroupsRequest request, Long actorId);
+
+    GroupActionResponse updateMaxGroupSize(Long courseId, UpdateMaxGroupSizeRequest request, Long actorId);
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getCourseGroups, generateGroups, updateGroupDeadline, lockAllGroups, unlockGroups, removeGroupMember } from '../api/groupApi.js'
+import { getCourseGroups, generateGroups, updateGroupDeadline, lockAllGroups, unlockGroups, removeGroupMember, addGroups, updateMaxGroupSize } from '../api/groupApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 import {
@@ -43,6 +43,15 @@ function GroupManagementPage() {
 
   const [removingMemberId, setRemovingMemberId] = useState(null)
   const [memberActionError, setMemberActionError] = useState(null)
+
+  const [addGroupsCount, setAddGroupsCount] = useState('')
+  const [addGroupsMaxMembers, setAddGroupsMaxMembers] = useState('')
+  const [addGroupsLoading, setAddGroupsLoading] = useState(false)
+  const [addGroupsError, setAddGroupsError] = useState(null)
+
+  const [updateSizeMaxMembers, setUpdateSizeMaxMembers] = useState('')
+  const [updateSizeLoading, setUpdateSizeLoading] = useState(false)
+  const [updateSizeError, setUpdateSizeError] = useState(null)
 
   const fetchGroups = async () => {
     try {
@@ -196,6 +205,64 @@ function GroupManagementPage() {
       setMemberActionError(msg)
     } finally {
       setRemovingMemberId(null)
+    }
+  }
+
+  const handleAddGroups = async (e) => {
+    e.preventDefault()
+    setAddGroupsError(null)
+    setSuccessMessage(null)
+
+    if (!addGroupsCount || parseInt(addGroupsCount) < 1) {
+      setAddGroupsError('Number of groups to add must be at least 1.')
+      return
+    }
+    if (!addGroupsMaxMembers || parseInt(addGroupsMaxMembers) < 1) {
+      setAddGroupsError('Max Group Size must be at least 1.')
+      return
+    }
+
+    setAddGroupsLoading(true)
+    try {
+      await addGroups(courseId, {
+        count: parseInt(addGroupsCount),
+        maxMembers: parseInt(addGroupsMaxMembers)
+      }, token)
+      setSuccessMessage('Groups added successfully.')
+      setAddGroupsCount('')
+      setAddGroupsMaxMembers('')
+      await fetchGroups()
+    } catch (err) {
+      const msg = err.payload?.message || err.message || 'Failed to add groups'
+      setAddGroupsError(msg)
+    } finally {
+      setAddGroupsLoading(false)
+    }
+  }
+
+  const handleUpdateMaxGroupSize = async (e) => {
+    e.preventDefault()
+    setUpdateSizeError(null)
+    setSuccessMessage(null)
+
+    if (!updateSizeMaxMembers || parseInt(updateSizeMaxMembers) < 1) {
+      setUpdateSizeError('Max Group Size must be at least 1.')
+      return
+    }
+
+    setUpdateSizeLoading(true)
+    try {
+      await updateMaxGroupSize(courseId, {
+        maxGroupSize: parseInt(updateSizeMaxMembers)
+      }, token)
+      setSuccessMessage('Max group size updated successfully.')
+      setUpdateSizeMaxMembers('')
+      await fetchGroups()
+    } catch (err) {
+      const msg = err.payload?.message || err.message || 'Failed to update max group size'
+      setUpdateSizeError(msg)
+    } finally {
+      setUpdateSizeLoading(false)
     }
   }
 
@@ -368,35 +435,88 @@ function GroupManagementPage() {
 
                 <div style={{ paddingBottom: '20px', borderBottom: '1px solid var(--border-subtle)' }}>
                   <h3 style={{ fontSize: '1rem', marginBottom: '16px' }}>Generate Groups</h3>
-                  {groups.length > 0 && (
-                    <div className="form-alert" style={{ marginBottom: '16px', background: 'var(--blue-soft)', color: 'var(--blue)', border: '1px solid #b3d4f0' }}>
+                  {groups.length > 0 ? (
+                    <div className="form-alert" style={{ background: 'var(--blue-soft)', color: 'var(--blue)', border: '1px solid #b3d4f0' }}>
                       <Users size={18} />
-                      <span>Groups have already been generated for this course. Existing groups are displayed below.</span>
+                      <span>Groups have already been generated. Use Modify Group Setup below to add groups or update group size.</span>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleGenerateGroups} noValidate style={{ display: 'grid', gap: '12px' }}>
+                      {generateError && (
+                        <div className="form-alert" style={{ marginBottom: '8px' }}>
+                          <AlertCircle size={18} />
+                          <span>{generateError}</span>
+                        </div>
+                      )}
+                      <label className="form-field">
+                        Number of Groups *
+                        <input type="number" value={numberOfGroups} onChange={e => setNumberOfGroups(e.target.value)} disabled={generateLoading} />
+                      </label>
+                      <label className="form-field">
+                        Max Group Size *
+                        <input type="number" value={maxGroupSize} onChange={e => setMaxGroupSize(e.target.value)} disabled={generateLoading} />
+                      </label>
+                      <label className="form-field">
+                        Formation Deadline *
+                        <input type="datetime-local" value={groupFormationDeadline} onChange={e => setGroupFormationDeadline(e.target.value)} disabled={generateLoading} />
+                      </label>
+                      <button type="submit" className="primary-button" disabled={generateLoading} style={{ marginTop: '8px' }}>
+                        {generateLoading ? <Loader2 size={18} className="button-spinner" /> : 'Generate Groups'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                <div style={{ paddingBottom: '20px', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <h3 style={{ fontSize: '1rem', marginBottom: '16px' }}>Modify Group Setup</h3>
+                  {groups.length > 0 && groups[0].groupStatus === 'LOCKED' && (
+                    <div className="form-alert" style={{ marginBottom: '16px', background: 'var(--yellow-soft)', color: 'var(--yellow)', border: '1px solid #faebcc' }}>
+                      <Lock size={18} />
+                      <span>Groups are locked. Please unlock groups before modifying group configuration.</span>
                     </div>
                   )}
-                  <form onSubmit={handleGenerateGroups} noValidate style={{ display: 'grid', gap: '12px' }}>
-                    {generateError && (
-                      <div className="form-alert" style={{ marginBottom: '8px' }}>
-                        <AlertCircle size={18} />
-                        <span>{generateError}</span>
-                      </div>
-                    )}
-                    <label className="form-field">
-                      Number of Groups *
-                      <input type="number" value={numberOfGroups} onChange={e => setNumberOfGroups(e.target.value)} disabled={generateLoading || groups.length > 0} />
-                    </label>
-                    <label className="form-field">
-                      Max Group Size *
-                      <input type="number" value={maxGroupSize} onChange={e => setMaxGroupSize(e.target.value)} disabled={generateLoading || groups.length > 0} />
-                    </label>
-                    <label className="form-field">
-                      Formation Deadline *
-                      <input type="datetime-local" value={groupFormationDeadline} onChange={e => setGroupFormationDeadline(e.target.value)} disabled={generateLoading || groups.length > 0} />
-                    </label>
-                    <button type="submit" className="primary-button" disabled={generateLoading || groups.length > 0} style={{ marginTop: '8px' }}>
-                      {generateLoading ? <Loader2 size={18} className="button-spinner" /> : 'Generate Groups'}
-                    </button>
-                  </form>
+                  
+                  <div style={{ marginBottom: '16px' }}>
+                    <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--neutral-text)' }}>Add More Groups</h4>
+                    <form onSubmit={handleAddGroups} noValidate style={{ display: 'grid', gap: '12px' }}>
+                      {addGroupsError && (
+                        <div className="form-alert" style={{ marginBottom: '8px' }}>
+                          <AlertCircle size={18} />
+                          <span>{addGroupsError}</span>
+                        </div>
+                      )}
+                      <label className="form-field">
+                        Number of Groups to Add *
+                        <input type="number" value={addGroupsCount} onChange={e => setAddGroupsCount(e.target.value)} disabled={addGroupsLoading || (groups.length > 0 && groups[0].groupStatus === 'LOCKED') || (courseDetails?.courseStatus === 'ARCHIVED')} />
+                      </label>
+                      <label className="form-field">
+                        Max Group Size *
+                        <input type="number" value={addGroupsMaxMembers} onChange={e => setAddGroupsMaxMembers(e.target.value)} disabled={addGroupsLoading || (groups.length > 0 && groups[0].groupStatus === 'LOCKED') || (courseDetails?.courseStatus === 'ARCHIVED')} />
+                      </label>
+                      <button type="submit" className="logout-button" disabled={addGroupsLoading || (groups.length > 0 && groups[0].groupStatus === 'LOCKED') || (courseDetails?.courseStatus === 'ARCHIVED')} style={{ marginTop: '4px', justifyContent: 'center' }}>
+                        {addGroupsLoading ? <Loader2 size={18} className="button-spinner" /> : 'Add Groups'}
+                      </button>
+                    </form>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--neutral-text)' }}>Update Max Group Size</h4>
+                    <form onSubmit={handleUpdateMaxGroupSize} noValidate style={{ display: 'grid', gap: '12px' }}>
+                      {updateSizeError && (
+                        <div className="form-alert" style={{ marginBottom: '8px' }}>
+                          <AlertCircle size={18} />
+                          <span>{updateSizeError}</span>
+                        </div>
+                      )}
+                      <label className="form-field">
+                        New Max Group Size *
+                        <input type="number" value={updateSizeMaxMembers} onChange={e => setUpdateSizeMaxMembers(e.target.value)} disabled={updateSizeLoading || (groups.length > 0 && groups[0].groupStatus === 'LOCKED') || (courseDetails?.courseStatus === 'ARCHIVED')} />
+                      </label>
+                      <button type="submit" className="logout-button" disabled={updateSizeLoading || (groups.length > 0 && groups[0].groupStatus === 'LOCKED') || (courseDetails?.courseStatus === 'ARCHIVED')} style={{ marginTop: '4px', justifyContent: 'center' }}>
+                        {updateSizeLoading ? <Loader2 size={18} className="button-spinner" /> : 'Update Size'}
+                      </button>
+                    </form>
+                  </div>
                 </div>
 
                 <div style={{ paddingBottom: '20px', borderBottom: '1px solid var(--border-subtle)' }}>
@@ -410,9 +530,9 @@ function GroupManagementPage() {
                     )}
                     <label className="form-field">
                       New Deadline *
-                      <input type="datetime-local" value={newDeadline} onChange={e => setNewDeadline(e.target.value)} disabled={updateDeadlineLoading} />
+                      <input type="datetime-local" value={newDeadline} onChange={e => setNewDeadline(e.target.value)} disabled={updateDeadlineLoading || (courseDetails?.courseStatus === 'ARCHIVED')} />
                     </label>
-                    <button type="submit" className="logout-button" disabled={updateDeadlineLoading} style={{ marginTop: '8px', justifyContent: 'center' }}>
+                    <button type="submit" className="logout-button" disabled={updateDeadlineLoading || (courseDetails?.courseStatus === 'ARCHIVED')} style={{ marginTop: '8px', justifyContent: 'center' }}>
                       {updateDeadlineLoading ? <Loader2 size={18} className="button-spinner" /> : 'Save Deadline'}
                     </button>
                   </form>
@@ -425,7 +545,7 @@ function GroupManagementPage() {
                       className="primary-button" 
                       style={{ background: 'var(--danger)', borderColor: 'var(--danger)', width: '100%', display: 'flex', gap: '8px' }}
                       onClick={handleLockGroups}
-                      disabled={lockUnlockLoading}
+                      disabled={lockUnlockLoading || (courseDetails?.courseStatus === 'ARCHIVED')}
                     >
                       <Lock size={16} />
                       {lockUnlockLoading ? 'Processing...' : 'Lock All Groups'}
@@ -434,7 +554,7 @@ function GroupManagementPage() {
                       className="logout-button" 
                       style={{ width: '100%', justifyContent: 'center', display: 'flex', gap: '8px' }}
                       onClick={handleUnlockGroups}
-                      disabled={lockUnlockLoading}
+                      disabled={lockUnlockLoading || (courseDetails?.courseStatus === 'ARCHIVED')}
                     >
                       <Unlock size={16} />
                       {lockUnlockLoading ? 'Processing...' : 'Unlock Groups'}

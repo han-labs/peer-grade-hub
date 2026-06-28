@@ -1,8 +1,10 @@
 package edu.hcmute.peergradehub.controller.group;
 
 import edu.hcmute.peergradehub.common.response.ApiResponse;
+import edu.hcmute.peergradehub.dto.request.group.AddGroupsRequest;
 import edu.hcmute.peergradehub.dto.request.group.GenerateGroupsRequest;
 import edu.hcmute.peergradehub.dto.request.group.UpdateGroupDeadlineRequest;
+import edu.hcmute.peergradehub.dto.request.group.UpdateMaxGroupSizeRequest;
 import edu.hcmute.peergradehub.dto.response.group.GroupActionResponse;
 import edu.hcmute.peergradehub.dto.response.group.GroupManagementResponse;
 import edu.hcmute.peergradehub.exception.UnauthorizedException;
@@ -76,6 +78,26 @@ public class GroupController {
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         GroupActionResponse response = groupService.unlockGroups(courseId, currentUserId(principal));
+        return ApiResponse.success(response.message(), response.groupManagement());
+    }
+
+    @PostMapping("/add")
+    public ApiResponse<GroupManagementResponse> addGroups(
+            @PathVariable Long courseId,
+            @RequestBody AddGroupsRequest request,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        GroupActionResponse response = groupService.addGroups(courseId, request, currentUserId(principal));
+        return ApiResponse.success(response.message(), response.groupManagement());
+    }
+
+    @PutMapping("/max-size")
+    public ApiResponse<GroupManagementResponse> updateMaxGroupSize(
+            @PathVariable Long courseId,
+            @RequestBody UpdateMaxGroupSizeRequest request,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        GroupActionResponse response = groupService.updateMaxGroupSize(courseId, request, currentUserId(principal));
         return ApiResponse.success(response.message(), response.groupManagement());
     }
 
