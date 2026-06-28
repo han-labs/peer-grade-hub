@@ -44,6 +44,15 @@ public class CourseServiceImpl implements CourseService {
     private final CourseMapper courseMapper;
 
     @Override
+    public List<CourseSummaryResponse> getActiveCourses(Long actorId) {
+        validateLecturer(actorId);
+        List<Course> courses = courseRepository.findByLecturerIdAndCourseStatus(actorId, CourseStatus.ACTIVE);
+        return courses.stream()
+                .map(courseMapper::toCourseSummary)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public Course createCourse(String courseName, String classCode, String semester, User lecturer, String description) {
         if (lecturer.getUserRole() != UserRole.LECTURER) {
@@ -170,4 +179,5 @@ public class CourseServiceImpl implements CourseService {
 
         return courseMapper.toWorkspace(savedCourse, lessons, materialsByLessonId);
     }
+
 }
