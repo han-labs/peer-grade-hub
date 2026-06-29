@@ -55,7 +55,7 @@ function NotPublishedState({ message }) {
       <div className="result-not-published__icon">
         <Clock size={32} />
       </div>
-      <h2>Results are being processed for {assignmentTitle}</h2>
+      <h2>Results are being processed</h2>
       <p>{message || 'Your results are still being processed.'}</p>
       <p className="result-not-published__hint">
         The lecturer will publish results for this assignment soon.
