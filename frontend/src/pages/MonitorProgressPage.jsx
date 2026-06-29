@@ -2,17 +2,16 @@ import {
   AlertCircle,
   ArrowLeft,
   BarChart3,
-  CheckCircle2,
+  Bell,
   ClipboardList,
-  Clock3,
   FileClock,
-  FileWarning,
-  Inbox,
+  ListFilter,
   RefreshCw,
   ShieldAlert,
+  TrendingUp,
   UsersRound,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   getFilteredProgressGroups,
@@ -23,20 +22,23 @@ import { ApiError } from '../api/httpClient.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 import GroupDetailPanel from '../components/progress/GroupDetailPanel.jsx'
-import GroupProgressCard from '../components/progress/GroupProgressCard.jsx'
-import ProgressStatCard from '../components/progress/ProgressStatCard.jsx'
 import '../progress.css'
 
-const FILTERS = [
-  ['ALL', 'All groups'],
-  ['INCOMPLETE', 'Incomplete'],
-  ['NOT_SUBMITTED', 'Not submitted'],
-  ['SUBMITTED', 'Submitted'],
-  ['LATE', 'Late'],
-  ['NOT_REVIEWED', 'Not reviewed'],
-  ['REVIEWED', 'Reviewed'],
-  ['NO_RECEIVED_REVIEW', 'No received review'],
+const PRIMARY_FILTERS = [
+  ['ALL', 'All'],
+  ['INCOMPLETE', 'Needs Attention'],
+  ['NOT_REVIEWED', 'Review Issues'],
+  ['NO_RECEIVED_REVIEW', 'No Received Review'],
 ]
+
+const SECONDARY_FILTERS = [
+  ['SUBMITTED', 'Submitted'],
+  ['REVIEWED', 'Reviewed'],
+  ['LATE', 'Late'],
+  ['NOT_SUBMITTED', 'Not Submitted'],
+]
+
+const FILTERS = [...PRIMARY_FILTERS, ...SECONDARY_FILTERS]
 
 function formatDateTime(value) {
   if (!value) return 'Not scheduled'
@@ -65,20 +67,161 @@ function AccessRestricted() {
   )
 }
 
-function CompletionCard({ title, rate, completed, pending, total, tone }) {
+function pluralize(count, singular, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`
+}
+
+function formatPercent(value) {
+  return `${Number(value ?? 0).toFixed(2)}%`
+}
+
+function isMissingSubmission(group) {
+  return !group.submissionStatus || ['DRAFT', 'RETURNED'].includes(group.submissionStatus)
+}
+
+function isReviewed(group) {
+  return group.assignedReviewCount > 0 && group.incompleteReviewCount === 0
+}
+
+function formatStatus(value, fallback = 'Not submitted') {
+  if (!value) return fallback
+  return value.replaceAll('_', ' ').toLowerCase()
+}
+
+function hasAttentionSignal(group) {
+  return isMissingSubmission(group)
+    || group.late
+    || group.submissionStatus === 'LATE'
+    || group.incompleteReviewCount > 0
+    || !group.hasReceivedReview
+}
+
+function matchesFilter(group, filter) {
+  switch (filter) {
+    case 'INCOMPLETE':
+      return isMissingSubmission(group) || group.incompleteReviewCount > 0
+    case 'NOT_SUBMITTED':
+      return isMissingSubmission(group)
+    case 'SUBMITTED':
+      return ['SUBMITTED', 'LATE'].includes(group.submissionStatus)
+    case 'LATE':
+      return group.late || group.submissionStatus === 'LATE'
+    case 'NOT_REVIEWED':
+      return group.incompleteReviewCount > 0
+    case 'REVIEWED':
+      return isReviewed(group)
+    case 'NO_RECEIVED_REVIEW':
+      return !group.hasReceivedReview
+    default:
+      return true
+  }
+}
+
+function buildInsights(statistics) {
+  if (!statistics) return []
+
+  const insights = []
+
+  if (statistics.pendingCount > 0) {
+    insights.push({
+      tone: 'warning',
+      title: `${pluralize(statistics.pendingCount, 'group')} not submitted yet.`,
+      detail: 'Check these groups before grading or review follow-up.',
+    })
+  }
+
+  if (statistics.lateCount > 0) {
+    insights.push({
+      tone: 'danger',
+      title: `${pluralize(statistics.lateCount, 'group')} submitted late.`,
+      detail: 'Late work may need lecturer review before final grade decisions.',
+    })
+  }
+
+  if (statistics.incompleteReviews > 0) {
+    insights.push({
+      tone: 'warning',
+      title: `${pluralize(statistics.incompleteReviews, 'review task')} unfinished.`,
+      detail: 'Follow up with reviewer groups that still need to submit reviews.',
+    })
+  }
+
+  if (statistics.groupsWithNoReceivedReview > 0) {
+    insights.push({
+      tone: 'danger',
+      title: `${pluralize(statistics.groupsWithNoReceivedReview, 'group')} has not received any review assignment.`,
+      detail: 'Coverage gaps can affect fairness and final review evidence.',
+    })
+  }
+
+  if (Number(statistics.peerReviewCompletionRate ?? 0) < 100 && statistics.totalReviewAssignments > 0) {
+    insights.push({
+      tone: 'info',
+      title: `Peer review completion is ${formatPercent(statistics.peerReviewCompletionRate)}.`,
+      detail: 'Use the review filters to focus on incomplete reviewer work.',
+    })
+  }
+
+  if (insights.length === 0) {
+    insights.push({
+      tone: 'positive',
+      title: 'No urgent attention items detected.',
+      detail: 'Submissions and peer review coverage look complete for this assignment.',
+    })
+  }
+
+  return insights
+}
+
+function getDeadlineLabel(value) {
+  if (!value) return 'Not scheduled'
+
+  const deadline = new Date(value)
+  const now = new Date()
+  const diffDays = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) return 'Closed'
+  if (diffDays === 0) return 'Due today'
+  if (diffDays === 1) return '1 day left'
+  return `${diffDays} days left`
+}
+
+function MetricPill({ label, value, tone = 'neutral' }) {
+  return (
+    <span className={`metric-pill metric-pill--${tone}`}>
+      <strong>{value}</strong>
+      {label}
+    </span>
+  )
+}
+
+function DecisionKpiCard({ children, icon: Icon, title, tone = 'neutral' }) {
+  return (
+    <article className={`decision-kpi-card decision-kpi-card--${tone}`}>
+      <div className="decision-kpi-card__heading">
+        <span className="decision-kpi-card__icon">
+          <Icon size={20} aria-hidden="true" />
+        </span>
+        <h2>{title}</h2>
+      </div>
+      {children}
+    </article>
+  )
+}
+
+function ProgressKpiCard({ children, detail, headline, rate, title, tone }) {
   const safeRate = Math.min(100, Math.max(0, Number(rate ?? 0)))
 
   return (
-    <article className={`completion-card completion-card--${tone}`}>
-      <div className="completion-card__heading">
+    <DecisionKpiCard icon={TrendingUp} title={title} tone={tone}>
+      <div className="decision-kpi-card__main">
         <div>
-          <p>{title}</p>
-          <strong>{safeRate.toFixed(2)}%</strong>
+          <strong>{headline}</strong>
+          <span>{detail}</span>
         </div>
-        <span>{completed} of {total} complete</span>
       </div>
       <div
-        className="completion-progress"
+        className="kpi-progress"
         role="progressbar"
         aria-label={title}
         aria-valuenow={safeRate}
@@ -87,11 +230,201 @@ function CompletionCard({ title, rate, completed, pending, total, tone }) {
       >
         <span style={{ width: `${safeRate}%` }} />
       </div>
-      <div className="completion-card__footer">
-        <span><CheckCircle2 size={15} /> {completed} completed</span>
-        <span><Clock3 size={15} /> {pending} remaining</span>
+      <div className="metric-pill-row">
+        <MetricPill label="completion" value={formatPercent(rate)} tone="blue" />
+        {children}
       </div>
-    </article>
+    </DecisionKpiCard>
+  )
+}
+
+function AttentionMenu({ insights, isOpen, onToggle }) {
+  return (
+    <div className="attention-menu">
+      <button
+        className="attention-menu__button"
+        type="button"
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        onClick={onToggle}
+      >
+        <Bell size={17} aria-hidden="true" />
+        Attention
+        <strong>{insights.length}</strong>
+      </button>
+
+      {isOpen && (
+        <div className="attention-menu__panel" role="dialog" aria-label="Attention summary">
+          <div className="attention-menu__heading">
+            <strong>Attention summary</strong>
+            <span>{insights.length} signal{insights.length === 1 ? '' : 's'}</span>
+          </div>
+          <div className="attention-menu__list">
+            {insights.map((insight) => (
+              <article className={`attention-menu__item attention-menu__item--${insight.tone}`} key={insight.title}>
+                <AlertCircle size={16} aria-hidden="true" />
+                <div>
+                  <strong>{insight.title}</strong>
+                  <p>{insight.detail}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MonitoringContextCard({ assignment, course, insights, isAttentionOpen, onToggleAttention }) {
+  return (
+    <section className="monitor-context-card" aria-labelledby="monitor-context-heading">
+      <div className="monitor-context-card__content">
+        <p className="eyebrow">Selected assignment</p>
+        <h1 id="monitor-context-heading">Monitor Progress</h1>
+        <p>
+          Tracking <strong>{assignment.title}</strong> in <strong>{course.name}</strong>.
+        </p>
+        <div className="monitor-context-card__identity">
+          <div>
+            <span>Course</span>
+            <strong>{course.name}</strong>
+          </div>
+          <div>
+            <span>Class code</span>
+            <strong>{course.classCode}</strong>
+          </div>
+          <div>
+            <span>Assignment</span>
+            <strong>{assignment.title}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="monitor-context-card__actions">
+        <AttentionMenu
+          insights={insights}
+          isOpen={isAttentionOpen}
+          onToggle={onToggleAttention}
+        />
+      </div>
+
+      <div className="monitor-context-card__deadlines" aria-label="Selected assignment deadlines">
+        <div>
+          <FileClock size={18} aria-hidden="true" />
+          <span>Submission deadline</span>
+          <strong>{formatDateTime(assignment.submissionDeadline)}</strong>
+          <small>{getDeadlineLabel(assignment.submissionDeadline)}</small>
+        </div>
+        <div>
+          <ClipboardList size={18} aria-hidden="true" />
+          <span>Review deadline</span>
+          <strong>{formatDateTime(assignment.reviewDeadline)}</strong>
+          <small>{getDeadlineLabel(assignment.reviewDeadline)}</small>
+        </div>
+      </div>
+
+      <p className="monitor-context-card__note">
+        Choose another course or assignment from the course workspace.
+      </p>
+    </section>
+  )
+}
+
+function getAttentionItems(group) {
+  const items = []
+
+  if (isMissingSubmission(group)) items.push('Missing submission')
+  if (group.late || group.submissionStatus === 'LATE') items.push('Late')
+  if (group.incompleteReviewCount > 0) items.push('Review pending')
+  if (!group.hasReceivedReview) items.push('No received review')
+
+  return items
+}
+
+function getSubmissionTone(group) {
+  if (group.late || group.submissionStatus === 'LATE') return 'danger'
+  if (isMissingSubmission(group)) return 'warning'
+  return 'positive'
+}
+
+function getReviewTone(group) {
+  if (group.assignedReviewCount === 0) return 'neutral'
+  if (group.incompleteReviewCount > 0) return 'warning'
+  return 'positive'
+}
+
+function getReceivedReviewTone(group) {
+  return group.hasReceivedReview ? 'positive' : 'warning'
+}
+
+function GroupProgressTable({ groups, isFiltering, onViewDetails }) {
+  return (
+    <div className={`group-progress-table-shell ${isFiltering ? 'group-progress-table-shell--loading' : ''}`}>
+      <table className="group-progress-table">
+        <thead>
+          <tr>
+            <th scope="col">Group</th>
+            <th scope="col">Submission</th>
+            <th scope="col">Assigned Reviews</th>
+            <th scope="col">Received Review</th>
+            <th scope="col">Attention</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((group) => {
+            const attentionItems = getAttentionItems(group)
+            const reviewLabel = group.assignedReviewCount === 0
+              ? 'No assigned review'
+              : `${group.completedReviewCount}/${group.assignedReviewCount} completed`
+
+            return (
+              <tr className={attentionItems.length > 0 ? 'group-progress-row--attention' : ''} key={group.groupId}>
+                <td data-label="Group">
+                  <strong>{group.groupName}</strong>
+                  <span>{formatStatus(group.groupStatus, 'group')}</span>
+                </td>
+                <td data-label="Submission">
+                  <span className={`monitor-badge monitor-badge--${getSubmissionTone(group)}`}>
+                    {formatStatus(group.submissionStatus)}
+                  </span>
+                  <small>{group.submittedAt ? formatDateTime(group.submittedAt) : 'No submission time'}</small>
+                </td>
+                <td data-label="Assigned Reviews">
+                  <span className={`monitor-badge monitor-badge--${getReviewTone(group)}`}>
+                    {reviewLabel}
+                  </span>
+                  <small>{group.incompleteReviewCount} unfinished</small>
+                </td>
+                <td data-label="Received Review">
+                  <span className={`monitor-badge monitor-badge--${getReceivedReviewTone(group)}`}>
+                    {group.hasReceivedReview ? 'Received' : 'No received review'}
+                  </span>
+                  <small>{group.receivedReviewCount} received</small>
+                </td>
+                <td data-label="Attention">
+                  {attentionItems.length === 0 ? (
+                    <span className="attention-summary attention-summary--clear">On track</span>
+                  ) : (
+                    <div className="attention-summary-list">
+                      {attentionItems.map((item) => (
+                        <span className="attention-summary" key={item}>{item}</span>
+                      ))}
+                    </div>
+                  )}
+                </td>
+                <td data-label="Action">
+                  <button className="group-table-action" type="button" onClick={() => onViewDetails(group)}>
+                    View details
+                  </button>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -112,6 +445,7 @@ function MonitorProgressPage() {
   const [groupDetail, setGroupDetail] = useState(null)
   const [detailError, setDetailError] = useState('')
   const [isDetailLoading, setIsDetailLoading] = useState(false)
+  const [isAttentionOpen, setIsAttentionOpen] = useState(false)
 
   const handleUnauthorized = useCallback((error) => {
     if (error instanceof ApiError && error.status === 401) {
@@ -190,6 +524,18 @@ function MonitorProgressPage() {
   }
 
   const statistics = dashboard?.statistics
+  const filterCounts = useMemo(() => {
+    const sourceGroups = dashboard?.groups ?? []
+    return FILTERS.reduce((counts, [value]) => {
+      counts[value] = sourceGroups.filter((group) => matchesFilter(group, value)).length
+      return counts
+    }, {})
+  }, [dashboard?.groups])
+  const insights = useMemo(() => buildInsights(statistics), [statistics])
+  const attentionGroupCount = useMemo(() => {
+    const sourceGroups = dashboard?.groups ?? []
+    return sourceGroups.filter(hasAttentionSignal).length
+  }, [dashboard?.groups])
 
   return (
     <div className="dashboard-shell">
@@ -222,67 +568,58 @@ function MonitorProgressPage() {
             </section>
           ) : dashboard ? (
             <>
-              <section className="monitor-header">
-                <div>
-                  <p className="eyebrow">{dashboard.course.classCode} · {dashboard.course.name}</p>
-                  <h1>{dashboard.assignment.title}</h1>
-                  <p>Follow submission and peer review completion across every course group.</p>
-                  <div className="monitor-header__badges">
-                    <span className="monitor-badge monitor-badge--active">{dashboard.course.status.toLowerCase()}</span>
-                    <span className="monitor-badge monitor-badge--readonly">Read-only monitoring</span>
-                  </div>
-                </div>
-                <div className="monitor-deadlines" aria-label="Assessment deadlines">
-                  <div>
-                    <FileClock size={18} aria-hidden="true" />
-                    <span>Submission deadline</span>
-                    <strong>{formatDateTime(dashboard.assignment.submissionDeadline)}</strong>
-                  </div>
-                  <div>
-                    <ClipboardList size={18} aria-hidden="true" />
-                    <span>Review deadline</span>
-                    <strong>{formatDateTime(dashboard.assignment.reviewDeadline)}</strong>
-                  </div>
-                </div>
-              </section>
+              <MonitoringContextCard
+                assignment={dashboard.assignment}
+                course={dashboard.course}
+                insights={insights}
+                isAttentionOpen={isAttentionOpen}
+                onToggleAttention={() => setIsAttentionOpen((current) => !current)}
+              />
 
-              <section className="completion-grid" aria-label="Completion rates">
-                <CompletionCard
-                  title="Submission completion"
+              <section className="monitor-decision-grid" aria-label="Progress decision summary">
+                <DecisionKpiCard icon={AlertCircle} title="Needs Attention" tone={attentionGroupCount > 0 ? 'attention' : 'positive'}>
+                  <div className="decision-kpi-card__main">
+                    <div>
+                      <strong>{attentionGroupCount}</strong>
+                      <span>{attentionGroupCount === 1 ? 'group needs' : 'groups need'} lecturer follow-up</span>
+                    </div>
+                  </div>
+                  <div className="metric-pill-row">
+                    <MetricPill label="missing" value={statistics.pendingCount} tone={statistics.pendingCount > 0 ? 'warning' : 'positive'} />
+                    <MetricPill label="late" value={statistics.lateCount} tone={statistics.lateCount > 0 ? 'danger' : 'positive'} />
+                    <MetricPill label="reviews" value={statistics.groupsWithIncompleteAssignedReviews} tone={statistics.groupsWithIncompleteAssignedReviews > 0 ? 'warning' : 'positive'} />
+                    <MetricPill label="uncovered" value={statistics.groupsWithNoReceivedReview} tone={statistics.groupsWithNoReceivedReview > 0 ? 'danger' : 'positive'} />
+                  </div>
+                </DecisionKpiCard>
+
+                <ProgressKpiCard
+                  title="Submission Status"
                   rate={statistics.submissionCompletionRate}
-                  completed={statistics.submittedCount}
-                  pending={statistics.pendingCount}
-                  total={statistics.totalGroups}
+                  headline={`${statistics.submittedCount} / ${statistics.totalGroups}`}
+                  detail="groups submitted for this assignment"
                   tone="submission"
-                />
-                <CompletionCard
-                  title="Peer review completion"
-                  rate={statistics.peerReviewCompletionRate}
-                  completed={statistics.completedReviews}
-                  pending={statistics.incompleteReviews}
-                  total={statistics.totalReviewAssignments}
-                  tone="review"
-                />
-              </section>
+                >
+                  <MetricPill label="pending" value={statistics.pendingCount} tone={statistics.pendingCount > 0 ? 'warning' : 'positive'} />
+                  <MetricPill label="late" value={statistics.lateCount} tone={statistics.lateCount > 0 ? 'danger' : 'positive'} />
+                </ProgressKpiCard>
 
-              <section className="monitor-stat-grid" aria-label="Detailed progress statistics">
-                <ProgressStatCard icon={UsersRound} label="Total groups" value={statistics.totalGroups} hint="All course groups" tone="neutral" />
-                <ProgressStatCard icon={CheckCircle2} label="Submitted" value={statistics.submittedCount} hint="Includes late submissions" tone="positive" />
-                <ProgressStatCard icon={Clock3} label="Pending" value={statistics.pendingCount} hint="Missing, draft, or returned" tone="warning" />
-                <ProgressStatCard icon={FileWarning} label="Late" value={statistics.lateCount} hint="Marked late submissions" tone="danger" />
-                <ProgressStatCard icon={ClipboardList} label="Review tasks" value={statistics.totalReviewAssignments} hint="Active assignments" tone="blue" />
-                <ProgressStatCard icon={CheckCircle2} label="Reviews complete" value={statistics.completedReviews} hint="Submitted peer reviews" tone="positive" />
-                <ProgressStatCard icon={Clock3} label="Reviews incomplete" value={statistics.incompleteReviews} hint="Still awaiting completion" tone="warning" />
-                <ProgressStatCard icon={Inbox} label="No received review" value={statistics.groupsWithNoReceivedReview} hint="Groups needing coverage" tone="danger" />
-                <ProgressStatCard icon={AlertCircle} label="Groups with unfinished reviews" value={statistics.groupsWithIncompleteAssignedReviews} hint="Reviewer follow-up needed" tone="yellow" />
+                <ProgressKpiCard
+                  title="Peer Review Status"
+                  rate={statistics.peerReviewCompletionRate}
+                  headline={`${statistics.completedReviews} / ${statistics.totalReviewAssignments}`}
+                  detail="reviews completed for this assignment"
+                  tone="review"
+                >
+                  <MetricPill label="incomplete" value={statistics.incompleteReviews} tone={statistics.incompleteReviews > 0 ? 'warning' : 'positive'} />
+                  <MetricPill label="total" value={statistics.totalReviewAssignments} tone="blue" />
+                </ProgressKpiCard>
               </section>
 
               <section className="monitor-groups-section" aria-labelledby="group-progress-heading">
                 <div className="monitor-section-heading">
                   <div>
                     <p className="eyebrow">Group progress</p>
-                    <h2 id="group-progress-heading">Assessment status by group</h2>
-                    <p>Filter the live monitoring snapshot and inspect supporting evidence.</p>
+                    <h2 id="group-progress-heading">Groups to monitor</h2>
                   </div>
                   <span className="monitor-group-count">
                     {isFiltering ? <span className="mini-spinner" aria-hidden="true" /> : groups.length}
@@ -290,19 +627,45 @@ function MonitorProgressPage() {
                   </span>
                 </div>
 
-                <div className="monitor-filter-bar" aria-label="Progress filters">
-                  {FILTERS.map(([value, label]) => (
-                    <button
-                      className={`monitor-filter-chip ${activeFilter === value ? 'monitor-filter-chip--active' : ''}`}
-                      type="button"
-                      key={value}
-                      aria-pressed={activeFilter === value}
-                      disabled={isFiltering}
-                      onClick={() => handleFilterChange(value)}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                <div className="monitor-filter-panel" aria-label="Progress filters">
+                  <div className="monitor-filter-group">
+                    <span className="monitor-filter-group__label">Quick filters</span>
+                    <div className="monitor-filter-bar">
+                      {PRIMARY_FILTERS.map(([value, label]) => (
+                        <button
+                          className={`monitor-filter-chip ${activeFilter === value ? 'monitor-filter-chip--active' : ''}`}
+                          type="button"
+                          key={value}
+                          aria-pressed={activeFilter === value}
+                          disabled={isFiltering}
+                          onClick={() => handleFilterChange(value)}
+                        >
+                          <ListFilter size={14} aria-hidden="true" />
+                          <span>{label}</span>
+                          <strong>{filterCounts[value] ?? 0}</strong>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="monitor-filter-group monitor-filter-group--secondary">
+                    <span className="monitor-filter-group__label">More filters</span>
+                    <div className="monitor-filter-bar">
+                      {SECONDARY_FILTERS.map(([value, label]) => (
+                        <button
+                          className={`monitor-filter-chip monitor-filter-chip--secondary ${activeFilter === value ? 'monitor-filter-chip--active' : ''}`}
+                          type="button"
+                          key={value}
+                          aria-pressed={activeFilter === value}
+                          disabled={isFiltering}
+                          onClick={() => handleFilterChange(value)}
+                        >
+                          <span>{label}</span>
+                          <strong>{filterCounts[value] ?? 0}</strong>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {filterError && (
@@ -323,15 +686,11 @@ function MonitorProgressPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className={`group-progress-grid ${isFiltering ? 'group-progress-grid--loading' : ''}`}>
-                    {groups.map((group) => (
-                      <GroupProgressCard
-                        key={group.groupId}
-                        group={group}
-                        onViewDetails={loadGroupDetail}
-                      />
-                    ))}
-                  </div>
+                  <GroupProgressTable
+                    groups={groups}
+                    isFiltering={isFiltering}
+                    onViewDetails={loadGroupDetail}
+                  />
                 )}
               </section>
             </>
