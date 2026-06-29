@@ -1,7 +1,9 @@
 import {
   Activity,
+  AlertCircle,
   ArrowUpRight,
   BookOpen,
+  CalendarClock,
   CheckCircle2,
   ClipboardCheck,
   FileText,
@@ -13,7 +15,10 @@ import {
   UserRound,
   UsersRound,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getRoleDashboard } from '../api/dashboardApi.js'
+import { ApiError } from '../api/httpClient.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 
@@ -23,11 +28,7 @@ const ROLE_CONTENT = {
     accent: 'student',
     heading: 'Learning workspace',
     description: 'Keep courses, group work, peer reviews, and published results organized.',
-    stats: [
-      { label: 'Courses', value: '-', hint: 'Join course support is coming next', icon: BookOpen },
-      { label: 'Peer reviews', value: '1', hint: 'Review task available', icon: ClipboardCheck },
-      { label: 'Account status', value: 'Active', hint: 'Ready to participate', icon: CheckCircle2 },
-    ],
+    stats: [],
     sections: [
       {
         title: 'Study tasks',
@@ -47,9 +48,9 @@ const ROLE_CONTENT = {
           {
             title: 'Join Course / Group',
             description: 'Join a course with an invitation code and participate in group formation.',
-            status: 'Soon',
+            status: 'Planned',
             meta: 'Course enrollment',
-            action: 'Coming soon',
+            action: 'Not available',
             path: null,
             icon: UsersRound,
             tone: 'green',
@@ -57,9 +58,9 @@ const ROLE_CONTENT = {
           {
             title: 'Submit Assignment',
             description: 'Upload group submissions and supporting materials once the submission flow is connected.',
-            status: 'Soon',
+            status: 'Planned',
             meta: 'Assignment submission',
-            action: 'Coming soon',
+            action: 'Not available',
             path: null,
             icon: FileText,
             tone: 'yellow',
@@ -67,9 +68,9 @@ const ROLE_CONTENT = {
           {
             title: 'View Results',
             description: 'Review published final scores and feedback after lecturers release results.',
-            status: 'Soon',
+            status: 'Planned',
             meta: 'Published grades',
-            action: 'Coming soon',
+            action: 'Not available',
             path: null,
             icon: Gauge,
             tone: 'purple',
@@ -83,11 +84,7 @@ const ROLE_CONTENT = {
     accent: 'lecturer',
     heading: 'Teaching workspace',
     description: 'Manage courses, groups, assignments, peer reviews, progress, and final grades.',
-    stats: [
-      { label: 'Courses', value: '-', hint: 'Manage live courses', icon: BookOpen },
-      { label: 'Group progress', value: '-', hint: 'Open monitoring for live detail', icon: UsersRound },
-      { label: 'Account status', value: 'Active', hint: 'Teaching access', icon: CheckCircle2 },
-    ],
+    stats: [],
     sections: [
       {
         title: 'Course setup',
@@ -110,7 +107,7 @@ const ROLE_CONTENT = {
             status: 'Available',
             meta: 'Course workspace',
             action: 'Manage Groups',
-            path: '/lecturer/manage-groups',
+            path: '/lecturer/courses',
             icon: UsersRound,
             tone: 'yellow',
           },
@@ -171,9 +168,9 @@ const ROLE_CONTENT = {
           {
             title: 'Appeals',
             description: 'Result appeal review is planned for a later phase.',
-            status: 'Soon',
+            status: 'Planned',
             meta: 'Appeal support',
-            action: 'Coming soon',
+            action: 'Not available',
             path: null,
             icon: FileText,
             tone: 'neutral',
@@ -187,11 +184,7 @@ const ROLE_CONTENT = {
     accent: 'administrator',
     heading: 'Administration workspace',
     description: 'Keep platform access and academic setup ready for the teaching team.',
-    stats: [
-      { label: 'Accounts', value: '-', hint: 'User management is planned', icon: UsersRound },
-      { label: 'Courses', value: '-', hint: 'Course oversight is planned', icon: BookOpen },
-      { label: 'Account status', value: 'Active', hint: 'Administrator access', icon: ShieldCheck },
-    ],
+    stats: [],
     sections: [
       {
         title: 'Administration tasks',
@@ -201,9 +194,9 @@ const ROLE_CONTENT = {
           {
             title: 'Manage Accounts',
             description: 'Review users, roles, and account status when account administration is connected.',
-            status: 'Soon',
+            status: 'Planned',
             meta: 'User access',
-            action: 'Coming soon',
+            action: 'Not available',
             path: null,
             icon: UserRound,
             tone: 'purple',
@@ -211,9 +204,9 @@ const ROLE_CONTENT = {
           {
             title: 'Manage Courses',
             description: 'Support course setup and platform-level course oversight in a future phase.',
-            status: 'Soon',
+            status: 'Planned',
             meta: 'Course administration',
-            action: 'Coming soon',
+            action: 'Not available',
             path: null,
             icon: BookOpen,
             tone: 'green',
@@ -221,9 +214,9 @@ const ROLE_CONTENT = {
           {
             title: 'System Settings',
             description: 'Configure platform policies after administrator tooling is implemented.',
-            status: 'Soon',
+            status: 'Planned',
             meta: 'Platform settings',
-            action: 'Coming soon',
+            action: 'Not available',
             path: null,
             icon: Settings,
             tone: 'neutral',
@@ -234,12 +227,98 @@ const ROLE_CONTENT = {
   },
 }
 
+const METRIC_ICONS = {
+  activeCourses: CheckCircle2,
+  activeUsers: CheckCircle2,
+  assignedReviews: ClipboardCheck,
+  assignments: FileText,
+  courses: BookOpen,
+  groups: UsersRound,
+  incompleteReviews: Activity,
+  joinedCourses: BookOpen,
+  lecturers: GraduationCap,
+  pendingReviews: ClipboardCheck,
+  pendingSubmissions: FileText,
+  publishedResults: Gauge,
+  reviewTasks: ClipboardCheck,
+  students: UsersRound,
+  submittedAssignments: CheckCircle2,
+  totalUsers: UsersRound,
+  upcomingAssignments: CalendarClock,
+}
+
 function formatDate(date) {
   return new Intl.DateTimeFormat('en', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
   }).format(date)
+}
+
+function formatDateTime(value) {
+  if (!value) return 'Not scheduled'
+  return new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+function metricIcon(metric) {
+  return METRIC_ICONS[metric.key] ?? Activity
+}
+
+function metricNumber(dashboardData, key) {
+  const metric = dashboardData?.metrics?.find((item) => item.key === key)
+  const value = Number(metric?.value)
+  return Number.isFinite(value) ? value : 0
+}
+
+function getTopMetrics(role, dashboardData, user, isDashboardLoading) {
+  if (isDashboardLoading) {
+    return [
+      { key: 'loading-primary', label: 'Loading', value: '...', icon: Activity },
+      { key: 'loading-secondary', label: 'Overview', value: '...', icon: Gauge },
+      { key: 'account-status', label: 'Status', value: user.status, icon: ShieldCheck },
+    ]
+  }
+
+  if (role === 'STUDENT') {
+    const pendingTasks = metricNumber(dashboardData, 'pendingSubmissions')
+      + metricNumber(dashboardData, 'pendingReviews')
+
+    return [
+      { key: 'joinedCourses', label: 'Courses', value: metricNumber(dashboardData, 'joinedCourses'), icon: BookOpen },
+      { key: 'pendingTasks', label: 'Pending tasks', value: pendingTasks, icon: Activity },
+      { key: 'publishedResults', label: 'Results', value: metricNumber(dashboardData, 'publishedResults'), icon: Gauge },
+    ]
+  }
+
+  if (role === 'LECTURER') {
+    const needsAttention = metricNumber(dashboardData, 'pendingSubmissions')
+      + metricNumber(dashboardData, 'incompleteReviews')
+
+    return [
+      { key: 'activeCourses', label: 'Active courses', value: metricNumber(dashboardData, 'activeCourses'), icon: BookOpen },
+      { key: 'assignments', label: 'Assignments', value: metricNumber(dashboardData, 'assignments'), icon: FileText },
+      { key: 'needsAttention', label: 'Needs attention', value: needsAttention, icon: AlertCircle },
+      { key: 'reviewTasks', label: 'Review tasks', value: metricNumber(dashboardData, 'reviewTasks'), icon: ClipboardCheck },
+    ]
+  }
+
+  if (role === 'ADMINISTRATOR') {
+    return [
+      { key: 'totalUsers', label: 'Users', value: metricNumber(dashboardData, 'totalUsers'), icon: UsersRound },
+      { key: 'courses', label: 'Courses', value: metricNumber(dashboardData, 'courses'), icon: BookOpen },
+      { key: 'groups', label: 'Groups', value: metricNumber(dashboardData, 'groups'), icon: UsersRound },
+      { key: 'assignments', label: 'Assignments', value: metricNumber(dashboardData, 'assignments'), icon: FileText },
+    ]
+  }
+
+  return [
+    { key: 'account-status', label: 'Status', value: user.status, icon: ShieldCheck },
+  ]
 }
 
 function FeatureCard({ feature, onOpen }) {
@@ -274,8 +353,261 @@ function FeatureCard({ feature, onOpen }) {
   )
 }
 
-function RoleOverview({ roleContent, user }) {
+function DashboardList({ emptyText, items, renderItem }) {
+  if (!items.length) {
+    return <p className="dashboard-data-empty">{emptyText}</p>
+  }
+
+  return (
+    <div className="dashboard-data-list">
+      {items.map(renderItem)}
+    </div>
+  )
+}
+
+function WorkboardCard({ action, children, meta, onClick, title }) {
+  return (
+    <article className="workboard-card">
+      <div>
+        {meta && <small>{meta}</small>}
+        <h3>{title}</h3>
+      </div>
+      <div className="workboard-card__body">
+        {children}
+      </div>
+      {action && (
+        <button className="workboard-card__action" type="button" onClick={onClick}>
+          {action}
+          <ArrowUpRight size={15} aria-hidden="true" />
+        </button>
+      )}
+    </article>
+  )
+}
+
+function StudentWorkboard({ dashboardData, onOpen }) {
+  if (!dashboardData) return null
+
+  const courses = dashboardData.joinedCourses || []
+  const assignments = dashboardData.upcomingAssignments || []
+  const assignedReviews = metricNumber(dashboardData, 'assignedReviews')
+  const pendingReviews = metricNumber(dashboardData, 'pendingReviews')
+  const publishedResults = metricNumber(dashboardData, 'publishedResults')
+
+  return (
+    <section className="role-workboard" aria-label="Student workboard">
+      <WorkboardCard meta="Learning" title="My Courses">
+        <DashboardList
+          emptyText="No joined courses yet."
+          items={courses.slice(0, 4)}
+          renderItem={(course) => (
+            <div className="dashboard-data-row" key={course.id}>
+              <div>
+                <strong>{course.courseName}</strong>
+                <span>{course.classCode} / {course.status}</span>
+              </div>
+              <small>{course.groupCount} groups</small>
+            </div>
+          )}
+        />
+      </WorkboardCard>
+
+      <WorkboardCard meta="Assignments" title="Upcoming Work">
+        <DashboardList
+          emptyText="No upcoming assignments."
+          items={assignments.slice(0, 4)}
+          renderItem={(assignment) => (
+            <div className="dashboard-data-row" key={assignment.id}>
+              <div>
+                <strong>{assignment.title}</strong>
+                <span>{assignment.courseName}</span>
+              </div>
+              <small>Due {formatDateTime(assignment.submissionDeadline)}</small>
+            </div>
+          )}
+        />
+      </WorkboardCard>
+
+      <WorkboardCard
+        action={assignedReviews > 0 ? 'Open review task' : null}
+        meta="Peer review"
+        onClick={() => onOpen('/peer-reviews/tasks/1')}
+        title="Peer Reviews"
+      >
+        <div className="workboard-metric-row">
+          <span>Assigned</span>
+          <strong>{assignedReviews}</strong>
+        </div>
+        <div className="workboard-metric-row">
+          <span>Pending</span>
+          <strong>{pendingReviews}</strong>
+        </div>
+      </WorkboardCard>
+
+      <WorkboardCard meta="Published grades" title="Published Results">
+        <div className="workboard-metric-row">
+          <span>Released</span>
+          <strong>{publishedResults}</strong>
+        </div>
+        <p className="dashboard-data-empty">Released scores and feedback will appear in the results workspace.</p>
+      </WorkboardCard>
+    </section>
+  )
+}
+
+function LecturerWorkboard({ dashboardData, onOpen }) {
+  if (!dashboardData) return null
+
+  const courses = dashboardData.courses || []
+  const assignments = dashboardData.upcomingAssignments || []
+  const pendingSubmissions = metricNumber(dashboardData, 'pendingSubmissions')
+  const incompleteReviews = metricNumber(dashboardData, 'incompleteReviews')
+
+  return (
+    <section className="role-workboard role-workboard--lecturer" aria-label="Lecturer workboard">
+      <WorkboardCard action="Open courses" meta="Courses" onClick={() => onOpen('/lecturer/courses')} title="Teaching Courses">
+        <DashboardList
+          emptyText="No courses assigned."
+          items={courses.slice(0, 4)}
+          renderItem={(course) => (
+            <button
+              className="dashboard-data-row dashboard-data-row--button"
+              key={course.id}
+              type="button"
+              onClick={() => onOpen(`/lecturer/courses/${course.id}/workspace`)}
+            >
+              <div>
+                <strong>{course.courseName}</strong>
+                <span>{course.classCode} / {course.status}</span>
+              </div>
+              <small>{course.assignmentCount} assignments / {course.groupCount} groups</small>
+            </button>
+          )}
+        />
+      </WorkboardCard>
+
+      <WorkboardCard action="Monitor progress" meta="Assessment" onClick={() => onOpen('/lecturer/progress')} title="Monitor Progress">
+        <div className="workboard-metric-row">
+          <span>Pending submissions</span>
+          <strong>{pendingSubmissions}</strong>
+        </div>
+        <div className="workboard-metric-row">
+          <span>Unfinished reviews</span>
+          <strong>{incompleteReviews}</strong>
+        </div>
+      </WorkboardCard>
+
+      <WorkboardCard meta="Actions" title="Assessment Actions">
+        <div className="quick-action-stack">
+          <button type="button" onClick={() => onOpen('/lecturer/assignments/1/peer-review-assignments')}>
+            Assign Peer Review
+            <ArrowUpRight size={15} aria-hidden="true" />
+          </button>
+          <button type="button" onClick={() => onOpen('/lecturer/my-courses')}>
+            Manage Assignments
+            <ArrowUpRight size={15} aria-hidden="true" />
+          </button>
+          <button type="button" onClick={() => onOpen('/lecturer/my-courses')}>
+            Manage Final Grades
+            <ArrowUpRight size={15} aria-hidden="true" />
+          </button>
+        </div>
+      </WorkboardCard>
+
+      <WorkboardCard meta="Deadlines" title="Upcoming Deadlines">
+        <DashboardList
+          emptyText="No upcoming deadlines."
+          items={assignments.slice(0, 4)}
+          renderItem={(assignment) => (
+            <div className="dashboard-data-row" key={assignment.id}>
+              <div>
+                <strong>{assignment.title}</strong>
+                <span>{assignment.courseName}</span>
+              </div>
+              <small>{formatDateTime(assignment.submissionDeadline)}</small>
+            </div>
+          )}
+        />
+      </WorkboardCard>
+    </section>
+  )
+}
+
+function AdminWorkboard({ dashboardData }) {
+  if (!dashboardData) return null
+
+  const recentCourses = dashboardData.recentCourses || []
+  const totalUsers = metricNumber(dashboardData, 'totalUsers')
+  const lecturers = metricNumber(dashboardData, 'lecturers')
+  const students = metricNumber(dashboardData, 'students')
+  const administrators = Math.max(totalUsers - lecturers - students, 0)
+  const courses = metricNumber(dashboardData, 'courses')
+  const activeCourses = metricNumber(dashboardData, 'activeCourses')
+  const archivedCourses = Math.max(courses - activeCourses, 0)
+
+  return (
+    <section className="role-workboard role-workboard--admin" aria-label="Administration overview">
+      <WorkboardCard meta="Accounts" title="Users by Role">
+        <div className="dashboard-summary-table">
+          <div><span>Administrators</span><strong>{administrators}</strong></div>
+          <div><span>Lecturers</span><strong>{lecturers}</strong></div>
+          <div><span>Students</span><strong>{students}</strong></div>
+        </div>
+      </WorkboardCard>
+
+      <WorkboardCard meta="Courses" title="Course Status">
+        <div className="dashboard-summary-table">
+          <div><span>Active</span><strong>{activeCourses}</strong></div>
+          <div><span>Archived</span><strong>{archivedCourses}</strong></div>
+        </div>
+      </WorkboardCard>
+
+      <WorkboardCard meta="Records" title="System Records">
+        <div className="dashboard-summary-table">
+          <div><span>Courses</span><strong>{courses}</strong></div>
+          <div><span>Groups</span><strong>{metricNumber(dashboardData, 'groups')}</strong></div>
+          <div><span>Assignments</span><strong>{metricNumber(dashboardData, 'assignments')}</strong></div>
+        </div>
+      </WorkboardCard>
+
+      <WorkboardCard meta="Recent setup" title="Recent Courses">
+        <DashboardList
+          emptyText="No courses have been created."
+          items={recentCourses.slice(0, 4)}
+          renderItem={(course) => (
+            <div className="dashboard-data-row" key={course.id}>
+              <div>
+                <strong>{course.courseName}</strong>
+                <span>{course.classCode} / {course.status}</span>
+              </div>
+              <small>{course.assignmentCount} assignments</small>
+            </div>
+          )}
+        />
+      </WorkboardCard>
+    </section>
+  )
+}
+
+function DashboardDataPanel({ dashboardData, onOpen, role }) {
+  if (role === 'STUDENT') {
+    return <StudentWorkboard dashboardData={dashboardData} onOpen={onOpen} />
+  }
+
+  if (role === 'LECTURER') {
+    return <LecturerWorkboard dashboardData={dashboardData} onOpen={onOpen} />
+  }
+
+  if (role === 'ADMINISTRATOR') {
+    return <AdminWorkboard dashboardData={dashboardData} />
+  }
+
+  return null
+}
+
+function RoleOverview({ dashboardData, dashboardError, isDashboardLoading, onRetryDashboard, roleContent, user }) {
   const navigate = useNavigate()
+  const metrics = getTopMetrics(user.role, dashboardData, user, isDashboardLoading)
 
   return (
     <>
@@ -297,17 +629,32 @@ function RoleOverview({ roleContent, user }) {
       </section>
 
       <section className="stats-grid" aria-label={`${roleContent.label} summary`}>
-        {roleContent.stats.map(({ label, value, hint, icon: Icon }) => (
-          <article className="stat-card" key={label}>
-            <span className={`stat-card__icon stat-card__icon--${roleContent.accent}`}>
-              <Icon size={21} aria-hidden="true" />
-            </span>
-            <p>{label}</p>
-            <strong>{value}</strong>
-            <small>{hint}</small>
-          </article>
-        ))}
+        {metrics.map((metric) => {
+          const Icon = metric.icon ?? metricIcon(metric)
+          return (
+            <article className="stat-card" key={metric.key}>
+              <span className={`stat-card__icon stat-card__icon--${roleContent.accent}`}>
+                <Icon size={21} aria-hidden="true" />
+              </span>
+              <p>{metric.label}</p>
+              <strong>{metric.value}</strong>
+              {metric.hint && <small>{metric.hint}</small>}
+            </article>
+          )
+        })}
       </section>
+
+      {dashboardError && (
+        <section className="dashboard-inline-error" role="status">
+          <AlertCircle size={18} aria-hidden="true" />
+          <span>{dashboardError}</span>
+          <button type="button" onClick={onRetryDashboard}>Retry</button>
+        </section>
+      )}
+
+      {!isDashboardLoading && !dashboardError && (
+        <DashboardDataPanel dashboardData={dashboardData} onOpen={navigate} role={user.role} />
+      )}
 
       {roleContent.sections.map((section) => (
         <section className="lecturer-hub-section" aria-labelledby={`${section.title}-title`} key={section.title}>
@@ -330,15 +677,59 @@ function RoleOverview({ roleContent, user }) {
 }
 
 function HomePage() {
-  const { user } = useAuth()
+  const { user, token, logout } = useAuth()
+  const navigate = useNavigate()
   const roleContent = ROLE_CONTENT[user.role] ?? ROLE_CONTENT.STUDENT
+  const [dashboardData, setDashboardData] = useState(null)
+  const [isDashboardLoading, setIsDashboardLoading] = useState(true)
+  const [dashboardError, setDashboardError] = useState('')
+  const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0)
+
+  useEffect(() => {
+    let active = true
+
+    async function loadDashboard() {
+      setIsDashboardLoading(true)
+      setDashboardError('')
+
+      try {
+        const response = await getRoleDashboard(user.role, token)
+        if (active) setDashboardData(response)
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          logout()
+          navigate('/login', { replace: true })
+          return
+        }
+        if (active) setDashboardError(error.message || 'Dashboard data could not be loaded.')
+      } finally {
+        if (active) setIsDashboardLoading(false)
+      }
+    }
+
+    loadDashboard()
+
+    return () => {
+      active = false
+    }
+  }, [dashboardRefreshKey, logout, navigate, token, user.role])
 
   return (
     <div className="dashboard-shell">
       <DashboardTopbar icon={LayoutDashboard} label="Overview" />
 
       <main className="dashboard-main">
-        <RoleOverview roleContent={roleContent} user={user} />
+        <RoleOverview
+          dashboardData={dashboardData}
+          dashboardError={dashboardError}
+          isDashboardLoading={isDashboardLoading}
+          onRetryDashboard={() => {
+            setDashboardData(null)
+            setDashboardRefreshKey((current) => current + 1)
+          }}
+          roleContent={roleContent}
+          user={user}
+        />
       </main>
     </div>
   )

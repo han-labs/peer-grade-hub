@@ -18,6 +18,8 @@ public interface AssignmentResultDao extends JpaRepository<AssignmentResult, Lon
     Optional<AssignmentResult> findByAssignmentIdAndGroupId(Long assignmentId, Long groupId);
     boolean existsByAssignmentIdAndGroupId(Long assignmentId, Long groupId);
     boolean existsByGroupId(Long groupId);
+    long countByPublished(Boolean published);
+    long countByGroupIdInAndPublished(List<Long> groupIds, Boolean published);
 
      // ===== NEW FOR UC-09 =====
 

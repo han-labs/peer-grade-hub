@@ -18,6 +18,16 @@ public interface AssignmentDao extends JpaRepository<Assignment, Long> {
     List<Assignment> findByLessonId(Long lessonId);
     boolean existsByLessonId(Long lessonId);
 
+    @Query("select assignment from Assignment assignment "
+            + "join fetch assignment.lesson lesson "
+            + "join fetch lesson.course course "
+            + "where course.id in :courseIds")
+    List<Assignment> findByCourseIdIn(@Param("courseIds") List<Long> courseIds);
+
+    @Query("select count(assignment) from Assignment assignment "
+            + "where assignment.lesson.course.id in :courseIds")
+    long countByCourseIdIn(@Param("courseIds") List<Long> courseIds);
+
     @EntityGraph(attributePaths = {"lesson.course.lecturer"})
     @Query("select assignment from Assignment assignment where assignment.id = :assignmentId")
     Optional<Assignment> findByIdWithCourseAndLecturer(@Param("assignmentId") Long assignmentId);

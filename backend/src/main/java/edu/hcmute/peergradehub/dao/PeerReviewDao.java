@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface PeerReviewDao extends JpaRepository<PeerReview, Long> {
     Optional<PeerReview> findByPeerReviewAssignmentId(Long peerReviewAssignmentId);
     boolean existsByPeerReviewAssignmentId(Long peerReviewAssignmentId);
+    List<PeerReview> findByPeerReviewAssignmentIdIn(List<Long> peerReviewAssignmentIds);
 
     @EntityGraph(attributePaths = {
         "peerReviewAssignment.reviewerGroup",

@@ -14,6 +14,8 @@ import edu.hcmute.peergradehub.enumeration.GroupStatus;
 @Repository
 public interface StudentGroupDao extends JpaRepository<StudentGroup, Long> {
     List<StudentGroup> findByCourseId(Long courseId);
+    List<StudentGroup> findByCourseIdIn(List<Long> courseIds);
+    long countByCourseIdIn(List<Long> courseIds);
     Optional<StudentGroup> findByIdAndCourseId(Long id, Long courseId);
     boolean existsByCourseIdAndGroupName(Long courseId, String groupName);
     List<StudentGroup> findByCourseIdOrderByIdAsc(Long courseId);

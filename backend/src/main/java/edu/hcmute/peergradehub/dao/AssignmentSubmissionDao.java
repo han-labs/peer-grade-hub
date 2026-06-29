@@ -15,7 +15,10 @@ import edu.hcmute.peergradehub.entity.AssignmentSubmission;
 public interface AssignmentSubmissionDao extends JpaRepository<AssignmentSubmission, Long> {
     @EntityGraph(attributePaths = {"group", "submittedBy"})
     List<AssignmentSubmission> findByAssignmentId(Long assignmentId);
+    @EntityGraph(attributePaths = {"assignment.lesson.course", "group", "submittedBy"})
+    List<AssignmentSubmission> findByAssignmentIdIn(List<Long> assignmentIds);
     List<AssignmentSubmission> findByGroupId(Long groupId);
+    List<AssignmentSubmission> findByGroupIdIn(List<Long> groupIds);
     Optional<AssignmentSubmission> findByAssignmentIdAndGroupId(Long assignmentId, Long groupId);
     boolean existsByAssignmentIdAndGroupId(Long assignmentId, Long groupId);
     boolean existsByGroupId(Long groupId);

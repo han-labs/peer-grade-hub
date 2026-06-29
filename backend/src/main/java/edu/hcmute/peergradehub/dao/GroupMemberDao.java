@@ -1,6 +1,7 @@
 package edu.hcmute.peergradehub.dao;
 
 import edu.hcmute.peergradehub.entity.GroupMember;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +13,8 @@ import java.util.Optional;
 @Repository
 public interface GroupMemberDao extends JpaRepository<GroupMember, Long> {
     List<GroupMember> findByGroupId(Long groupId);
+    @EntityGraph(attributePaths = {"group.course"})
+    List<GroupMember> findByUserId(Long userId);
     long countByGroupId(Long groupId);
     boolean existsByGroupIdAndUserId(Long groupId, Long userId);
     List<GroupMember> findByGroupIdIn(List<Long> groupIds);

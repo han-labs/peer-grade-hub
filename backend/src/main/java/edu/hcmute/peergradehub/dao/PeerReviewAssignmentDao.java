@@ -15,7 +15,11 @@ import edu.hcmute.peergradehub.entity.PeerReviewAssignment;
 public interface PeerReviewAssignmentDao extends JpaRepository<PeerReviewAssignment, Long> {
     @EntityGraph(attributePaths = {"reviewerGroup", "revieweeGroup", "assignedBy"})
     List<PeerReviewAssignment> findByAssignmentId(Long assignmentId);
+    @EntityGraph(attributePaths = {"assignment.lesson.course", "reviewerGroup", "revieweeGroup"})
+    List<PeerReviewAssignment> findByAssignmentIdIn(List<Long> assignmentIds);
     List<PeerReviewAssignment> findByReviewerGroupId(Long reviewerGroupId);
+    @EntityGraph(attributePaths = {"assignment.lesson.course", "reviewerGroup", "revieweeGroup"})
+    List<PeerReviewAssignment> findByReviewerGroupIdIn(List<Long> reviewerGroupIds);
     List<PeerReviewAssignment> findByRevieweeGroupId(Long revieweeGroupId);
     boolean existsByReviewerGroupId(Long reviewerGroupId);
     boolean existsByRevieweeGroupId(Long revieweeGroupId);
