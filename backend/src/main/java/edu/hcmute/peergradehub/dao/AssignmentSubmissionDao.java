@@ -20,9 +20,7 @@ public interface AssignmentSubmissionDao extends JpaRepository<AssignmentSubmiss
     boolean existsByAssignmentIdAndGroupId(Long assignmentId, Long groupId);
     boolean existsByGroupId(Long groupId);
 
-    // ===== NEW FOR UC-09: KHÔNG dùng @EntityGraph với attachments =====
-    // Vì AssignmentSubmission KHÔNG có field attachments
-    
+    // ===== NEW FOR UC-09 =====
     @Query("SELECT s FROM AssignmentSubmission s " +
            "JOIN FETCH s.group g " +
            "JOIN FETCH s.submittedBy u " +
@@ -38,5 +36,21 @@ public interface AssignmentSubmissionDao extends JpaRepository<AssignmentSubmiss
            "WHERE s.assignment.id = :assignmentId")
     List<AssignmentSubmission> findByAssignmentIdWithGroupAndSubmitter(
             @Param("assignmentId") Long assignmentId
+    );
+
+    // ===== UC-10 METHODS =====
+    
+    /**
+     * Get all submissions for an assignment except the current group.
+     * Used for Class Gallery (UC-10 Showcase Mode).
+     */
+    @Query("SELECT s FROM AssignmentSubmission s " +
+           "JOIN FETCH s.group g " +
+           "JOIN FETCH s.submittedBy u " +
+           "WHERE s.assignment.id = :assignmentId " +
+           "AND s.group.id != :excludeGroupId")
+    List<AssignmentSubmission> findByAssignmentIdAndGroupIdNot(
+            @Param("assignmentId") Long assignmentId,
+            @Param("excludeGroupId") Long excludeGroupId
     );
 }

@@ -1,0 +1,349 @@
+{
+  "info": {
+    "name": "PeerGrade Hub - UC-10 View Published Results",
+    "description": "API Collection for UC-10 View Published Results\n\nMain Flow:\n1. Student views published results (GET /results/assignment/{assignmentId})\n2. System checks publish status and showcase mode\n3. Student opens Class Gallery (if showcaseMode == true)\n\nAlternate Flows:\n- 2.1: Results not published -> message: \"Your results are still being processed.\"\n- 3.1: Showcase Mode disabled -> hide Class Gallery tab\n\nException Flows:\n- 2.1: Result data cannot be loaded\n- 2.2: Class Gallery data cannot be loaded\n\nBusiness Rules:\n- BR-14: Students cannot view grades until isPublished == true\n- BR-15: Showcase Mode does NOT show unpublished grades\n- BR-12: Reviewer identity is hidden from students",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "assignmentId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Login - Student",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has access token', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property('accessToken');",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "if (jsonData.data && jsonData.data.accessToken) {",
+              "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+              "    console.log('Token saved:', jsonData.data.accessToken);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"usernameOrEmail\": \"student01\",\n    \"password\": \"Student@123\",\n    \"rememberMe\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. View Results - Not Published (Alternate Flow 2.1)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response indicates not published', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.isPublished).to.equal(false);",
+              "    pm.expect(jsonData.data.message).to.equal('Your results are still being processed.');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/results/assignment/{{assignmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["results", "assignment", "{{assignmentId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Publish Grade for Group A (Setup)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupIds\": [1],\n    \"grades\": [\n        {\n            \"groupId\": 1,\n            \"score\": 85.5,\n            \"comment\": \"Excellent work! Clear structure and thorough analysis.\"\n        }\n    ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/publish",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "publish"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. View Results - Published (Main Flow Step 2)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has personal results', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.isPublished).to.equal(true);",
+              "    pm.expect(jsonData.data.personalResult).to.have.property('groupId');",
+              "    pm.expect(jsonData.data.personalResult).to.have.property('finalScore');",
+              "    pm.expect(jsonData.data.personalResult).to.have.property('lecturerComment');",
+              "    pm.expect(jsonData.data.personalResult).to.have.property('peerFeedbacks');",
+              "});",
+              "",
+              "pm.test('Peer feedback is anonymous (BR-12)', function () {",
+              "    var jsonData = pm.response.json();",
+              "    var feedbacks = jsonData.data.personalResult.peerFeedbacks;",
+              "    if (feedbacks.length > 0) {",
+              "        pm.expect(feedbacks[0]).to.have.property('anonymousReviewerName');",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/results/assignment/{{assignmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["results", "assignment", "{{assignmentId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Enable Showcase Mode (Setup)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"enabled\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/showcase",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "showcase"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. Publish Grade for Group B (Setup Showcase)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"groupIds\": [2],\n    \"grades\": [\n        {\n            \"groupId\": 2,\n            \"score\": 80.0,\n            \"comment\": \"Good work!\"\n        }\n    ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/publish",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "publish"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. View Results - Showcase Mode ON (Main Flow Step 3)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has showcase gallery', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.showcaseMode).to.equal(true);",
+              "    pm.expect(jsonData.data.showcaseGallery).to.have.property('enabled', true);",
+              "    pm.expect(jsonData.data.showcaseGallery).to.have.property('submissions');",
+              "});",
+              "",
+              "pm.test('BR-15: Only published grades shown in gallery', function () {",
+              "    var jsonData = pm.response.json();",
+              "    var submissions = jsonData.data.showcaseGallery.submissions;",
+              "    submissions.forEach(function(submission) {",
+              "        if (submission.isPublished === false) {",
+              "            pm.expect(submission.finalScore).to.equal(null);",
+              "        }",
+              "    });",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/results/assignment/{{assignmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["results", "assignment", "{{assignmentId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. View Results - Assignment Not Found",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 404', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test('Response has NOT_FOUND error', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.code).to.equal('NOT_FOUND');",
+              "    pm.expect(jsonData.message).to.include('Assignment not found');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/results/assignment/999",
+          "host": ["{{baseUrl}}"],
+          "path": ["results", "assignment", "999"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9. View Results - No Token (Unauthorized)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 401', function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/results/assignment/{{assignmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["results", "assignment", "{{assignmentId}}"]
+        }
+      },
+      "auth": {
+        "type": "noauth"
+      },
+      "response": []
+    },
+    {
+      "name": "10. Disable Showcase Mode (Cleanup)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assignmentId\": {{assignmentId}},\n    \"enabled\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/grades/showcase",
+          "host": ["{{baseUrl}}"],
+          "path": ["grades", "showcase"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
