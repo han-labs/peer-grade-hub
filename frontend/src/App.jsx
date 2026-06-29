@@ -17,10 +17,10 @@ import LecturerGroupsPage from './pages/LecturerGroupsPage.jsx'
 import CourseLessonsPage from './pages/CourseLessonsPage.jsx'
 import LessonAssignmentsPage from './pages/LessonAssignmentsPage.jsx'
 import PeerReviewPage from './pages/PeerReviewPage.jsx'
-import ViewResultsPage from './pages/result/ViewResultsPage';
-import StudentCoursesPage from './pages/student/StudentCoursesPage';
-import StudentCourseDetailPage from './pages/student/StudentCourseDetailPage';
-import StudentAssignmentsPage from './pages/student/StudentAssignmentsPage';
+import ViewResultsPage from './pages/result/ViewResultsPage.jsx';
+import StudentCoursesPage from './pages/student/StudentCoursesPage.jsx';
+import StudentCourseDetailPage from './pages/student/StudentCourseDetailPage.jsx';
+import StudentAssignmentsPage from './pages/student/StudentAssignmentsPage.jsx';
 import PeerReviewTasksPage from './pages/PeerReviewTasksPage.jsx'
 
 function PublicOnlyRoute({ children }) {
