@@ -21,4 +21,13 @@ public interface AssignmentService {
      * Includes isPublished status for each assignment.
      */
     LessonAssignmentsResponse getStudentAssignments(Long lessonId, Long studentId);
+
+    // ===== UC-04: MANAGE ASSIGNMENTS =====
+    Assignment createAssignment(Long lessonId, edu.hcmute.peergradehub.dto.request.course.CreateAssignmentRequest request, Long actorId);
+
+    Assignment updateAssignment(Long assignmentId, edu.hcmute.peergradehub.dto.request.course.CreateAssignmentRequest request, Long actorId);
+
+    edu.hcmute.peergradehub.dto.response.lesson.AssignmentDetailResponse getAssignmentDetail(Long assignmentId, Long actorId);
+
+    void deleteAssignment(Long assignmentId, Long actorId);
 }

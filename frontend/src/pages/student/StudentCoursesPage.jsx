@@ -20,7 +20,6 @@ export default function StudentCoursesPage() {
     const loadingTimer = window.setTimeout(() => {
       if (mounted) setLoading(true);
     }, 0);
-
     getStudentCourses(token)
       .then((response) => {
         if (mounted) setCourses(response.data || []);

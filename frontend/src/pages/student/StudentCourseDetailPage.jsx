@@ -16,7 +16,6 @@ export default function StudentCourseDetailPage() {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
   useEffect(() => {
     let mounted = true;
     const loadingTimer = window.setTimeout(() => {

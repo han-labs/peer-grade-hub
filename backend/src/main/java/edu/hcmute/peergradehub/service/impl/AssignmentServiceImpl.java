@@ -19,6 +19,15 @@ import java.time.LocalDateTime;
 import edu.hcmute.peergradehub.exception.BadRequestException;   
 import edu.hcmute.peergradehub.exception.ForbiddenException;    
 import edu.hcmute.peergradehub.exception.NotFoundException;    
+import edu.hcmute.peergradehub.dto.request.course.CreateAssignmentRequest;
+import edu.hcmute.peergradehub.dto.response.lesson.AssignmentDetailResponse;
+import edu.hcmute.peergradehub.entity.LessonMaterial;
+import edu.hcmute.peergradehub.entity.FileAttachment;
+import edu.hcmute.peergradehub.entity.LinkAttachment;
+import edu.hcmute.peergradehub.mapper.LessonMapper;
+import edu.hcmute.peergradehub.mapper.CourseMapper;
+import edu.hcmute.peergradehub.dto.response.course.LessonMaterialResponse;
+import edu.hcmute.peergradehub.dao.UserDao;    
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +38,9 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final LessonDao lessonRepository;
     private final CourseEnrollmentDao courseEnrollmentDao;
     private final AssignmentResultDao assignmentResultDao;
+    private final UserDao userDao;
+    private final LessonMapper lessonMapper;
+    private final CourseMapper courseMapper;
     @Override
     @Transactional
     public Assignment createAssignment(String title, String description, LocalDateTime submissionDeadline,
@@ -111,13 +123,21 @@ public class AssignmentServiceImpl implements AssignmentService {
                     );
                     // Hoặc đơn giản hơn: lấy assignment và kiểm tra result
                     // Hiện tại có thể bỏ qua hoặc để false
+                    List<LessonMaterialResponse> materialResponses = assignment.getMaterials() != null
+                            ? assignment.getMaterials().stream()
+                                    .map(courseMapper::toMaterialResponse)
+                                    .collect(Collectors.toList())
+                            : java.util.Collections.emptyList();
+
                     return new LessonAssignmentsResponse.AssignmentSummary(
                             assignment.getId(),
                             assignment.getTitle(),
                             assignment.getDescription(),
                             assignment.getSubmissionDeadline(),
                             assignment.getReviewDeadline(),
-                            assignment.getShowcaseMode()
+                            assignment.getShowcaseMode(),
+                            assignment.getAppealDays(),
+                            materialResponses
                     );
                 })
                 .collect(Collectors.toList());
@@ -131,4 +151,205 @@ public class AssignmentServiceImpl implements AssignmentService {
         );
     }
 
+    private static final double MAX_FILE_SIZE_MB = 20.0;
+    private static final java.util.Set<String> ALLOWED_FILE_TYPES = java.util.Set.of(
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "text/plain",
+            "image/png",
+            "image/jpeg"
+    );
+
+    @Override
+    @Transactional
+    public Assignment createAssignment(Long lessonId, CreateAssignmentRequest request, Long actorId) {
+        if (request.title() == null || request.title().trim().isEmpty()) {
+            throw new IllegalArgumentException("Assignment title is required. Please enter a title before saving.");
+        }
+
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new NotFoundException("Lesson not found"));
+        Course course = lesson.getCourse();
+        if (course == null) {
+            throw new NotFoundException("Course not found for this lesson");
+        }
+
+        if (!course.getLecturer().getId().equals(actorId)) {
+            throw new ForbiddenException("You are not authorized to perform this action.");
+        }
+
+        if (request.submissionDeadline() == null || request.reviewDeadline() == null) {
+            throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.");
+        }
+        if (!request.reviewDeadline().isAfter(request.submissionDeadline())) {
+            throw new IllegalArgumentException("Peer review deadline must be after submission deadline. Please adjust the deadlines.");
+        }
+
+        int appealDays = request.appealDays() != null ? request.appealDays() : 7;
+
+        try {
+            Assignment assignment = Assignment.builder()
+                    .title(request.title())
+                    .description(request.description())
+                    .submissionDeadline(request.submissionDeadline())
+                    .reviewDeadline(request.reviewDeadline())
+                    .appealDays(appealDays)
+                    .lesson(lesson)
+                    .materials(new java.util.ArrayList<>())
+                    .build();
+
+            if (request.materials() != null) {
+                for (var matReq : request.materials()) {
+                    if (matReq.title() == null || matReq.title().trim().isEmpty()) {
+                        throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.");
+                    }
+                    if ("FILE".equals(matReq.materialType())) {
+                        if (matReq.fileSizeMb() == null || matReq.fileSizeMb() > MAX_FILE_SIZE_MB ||
+                                matReq.fileType() == null || !ALLOWED_FILE_TYPES.contains(matReq.fileType()) ||
+                                matReq.fileName() == null || matReq.fileName().trim().isEmpty() ||
+                                matReq.filePath() == null || matReq.filePath().trim().isEmpty()) {
+                            throw new IllegalArgumentException("File upload failed. Please check the file size and format, then try again. If the problem persists, contact the administrator.");
+                        }
+                        FileAttachment file = new FileAttachment();
+                        file.setTitle(matReq.title());
+                        file.setAssignment(assignment);
+                        file.setFileName(matReq.fileName());
+                        file.setFilePath(matReq.filePath());
+                        file.setFileSizeMb(matReq.fileSizeMb());
+                        file.setFileType(matReq.fileType());
+                        assignment.getMaterials().add(file);
+                    } else if ("LINK".equals(matReq.materialType())) {
+                        if (matReq.url() == null || matReq.url().trim().isEmpty()) {
+                            throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.");
+                        }
+                        LinkAttachment link = new LinkAttachment();
+                        link.setTitle(matReq.title());
+                        link.setAssignment(assignment);
+                        link.setUrl(matReq.url());
+                        link.setLabel(matReq.label());
+                        assignment.getMaterials().add(link);
+                    } else {
+                        throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.");
+                    }
+                }
+            }
+
+            return assignmentRepository.save(assignment);
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public Assignment updateAssignment(Long assignmentId, CreateAssignmentRequest request, Long actorId) {
+        if (request.title() == null || request.title().trim().isEmpty()) {
+            throw new IllegalArgumentException("Assignment title is required. Please enter a title before saving.");
+        }
+
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new NotFoundException("Assignment not found"));
+        Course course = assignment.getLesson().getCourse();
+        if (!course.getLecturer().getId().equals(actorId)) {
+            throw new ForbiddenException("You are not authorized to perform this action.");
+        }
+
+        if (request.submissionDeadline() == null || request.reviewDeadline() == null) {
+            throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.");
+        }
+        if (!request.reviewDeadline().isAfter(request.submissionDeadline())) {
+            throw new IllegalArgumentException("Peer review deadline must be after submission deadline. Please adjust the deadlines.");
+        }
+
+        int appealDays = request.appealDays() != null ? request.appealDays() : 7;
+
+        try {
+            assignment.setTitle(request.title());
+            assignment.setDescription(request.description());
+            assignment.setSubmissionDeadline(request.submissionDeadline());
+            assignment.setReviewDeadline(request.reviewDeadline());
+            assignment.setAppealDays(appealDays);
+
+            assignment.getMaterials().clear();
+            if (request.materials() != null) {
+                for (var matReq : request.materials()) {
+                    if (matReq.title() == null || matReq.title().trim().isEmpty()) {
+                        throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.");
+                    }
+                    if ("FILE".equals(matReq.materialType())) {
+                        if (matReq.fileSizeMb() == null || matReq.fileSizeMb() > MAX_FILE_SIZE_MB ||
+                                matReq.fileType() == null || !ALLOWED_FILE_TYPES.contains(matReq.fileType()) ||
+                                matReq.fileName() == null || matReq.fileName().trim().isEmpty() ||
+                                matReq.filePath() == null || matReq.filePath().trim().isEmpty()) {
+                            throw new IllegalArgumentException("File upload failed. Please check the file size and format, then try again. If the problem persists, contact the administrator.");
+                        }
+                        FileAttachment file = new FileAttachment();
+                        file.setTitle(matReq.title());
+                        file.setAssignment(assignment);
+                        file.setFileName(matReq.fileName());
+                        file.setFilePath(matReq.filePath());
+                        file.setFileSizeMb(matReq.fileSizeMb());
+                        file.setFileType(matReq.fileType());
+                        assignment.getMaterials().add(file);
+                    } else if ("LINK".equals(matReq.materialType())) {
+                        if (matReq.url() == null || matReq.url().trim().isEmpty()) {
+                            throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.");
+                        }
+                        LinkAttachment link = new LinkAttachment();
+                        link.setTitle(matReq.title());
+                        link.setAssignment(assignment);
+                        link.setUrl(matReq.url());
+                        link.setLabel(matReq.label());
+                        assignment.getMaterials().add(link);
+                    } else {
+                        throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.");
+                    }
+                }
+            }
+
+            return assignmentRepository.save(assignment);
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Cannot save assignment due to invalid data. Please review the assignment information and try again.", e);
+        }
+    }
+
+    @Override
+    public AssignmentDetailResponse getAssignmentDetail(Long assignmentId, Long actorId) {
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new NotFoundException("Assignment not found"));
+        Course course = assignment.getLesson().getCourse();
+        
+        boolean isLecturer = course.getLecturer().getId().equals(actorId);
+        boolean isEnrolledStudent = courseEnrollmentDao.existsByCourseIdAndStudentId(course.getId(), actorId);
+        
+        if (!isLecturer && !isEnrolledStudent) {
+            throw new ForbiddenException("You are not authorized to view this assignment");
+        }
+
+        return lessonMapper.toAssignmentDetailResponse(assignment);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAssignment(Long assignmentId, Long actorId) {
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new NotFoundException("Assignment not found"));
+        Course course = assignment.getLesson().getCourse();
+        if (!course.getLecturer().getId().equals(actorId)) {
+            throw new ForbiddenException("You are not authorized to perform this action.");
+        }
+        
+        if (assignmentResultDao.existsPublishedByAssignmentIdAndGroupId(assignmentId, null)) {
+            throw new BadRequestException("Cannot delete assignment because grades have already been published.");
+        }
+
+        assignmentRepository.delete(assignment);
+    }
 }

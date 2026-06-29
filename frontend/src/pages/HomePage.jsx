@@ -26,59 +26,6 @@ const ROLE_CONTENT = {
   STUDENT: {
     label: 'Student',
     accent: 'student',
-<<<<<<< HEAD
-    heading: 'Learning workspace',
-    description: 'Keep courses, group work, peer reviews, and published results organized.',
-    stats: [],
-    sections: [
-      {
-        title: 'Study tasks',
-        eyebrow: 'What to do next',
-        description: 'Open the workspaces available for your current learning flow.',
-        features: [
-          {
-            title: 'Submit Peer Review',
-            description: 'Open your assigned review task, inspect the submission, then submit score and feedback.',
-            status: 'Available',
-            meta: 'Peer review task',
-            action: 'Submit Review',
-            path: '/peer-reviews/tasks/1',
-            icon: ClipboardCheck,
-            tone: 'blue',
-          },
-          {
-            title: 'Join Course / Group',
-            description: 'Join a course with an invitation code and participate in group formation.',
-            status: 'Planned',
-            meta: 'Course enrollment',
-            action: 'Not available',
-            path: null,
-            icon: UsersRound,
-            tone: 'green',
-          },
-          {
-            title: 'Submit Assignment',
-            description: 'Upload group submissions and supporting materials once the submission flow is connected.',
-            status: 'Planned',
-            meta: 'Assignment submission',
-            action: 'Not available',
-            path: null,
-            icon: FileText,
-            tone: 'yellow',
-          },
-          {
-            title: 'View Results',
-            description: 'Review published final scores and feedback after lecturers release results.',
-            status: 'Planned',
-            meta: 'Published grades',
-            action: 'Not available',
-            path: null,
-            icon: Gauge,
-            tone: 'purple',
-          },
-        ],
-      },
-=======
     heading: 'Your learning workspace',
     description: 'Keep course work and peer review responsibilities in view.',
     stats: [
@@ -87,10 +34,10 @@ const ROLE_CONTENT = {
       { label: 'Account status', value: 'Active', hint: 'Ready to participate', icon: CheckCircle2 },
     ],
     focus: [
-      { title: 'Joined courses', detail: 'Course enrollment summary', icon: BookOpen },
+      { title: 'Joined courses', detail: 'Course enrollment summary', icon: BookOpen, path: '/student/courses' },
       { title: 'Peer review tasks', detail: 'Assigned review queue', icon: UsersRound, path: '/peer-reviews' },
->>>>>>> 5abb507 (fix: Update UC07 peer review backend and frontend implementation)
     ],
+    sections: []
   },
   LECTURER: {
     label: 'Lecturer',
@@ -732,7 +679,6 @@ function HomePage() {
       <DashboardTopbar icon={LayoutDashboard} label="Overview" />
 
       <main className="dashboard-main">
-<<<<<<< HEAD
         <RoleOverview
           dashboardData={dashboardData}
           dashboardError={dashboardError}
@@ -744,190 +690,6 @@ function HomePage() {
           roleContent={roleContent}
           user={user}
         />
-=======
-        <section className="welcome-band">
-          <div>
-            <p className="dashboard-date">{formatDate(new Date())}</p>
-            <h1>Welcome back, {user.fullName.split(' ')[0]}.</h1>
-            <p>{roleContent.description}</p>
-          </div>
-          <div className="welcome-band__badges">
-            <span className={`role-badge role-badge--${roleContent.accent}`}>
-              {roleContent.label}
-            </span>
-            <span className="status-badge">
-              <span aria-hidden="true" />
-              {user.status}
-            </span>
-          </div>
-        </section>
-
-        <section className="stats-grid" aria-label="Workspace summary">
-          {roleContent.stats.map(({ label, value, hint, icon: Icon }) => (
-            <article className="stat-card" key={label}>
-              <span className={`stat-card__icon stat-card__icon--${roleContent.accent}`}>
-                <Icon size={21} />
-              </span>
-              <p>{label}</p>
-              <strong>{value}</strong>
-              <small>{hint}</small>
-            </article>
-          ))}
-        </section>
-
-        {user.role === 'LECTURER' && (
-          <section className="lecturer-demo-section" aria-labelledby="demo-workspaces-title">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Current demo data</p>
-                <h2 id="demo-workspaces-title">Use-case workspaces</h2>
-              </div>
-            </div>
-            <div className="lecturer-demo-grid">
-              <article className="demo-feature" aria-labelledby="uc02-demo-title">
-                <div className="demo-feature__icon">
-                  <BookOpen size={23} aria-hidden="true" />
-                </div>
-                <div className="demo-feature__copy">
-                  <div className="demo-feature__meta">
-                    <span>UC-02</span>
-                    <small>Manage Courses</small>
-                  </div>
-                  <h2 id="uc02-demo-title">Course Management</h2>
-                  <p>Create and manage your courses, view course details, and access course workspaces.</p>
-                </div>
-                <button
-                  className="demo-feature__action"
-                  type="button"
-                  onClick={() => navigate('/lecturer/courses')}
-                >
-                  Manage Courses
-                  <ArrowUpRight size={18} aria-hidden="true" />
-                </button>
-              </article>
-
-              <article className="demo-feature" aria-labelledby="uc14-demo-title">
-                <div className="demo-feature__icon">
-                  <ClipboardCheck size={23} aria-hidden="true" />
-                </div>
-                <div className="demo-feature__copy">
-                  <div className="demo-feature__meta">
-                    <span>UC-14 demo</span>
-                    <small>Assignment #1</small>
-                  </div>
-                  <h2 id="uc14-demo-title">Assign peer reviews</h2>
-                  <p>Pair reviewer and target groups, then check review coverage.</p>
-                </div>
-                <button
-                  className="demo-feature__action"
-                  type="button"
-                  onClick={() => navigate('/lecturer/assignments/1/peer-review-assignments')}
-                >
-                  Open UC-14
-                  <ArrowUpRight size={18} aria-hidden="true" />
-                </button>
-              </article>
-
-              <article className="demo-feature demo-feature--progress" aria-labelledby="uc08-demo-title">
-                <div className="demo-feature__icon">
-                  <Activity size={23} aria-hidden="true" />
-                </div>
-                <div className="demo-feature__copy">
-                  <div className="demo-feature__meta">
-                    <span>UC-08 demo</span>
-                    <small>Course #2 · Assignment #2</small>
-                  </div>
-                  <h2 id="uc08-demo-title">Monitor Progress</h2>
-                  <p>Review submission and peer review progress across all course groups.</p>
-                </div>
-                <button
-                  className="demo-feature__action"
-                  type="button"
-                  onClick={() => navigate('/lecturer/courses/2/assignments/2/progress')}
-                >
-                  Open Monitor Progress
-                  <ArrowUpRight size={18} aria-hidden="true" />
-                </button>
-              </article>
-            </div>
-          </section>
-        )}
-
-
-
-
-        <section className="dashboard-grid">
-          <div className="workspace-section">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Role overview</p>
-                <h2>{roleContent.heading}</h2>
-              </div>
-            </div>
-
-            <div className="focus-list">
-              {roleContent.focus.map(({ title, detail, icon: Icon, path }) => (
-                <div
-                  className={`focus-row ${path ? 'focus-row--clickable' : ''}`}
-                  key={title}
-                  onClick={path ? () => navigate(path) : undefined}
-                >
-                  <span className={`focus-row__icon focus-row__icon--${roleContent.accent}`}>
-                    <Icon size={20} />
-                  </span>
-                  <div>
-                    <strong>{title}</strong>
-                    <span>{detail}</span>
-                  </div>
-                  <span
-                    className="placeholder-state"
-                    style={path ? { cursor: 'pointer', background: 'var(--blue-soft)', color: 'var(--blue)' } : undefined}
-                  >
-                    Preview
-                  </span>
-                  <ArrowUpRight
-                    size={18}
-                    aria-hidden="true"
-                    style={path ? { cursor: 'pointer', color: 'var(--blue)' } : undefined}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <aside className="profile-panel" aria-labelledby="profile-heading">
-            <div className="profile-panel__heading">
-              <span className={`user-avatar user-avatar--large user-avatar--${roleContent.accent}`}>
-                {user.fullName
-                  .split(' ')
-                  .map((part) => part[0])
-                  .slice(0, 2)
-                  .join('')
-                  .toUpperCase()}
-              </span>
-              <div>
-                <p className="eyebrow">Signed-in profile</p>
-                <h2 id="profile-heading">{user.fullName}</h2>
-              </div>
-            </div>
-
-            <dl className="profile-details">
-              <div>
-                <dt><UserRound size={17} aria-hidden="true" /> Username</dt>
-                <dd>{user.username}</dd>
-              </div>
-              <div>
-                <dt><Mail size={17} aria-hidden="true" /> Email</dt>
-                <dd>{user.email}</dd>
-              </div>
-              <div>
-                <dt><ShieldCheck size={17} aria-hidden="true" /> Role</dt>
-                <dd>{roleContent.label}</dd>
-              </div>
-            </dl>
-          </aside>
-        </section>
->>>>>>> 5abb507 (fix: Update UC07 peer review backend and frontend implementation)
       </main>
     </div>
   )

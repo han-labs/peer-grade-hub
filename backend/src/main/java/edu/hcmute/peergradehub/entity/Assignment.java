@@ -38,6 +38,14 @@ public class Assignment {
     @Builder.Default
     private Boolean showcaseMode = false;
 
+    @Column(name = "appeal_days", nullable = false)
+    @Builder.Default
+    private Integer appealDays = 7;
+
+    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<LessonMaterial> materials = new java.util.ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lesson_id", nullable = false)
     private Lesson lesson;

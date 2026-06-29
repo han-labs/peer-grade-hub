@@ -16,6 +16,8 @@ public record LessonAssignmentsResponse(
             String description,
             LocalDateTime submissionDeadline,
             LocalDateTime reviewDeadline,
-            Boolean showcaseMode
+            Boolean showcaseMode,
+            Integer appealDays,
+            List<edu.hcmute.peergradehub.dto.response.course.LessonMaterialResponse> materials
     ) {}
 }
