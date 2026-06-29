@@ -96,7 +96,11 @@ function CourseWorkspacePage() {
       setLoading(true)
       setError(null)
       const response = await getCourseWorkspace(courseId, token)
-      const data = response.data || response
+      const data = response?.data ?? response
+
+      if (!data?.course) {
+        throw new Error('Course workspace data is incomplete. Please refresh and try again.')
+      }
       setWorkspace(data)
       setEditCourseData({
         courseName: data?.course?.courseName || '',
@@ -213,7 +217,7 @@ function CourseWorkspacePage() {
     try {
 
       await createLessonMaterial(courseId, lessonId, requestPayload, token)
-      
+
       setMaterialTitle('')
       setMaterialUrl('')
       setMaterialLabel('')
@@ -396,8 +400,8 @@ function CourseWorkspacePage() {
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {workspace.course.courseStatus === 'ACTIVE' ? (
-                    <button 
-                      className="logout-button" 
+                    <button
+                      className="logout-button"
                       onClick={handleArchiveCourse}
                       disabled={isStatusChanging}
                       style={{ background: 'var(--neutral-text)', color: '#fff', borderColor: 'var(--neutral-text)' }}
@@ -405,8 +409,8 @@ function CourseWorkspacePage() {
                       {isStatusChanging ? <Loader2 size={16} className="button-spinner" /> : <Archive size={16} />} Archive
                     </button>
                   ) : (
-                    <button 
-                      className="primary-button" 
+                    <button
+                      className="primary-button"
                       onClick={handleUnarchiveCourse}
                       disabled={isStatusChanging}
                     >
@@ -414,8 +418,8 @@ function CourseWorkspacePage() {
                     </button>
                   )}
                   {workspace.course.courseStatus === 'ACTIVE' && (
-                    <button 
-                      className="icon-button" 
+                    <button
+                      className="icon-button"
                       onClick={() => setIsEditingCourse(!isEditingCourse)}
                       title="Edit Course"
                     >
@@ -575,8 +579,8 @@ function CourseWorkspacePage() {
                             >
                               <Edit2 size={14} />
                             </button>
-                            <button 
-                              className="icon-button" 
+                            <button
+                              className="icon-button"
                               style={{ color: 'var(--danger)' }}
                               onClick={() => handleDeleteLesson(lesson.id)}
                               disabled={deletingLessonId === lesson.id}
@@ -584,8 +588,8 @@ function CourseWorkspacePage() {
                             >
                               {deletingLessonId === lesson.id ? <Loader2 size={14} className="button-spinner" /> : <Trash2 size={14} />}
                             </button>
-                            <button 
-                              className="logout-button" 
+                            <button
+                              className="logout-button"
                               style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
                               onClick={() => {
                                 setAddingMaterialForLesson(addingMaterialForLesson === lesson.id ? null : lesson.id)
@@ -607,7 +611,7 @@ function CourseWorkspacePage() {
                               <span>{materialError}</span>
                             </div>
                           )}
-                          
+
                           <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
                               <input type="radio" name="materialType" value="LINK" checked={materialType === 'LINK'} onChange={() => setMaterialType('LINK')} />
@@ -735,7 +739,7 @@ function CourseWorkspacePage() {
                                   </form>
                                 ) : (
                                   <>
-                                    <div style={{ 
+                                    <div style={{
                                       width: '36px', height: '36px', borderRadius: '8px', display: 'grid', placeItems: 'center', flexShrink: 0,
                                       color: material.materialType === 'LINK' ? 'var(--blue)' : 'var(--purple)',
                                       background: material.materialType === 'LINK' ? 'var(--blue-soft)' : 'var(--purple-soft)'
@@ -759,7 +763,7 @@ function CourseWorkspacePage() {
                                     </div>
                                     {workspace.course.courseStatus === 'ACTIVE' && (
                                       <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
-                                        <button 
+                                        <button
                                           className="icon-button"
                                           onClick={() => {
                                             setEditingMaterialId(material.id)
@@ -780,8 +784,8 @@ function CourseWorkspacePage() {
                                         >
                                           <Edit2 size={16} />
                                         </button>
-                                        <button 
-                                          className="icon-button" 
+                                        <button
+                                          className="icon-button"
                                           style={{ color: 'var(--danger)' }}
                                           onClick={() => handleDeleteMaterial(lesson.id, material.id)}
                                           disabled={deletingMaterialId === material.id}
@@ -821,15 +825,15 @@ function CourseWorkspacePage() {
                 </div>
               </div>
               <div style={{ marginTop: '20px', display: 'grid', gap: '12px' }}>
-                <button 
-                  className="logout-button" 
+                <button
+                  className="logout-button"
                   style={{ width: '100%', justifyContent: 'flex-start', minHeight: '44px' }}
                   onClick={() => setIsEditingCourse(true)}
                 >
                   <Edit2 size={16} /> Edit Course Details
                 </button>
-                <button 
-                  className="logout-button" 
+                <button
+                  className="logout-button"
                   style={{ width: '100%', justifyContent: 'flex-start', minHeight: '44px' }}
                   onClick={() => navigate(`/lecturer/courses/${courseId}/groups`)}
                 >

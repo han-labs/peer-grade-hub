@@ -325,7 +325,7 @@ function MonitoringContextCard({ assignment, course, insights, isAttentionOpen, 
       </div>
 
       <p className="monitor-context-card__note">
-        Choose another course or assignment from the course workspace.
+        Use the course progress dashboard to choose another assignment.
       </p>
     </section>
   )
@@ -545,9 +545,9 @@ function MonitorProgressPage() {
         <AccessRestricted />
       ) : (
         <main className="monitor-main">
-          <button className="back-link" type="button" onClick={() => navigate('/dashboard')}>
+          <button className="back-link" type="button" onClick={() => navigate(`/lecturer/progress/courses/${courseId}`)}>
             <ArrowLeft size={17} aria-hidden="true" />
-            Dashboard
+            Course progress
           </button>
 
           {isLoading ? (
