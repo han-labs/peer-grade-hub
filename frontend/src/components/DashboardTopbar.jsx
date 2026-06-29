@@ -4,6 +4,7 @@ import {
   ClipboardCheck,
   FileText,
   Gauge,
+  Eye,
   GraduationCap,
   LayoutDashboard,
   LogOut,
@@ -112,30 +113,43 @@ const ROLE_NAV_GROUPS = {
     },
   ],
   STUDENT: [
-    {
-      title: 'Learning',
-      items: [
-        {
-          label: 'Overview',
-          to: '/student',
-          icon: LayoutDashboard,
-          status: 'Available',
-          activePaths: ['/dashboard', '/student', '/student/dashboard'],
-        },
-        { label: 'Join Course / Group', icon: UsersRound, status: 'Soon' },
-        { label: 'Submit Assignment', icon: FileText, status: 'Soon' },
-        {
-          label: 'Submit Peer Review',
-          to: '/peer-reviews/tasks/1',
-          icon: ClipboardCheck,
-          status: 'Sample',
-          activeLabels: ['Submit Peer Review'],
-          activeMatcher: (pathname) => pathname.includes('/peer-reviews/tasks'),
-        },
-        { label: 'View Results', icon: Gauge, status: 'Soon' },
-      ],
-    },
-  ],
+  {
+    title: 'Learning',
+    items: [
+      {
+        label: 'Overview',
+        to: '/student',
+        icon: LayoutDashboard,
+        status: 'Available',
+        activePaths: ['/dashboard', '/student', '/student/dashboard'],
+      },
+      {
+        label: 'My Courses',
+        to: '/student/courses',
+        icon: BookOpen,
+        status: 'Available',
+        activeLabels: ['My Courses'],
+      },
+      {
+        label: 'View Results',
+        to: '/student/courses',  
+        icon: Eye,
+        status: 'Available',
+        activeMatcher: (pathname) => pathname.includes('/results') || pathname.includes('/student/courses'),
+      },
+      {
+        label: 'Submit Peer Review',
+        to: '/peer-reviews/tasks/1',
+        icon: ClipboardCheck,
+        status: 'Sample',
+        activeLabels: ['Submit Peer Review'],
+        activeMatcher: (pathname) => pathname.includes('/peer-reviews/tasks'),
+      },
+      { label: 'Join Course / Group', icon: UsersRound, status: 'Soon' },
+      { label: 'Submit Assignment', icon: FileText, status: 'Soon' },
+    ],
+  },
+],
 }
 
 function getInitials(fullName) {

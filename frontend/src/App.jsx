@@ -14,6 +14,10 @@ import LecturerCoursesPage from './pages/LecturerCoursesPage.jsx'
 import CourseLessonsPage from './pages/CourseLessonsPage.jsx'
 import LessonAssignmentsPage from './pages/LessonAssignmentsPage.jsx'
 import PeerReviewPage from './pages/PeerReviewPage.jsx'
+import ViewResultsPage from './pages/result/ViewResultsPage';
+import StudentCoursesPage from './pages/student/StudentCoursesPage';
+import StudentCourseDetailPage from './pages/student/StudentCourseDetailPage';
+import StudentAssignmentsPage from './pages/student/StudentAssignmentsPage';
 
 function PublicOnlyRoute({ children }) {
   const { user, isInitializing } = useAuth()
@@ -136,7 +140,42 @@ function App() {
           </ProtectedRoute>
         }
       />
+      {/* UC-10: Student Navigation */}
+      <Route
+        path="/student/courses"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <StudentCoursesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/courses/:courseId/lessons"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <StudentCourseDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/courses/:courseId/lessons/:lessonId/assignments"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <StudentAssignmentsPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* UC-10: View Results */}
+      <Route
+        path="/student/assignments/:assignmentId/results"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <ViewResultsPage />
+          </ProtectedRoute>
+        }
+      />
 
+      
       {/* UC-08: Monitor Progress */}
       <Route
         path="/lecturer/courses/:courseId/assignments/:assignmentId/progress"
