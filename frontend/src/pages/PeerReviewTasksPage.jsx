@@ -5,6 +5,7 @@ import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 import PeerReviewTaskCard from '../components/peerreview/PeerReviewTaskCard.jsx'
 import { ClipboardCheck, Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
+import '../progress.css'
 
 export default function PeerReviewTasksPage() {
   const { user, token } = useAuth()
@@ -85,7 +86,7 @@ export default function PeerReviewTasksPage() {
 
         <section className="welcome-band" style={{ marginBottom: '32px' }}>
           <div>
-            <p className="dashboard-date">Task queue</p>
+            <p className="eyebrow">PEER REVIEW TASKS</p>
             <h1 style={{ margin: '8px 0 4px', fontSize: '1.75rem', fontWeight: '800' }}>Peer Review Tasks</h1>
             <p style={{ margin: 0, color: 'var(--neutral-text)', fontSize: '0.94rem' }}>
               Manage your assigned peer review submissions.
@@ -99,18 +100,6 @@ export default function PeerReviewTasksPage() {
             type="button"
             className={`monitor-filter-chip ${filter === 'ALL' ? 'monitor-filter-chip--active' : ''}`}
             onClick={() => setFilter('ALL')}
-            style={{
-              minHeight: '36px',
-              padding: '0 18px',
-              borderRadius: '9px',
-              border: '1px solid var(--border-subtle)',
-              fontSize: '0.78rem',
-              fontWeight: '650',
-              cursor: 'pointer',
-              background: filter === 'ALL' ? 'var(--ink)' : '#ffffff',
-              color: filter === 'ALL' ? '#ffffff' : 'var(--neutral-text)',
-              transition: 'all 0.2s',
-            }}
           >
             All
           </button>
@@ -118,18 +107,6 @@ export default function PeerReviewTasksPage() {
             type="button"
             className={`monitor-filter-chip ${filter === 'PENDING' ? 'monitor-filter-chip--active' : ''}`}
             onClick={() => setFilter('PENDING')}
-            style={{
-              minHeight: '36px',
-              padding: '0 18px',
-              borderRadius: '9px',
-              border: '1px solid var(--border-subtle)',
-              fontSize: '0.78rem',
-              fontWeight: '650',
-              cursor: 'pointer',
-              background: filter === 'PENDING' ? 'var(--ink)' : '#ffffff',
-              color: filter === 'PENDING' ? '#ffffff' : 'var(--neutral-text)',
-              transition: 'all 0.2s',
-            }}
           >
             Pending
           </button>
@@ -137,18 +114,6 @@ export default function PeerReviewTasksPage() {
             type="button"
             className={`monitor-filter-chip ${filter === 'SUBMITTED' ? 'monitor-filter-chip--active' : ''}`}
             onClick={() => setFilter('SUBMITTED')}
-            style={{
-              minHeight: '36px',
-              padding: '0 18px',
-              borderRadius: '9px',
-              border: '1px solid var(--border-subtle)',
-              fontSize: '0.78rem',
-              fontWeight: '650',
-              cursor: 'pointer',
-              background: filter === 'SUBMITTED' ? 'var(--ink)' : '#ffffff',
-              color: filter === 'SUBMITTED' ? '#ffffff' : 'var(--neutral-text)',
-              transition: 'all 0.2s',
-            }}
           >
             Submitted
           </button>
