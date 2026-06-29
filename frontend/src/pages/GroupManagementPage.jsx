@@ -305,13 +305,22 @@ function GroupManagementPage() {
       <DashboardTopbar icon={Users} label="Group Management" />
 
       <main className="dashboard-main">
-        <button
-          className="logout-button"
-          onClick={() => navigate(`/lecturer/courses/${courseId}/workspace`)}
-          style={{ marginBottom: '24px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-        >
-          <ArrowLeft size={16} /> Back to Workspace
-        </button>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+          <button
+            className="logout-button"
+            onClick={() => navigate('/lecturer/manage-groups')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <ArrowLeft size={16} /> Back to Group Courses
+          </button>
+          <button
+            className="logout-button"
+            onClick={() => navigate(`/lecturer/courses/${courseId}/workspace`)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <ArrowLeft size={16} /> Back to Workspace
+          </button>
+        </div>
 
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--neutral-text)' }}>

@@ -29,6 +29,17 @@ public class LessonController {
                 .body(ApiResponse.success("Lesson created successfully.", response));
     }
 
+    @PutMapping("/courses/{courseId}/lessons/{lessonId}")
+    public ApiResponse<LessonResponse> updateLesson(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId,
+            @RequestBody CreateLessonRequest request,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        LessonResponse response = lessonService.updateLesson(courseId, lessonId, request, currentUserId(principal));
+        return ApiResponse.success("Lesson updated successfully.", response);
+    }
+
     private Long currentUserId(CustomUserPrincipal principal) {
         if (principal == null) {
             throw new UnauthorizedException();

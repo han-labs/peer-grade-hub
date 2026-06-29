@@ -137,6 +137,89 @@ public class LessonMaterialServiceImpl implements LessonMaterialService {
 
     @Override
     @Transactional
+    public LessonMaterialResponse updateLessonMaterial(Long courseId, Long lessonId, Long materialId, CreateLessonMaterialRequest request, Long actorId) {
+        User actor = userDao.findById(actorId)
+                .orElseThrow(() -> new NotFoundException("Actor not found."));
+
+        if (actor.getUserRole() != UserRole.LECTURER || actor.getStatus() != UserStatus.ACTIVE) {
+            throw new ForbiddenException("You are not authorized to perform this action.");
+        }
+
+        Course course = courseDao.findByIdAndLecturerId(courseId, actorId)
+                .orElseThrow(() -> new ForbiddenException("You are not authorized to manage this course."));
+
+        if (course.getCourseStatus() != CourseStatus.ACTIVE) {
+            throw new BadRequestException("This course is archived and cannot be modified.");
+        }
+
+        LessonMaterial material = lessonMaterialDao.findById(materialId)
+                .orElseThrow(() -> new NotFoundException("Lesson material not found."));
+
+        if (material.getLesson() == null || !material.getLesson().getId().equals(lessonId) 
+                || !material.getLesson().getCourse().getId().equals(courseId)) {
+            throw new ForbiddenException("You are not authorized to update this material.");
+        }
+
+        if (!StringUtils.hasText(request.title())) {
+            throw new BadRequestException("Material could not be saved. Please try again.");
+        }
+
+        if (!"FILE".equals(request.materialType()) && !"LINK".equals(request.materialType())) {
+            throw new BadRequestException("Material could not be saved. Please try again.");
+        }
+
+        try {
+            if ("FILE".equals(request.materialType())) {
+                if (!(material instanceof FileAttachment fileAttachment)) {
+                    throw new BadRequestException("Cannot change material type.");
+                }
+
+                if (request.fileSizeMb() == null || request.fileSizeMb() > MAX_FILE_SIZE_MB || request.fileSizeMb() <= 0) {
+                    throw new BadRequestException("File size exceeds the maximum limit. Please select a different file or use a URL link.");
+                }
+
+                if (request.fileType() == null || !ALLOWED_FILE_TYPES.contains(request.fileType())) {
+                    throw new BadRequestException("Invalid file type. Please select an allowed file type.");
+                }
+
+                if (!StringUtils.hasText(request.fileName()) || !StringUtils.hasText(request.filePath())) {
+                    throw new BadRequestException("Material could not be saved. Please try again.");
+                }
+
+                fileAttachment.setTitle(request.title());
+                fileAttachment.setFileName(request.fileName());
+                fileAttachment.setFilePath(request.filePath());
+                fileAttachment.setFileSizeMb(request.fileSizeMb());
+                fileAttachment.setFileType(request.fileType());
+
+                FileAttachment saved = lessonMaterialDao.save(fileAttachment);
+                return courseMapper.toMaterialResponse(saved);
+
+            } else { // LINK
+                if (!(material instanceof LinkAttachment linkAttachment)) {
+                    throw new BadRequestException("Cannot change material type.");
+                }
+
+                if (!StringUtils.hasText(request.url()) || !isValidUrl(request.url())) {
+                    throw new BadRequestException("Invalid URL. Please enter a valid link.");
+                }
+
+                linkAttachment.setTitle(request.title());
+                linkAttachment.setUrl(request.url());
+                linkAttachment.setLabel(request.label());
+
+                LinkAttachment saved = lessonMaterialDao.save(linkAttachment);
+                return courseMapper.toMaterialResponse(saved);
+            }
+        } catch (BadRequestException | ForbiddenException | NotFoundException | ConflictException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Material could not be saved. Please try again.");
+        }
+    }
+
+    @Override
+    @Transactional
     public void deleteLessonMaterial(Long courseId, Long lessonId, Long materialId, Long actorId) {
         User actor = userDao.findById(actorId)
                 .orElseThrow(() -> new NotFoundException("Actor not found."));

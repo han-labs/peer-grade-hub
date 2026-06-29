@@ -96,6 +96,19 @@ export const createLesson = async (courseId, request, token) => {
 };
 
 /**
+ * Update a lesson
+ * PUT /api/courses/{courseId}/lessons/{lessonId}
+ */
+export const updateLesson = async (courseId, lessonId, request, token) => {
+    const response = await apiRequest(`/courses/${courseId}/lessons/${lessonId}`, {
+        method: 'PUT',
+        body: JSON.stringify(request),
+        token,
+    });
+    return response;
+};
+
+/**
  * Create a lesson material
  * POST /api/courses/{courseId}/lessons/{lessonId}/materials
  */
@@ -104,6 +117,22 @@ export const createLessonMaterial = async (courseId, lessonId, request, token) =
         `/courses/${courseId}/lessons/${lessonId}/materials`,
         {
             method: 'POST',
+            body: JSON.stringify(request),
+            token,
+        }
+    );
+    return response;
+};
+
+/**
+ * Update a lesson material
+ * PUT /api/courses/{courseId}/lessons/{lessonId}/materials/{materialId}
+ */
+export const updateLessonMaterial = async (courseId, lessonId, materialId, request, token) => {
+    const response = await apiRequest(
+        `/courses/${courseId}/lessons/${lessonId}/materials/${materialId}`,
+        {
+            method: 'PUT',
             body: JSON.stringify(request),
             token,
         }
