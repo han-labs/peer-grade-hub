@@ -126,11 +126,11 @@ const ROLE_NAV_GROUPS = {
         { label: 'Submit Assignment', icon: FileText, status: 'Soon' },
         {
           label: 'Submit Peer Review',
-          to: '/peer-reviews/tasks/1',
+          to: '/peer-review-tasks',
           icon: ClipboardCheck,
           status: 'Available',
           activeLabels: ['Submit Peer Review'],
-          activeMatcher: (pathname) => pathname.includes('/peer-reviews/tasks'),
+          activeMatcher: (pathname) => pathname.startsWith('/peer-review-tasks'),
         },
         { label: 'View Results', icon: Gauge, status: 'Soon' },
       ],

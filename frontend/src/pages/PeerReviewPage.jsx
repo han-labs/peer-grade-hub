@@ -113,12 +113,13 @@ function PeerReviewPage() {
     scoreNum >= 0 &&
     scoreNum <= 100
 
-  const isCommentValid = comment.trim().length > 0 && comment.length <= 1000
-  const isFormValid = isScoreValid && isCommentValid
+  const isExpired = task?.dueAt ? new Date(task.dueAt) < new Date() : false
+  const isCommentValid = comment.trim().length >= 10 && comment.length <= 1000
+  const isFormValid = isScoreValid && isCommentValid && !isExpired
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (!isFormValid || isSubmitting) return
+    if (!isFormValid || isSubmitting || isExpired) return
 
     setIsSubmitting(true)
     setFeedback(null)
@@ -171,7 +172,7 @@ function PeerReviewPage() {
         <AccessRestricted />
       ) : (
         <main className="peer-review-main">
-          <button className="back-link" type="button" onClick={() => navigate('/peer-reviews')}>
+          <button className="back-link" type="button" onClick={() => navigate('/peer-review-tasks')}>
             <ArrowLeft size={17} aria-hidden="true" />
             Back to peer reviews
           </button>
@@ -439,6 +440,13 @@ function PeerReviewPage() {
                       </div>
                   </div>
 
+                  {isExpired && (
+                    <div className="form-alert" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                      <AlertCircle size={18} />
+                      <span>The review deadline has passed. Submission and editing are locked.</span>
+                    </div>
+                  )}
+
                   <form
                     onSubmit={handleSubmit}
                     style={{ marginTop: '24px', display: 'grid', gap: '20px' }}
@@ -450,7 +458,7 @@ function PeerReviewPage() {
                         min="0"
                         max="100"
                         required
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isExpired}
                         value={score}
                         onChange={(e) => setScore(e.target.value)}
                         placeholder="Enter integer score"
@@ -460,17 +468,17 @@ function PeerReviewPage() {
                           padding: '0 12px',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '10px',
-                          background: isSubmitting ? '#f5f5f5' : '#ffffff',
+                          background: (isSubmitting || isExpired) ? '#f5f5f5' : '#ffffff',
                         }}
                       />
                     </label>
 
                     <label className="form-field">
-                      <span>Feedback Comments</span>
+                      <span>Feedback Comments (minimum 10 characters)</span>
                       <textarea
                         required
                         maxLength={1000}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isExpired}
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="Explain your evaluation..."
@@ -480,7 +488,7 @@ function PeerReviewPage() {
                           padding: '12px',
                           border: '1px solid var(--border-subtle)',
                           borderRadius: '10px',
-                          background: isSubmitting ? '#f5f5f5' : '#ffffff',
+                          background: (isSubmitting || isExpired) ? '#f5f5f5' : '#ffffff',
                           resize: 'vertical',
                           fontFamily: 'inherit',
                           fontSize: '0.84rem',
@@ -489,20 +497,27 @@ function PeerReviewPage() {
                       <div
                         style={{
                           display: 'flex',
-                          justifyContent: 'flex-end',
+                          justifyContent: 'space-between',
                           fontSize: '0.7rem',
                           color: 'var(--neutral-text)',
                           marginTop: '4px',
                         }}
                       >
-                        {comment.length} / 1000 characters
+                        <div>
+                          {comment.trim().length > 0 && comment.trim().length < 10 && (
+                            <span style={{ color: 'var(--negative-text)' }}>Comment must be at least 10 characters.</span>
+                          )}
+                        </div>
+                        <div>
+                          {comment.length} / 1000 characters
+                        </div>
                       </div>
                     </label>
 
                     <button
                       type="submit"
                       className="primary-button"
-                      disabled={isSubmitting || !isFormValid}
+                      disabled={isSubmitting || !isFormValid || isExpired}
                       style={{ marginTop: '8px' }}
                     >
                       {isSubmitting ? (

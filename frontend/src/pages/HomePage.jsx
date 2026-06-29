@@ -35,7 +35,7 @@ const ROLE_CONTENT = {
     ],
     focus: [
       { title: 'Joined courses', detail: 'Course enrollment summary', icon: BookOpen, path: '/student/courses' },
-      { title: 'Peer review tasks', detail: 'Assigned review queue', icon: UsersRound, path: '/peer-reviews' },
+      { title: 'Peer review tasks', detail: 'Assigned review queue', icon: UsersRound, path: '/peer-review-tasks' },
     ],
     sections: []
   },
@@ -391,7 +391,7 @@ function StudentWorkboard({ dashboardData, onOpen }) {
       <WorkboardCard
         action={assignedReviews > 0 ? 'Open review task' : null}
         meta="Peer review"
-        onClick={() => onOpen('/peer-reviews')}
+        onClick={() => onOpen('/peer-review-tasks')}
         title="Peer Reviews"
       >
         <div className="workboard-metric-row">

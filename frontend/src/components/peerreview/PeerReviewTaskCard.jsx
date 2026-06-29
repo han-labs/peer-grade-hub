@@ -124,7 +124,7 @@ export default function PeerReviewTaskCard({ task }) {
         {/* Right-aligned button */}
         <button
           type="button"
-          onClick={() => navigate(`/peer-reviews/tasks/${id}`)}
+          onClick={() => navigate(`/peer-review-tasks/${id}`)}
           className="primary-button"
           style={{
             minHeight: '36px',
@@ -143,7 +143,7 @@ export default function PeerReviewTaskCard({ task }) {
             transition: 'background 0.2s',
           }}
         >
-          Submit Peer Review
+          {submitted ? 'Edit Review' : 'Submit Review'}
           <ArrowRight size={14} />
         </button>
       </div>

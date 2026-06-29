@@ -219,7 +219,7 @@ function App() {
 
       {/* UC-07: Submit Peer Review */}
       <Route
-        path="/peer-reviews"
+        path="/peer-review-tasks"
         element={
           <ProtectedRoute>
             <PeerReviewTasksPage />
@@ -228,7 +228,7 @@ function App() {
       />
 
       <Route
-        path="/peer-reviews/tasks/:id"
+        path="/peer-review-tasks/:id"
         element={
           <ProtectedRoute>
             <PeerReviewPage />
