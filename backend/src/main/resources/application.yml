@@ -1,4 +1,4 @@
-﻿server:
+server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api
@@ -24,6 +24,7 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    validate-on-migrate: false
 
 app:
   jwt:
