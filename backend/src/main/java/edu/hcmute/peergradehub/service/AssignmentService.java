@@ -1,5 +1,5 @@
 package edu.hcmute.peergradehub.service;
-
+import edu.hcmute.peergradehub.dto.response.lesson.LessonAssignmentsResponse;
 import edu.hcmute.peergradehub.entity.Assignment;
 import edu.hcmute.peergradehub.entity.Lesson;
 
@@ -13,4 +13,12 @@ public interface AssignmentService {
                                 LocalDateTime submissionDeadline, LocalDateTime reviewDeadline);
 
     Assignment setShowcaseMode(Assignment assignment, boolean showcaseMode);
+    // ===== NEW FOR UC-10 STUDENT NAVIGATION =====
+    
+    /**
+     * Get all assignments of a lesson for a student.
+     * Student must be enrolled in the course.
+     * Includes isPublished status for each assignment.
+     */
+    LessonAssignmentsResponse getStudentAssignments(Long lessonId, Long studentId);
 }

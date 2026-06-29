@@ -17,4 +17,10 @@ public interface CourseService {
     CourseWorkspaceResponse getCourseWorkspace(Long courseId, Long actorId);
     CourseWorkspaceResponse updateCourse(Long courseId, UpdateCourseRequest request, Long actorId);
     List<CourseSummaryResponse> getActiveCourses(Long actorId);
+    // ===== NEW FOR UC-10 STUDENT NAVIGATION =====
+    
+    /**
+     * Get all ACTIVE courses that a student has joined.
+     */
+    List<CourseSummaryResponse> getStudentActiveCourses(Long studentId);
 }

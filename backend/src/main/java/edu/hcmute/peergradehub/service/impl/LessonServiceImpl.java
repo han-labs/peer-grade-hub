@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Collections;
 import edu.hcmute.peergradehub.dto.response.lesson.LessonAssignmentsResponse;
 import edu.hcmute.peergradehub.dao.AssignmentDao;
+import java.util.stream.Collectors;
+import edu.hcmute.peergradehub.dao.CourseEnrollmentDao;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class LessonServiceImpl implements LessonService {
     private final CourseMapper courseMapper;
     private final AssignmentDao assignmentDao; 
     private final LessonMapper lessonMapper;
+    private final CourseEnrollmentDao courseEnrollmentDao;
     @Override
     @Transactional
     public Lesson createLesson(String title, Course course) {
@@ -103,5 +106,41 @@ public class LessonServiceImpl implements LessonService {
         // 5. Map sang response
         return lessonMapper.toLessonAssignmentsResponse(lesson, course, assignments);
     }
-
+    @Override
+    public List<LessonResponse> getStudentLessons(Long courseId, Long studentId) {
+        // 1. Kiểm tra student tồn tại
+        User student = userDao.findById(studentId)
+                .orElseThrow(() -> new NotFoundException("Student not found."));
+        
+        if (student.getUserRole() != UserRole.STUDENT || student.getStatus() != UserStatus.ACTIVE) {
+            throw new ForbiddenException("Only active students can view lessons.");
+        }
+        
+        // 2. Kiểm tra student đã join course này chưa
+        // Cần inject CourseEnrollmentDao vào class
+        boolean isEnrolled = courseEnrollmentDao.existsByCourseIdAndStudentId(courseId, studentId);
+        if (!isEnrolled) {
+            throw new ForbiddenException("You are not enrolled in this course.");
+        }
+        
+        // 3. Kiểm tra course tồn tại và ACTIVE
+        Course course = courseDao.findById(courseId)
+                .orElseThrow(() -> new NotFoundException("Course not found."));
+        
+        if (course.getCourseStatus() != CourseStatus.ACTIVE) {
+            throw new BadRequestException("This course is not active.");
+        }
+        
+        // 4. Lấy lessons của course
+        List<Lesson> lessons = lessonRepository.findByCourseId(courseId);
+        
+        // 5. Map sang response (không có materials cho student view)
+        return lessons.stream()
+                .map(lesson -> new LessonResponse(
+                        lesson.getId(),
+                        lesson.getTitle(),
+                        Collections.emptyList() // Student không cần materials
+                ))
+                .collect(Collectors.toList());
+    }
 }

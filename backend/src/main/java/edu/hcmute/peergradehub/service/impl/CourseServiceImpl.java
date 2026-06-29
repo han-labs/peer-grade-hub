@@ -179,5 +179,19 @@ public class CourseServiceImpl implements CourseService {
 
         return courseMapper.toWorkspace(savedCourse, lessons, materialsByLessonId);
     }
+    @Override
+    public List<CourseSummaryResponse> getStudentActiveCourses(Long studentId) {
+        // Kiểm tra student tồn tại
+        User student = userDao.findById(studentId)
+                .orElseThrow(() -> new NotFoundException("Student not found."));
+        
+        if (student.getUserRole() != UserRole.STUDENT || student.getStatus() != UserStatus.ACTIVE) {
+            throw new ForbiddenException("Only active students can view their courses.");
+        }
+        List<Course> courses = courseRepository.findActiveCoursesByStudentId(studentId);
+        return courses.stream()
+                .map(courseMapper::toCourseSummary)
+                .collect(Collectors.toList());
+    }
 
 }
