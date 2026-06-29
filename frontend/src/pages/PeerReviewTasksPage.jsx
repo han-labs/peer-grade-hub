@@ -86,8 +86,8 @@ export default function PeerReviewTasksPage() {
 
         <section className="welcome-band" style={{ marginBottom: '32px' }}>
           <div>
-            <p className="eyebrow">PEER REVIEW TASKS</p>
-            <h1 style={{ margin: '8px 0 4px', fontSize: '1.75rem', fontWeight: '800' }}>Peer Review Tasks</h1>
+            <p className="eyebrow" style={{ color: 'var(--neutral-text)' }}>PEER REVIEW TASKS</p>
+            <h1 style={{ margin: '8px 0 4px', fontWeight: '800' }}>Peer Review Tasks</h1>
             <p style={{ margin: 0, color: 'var(--neutral-text)', fontSize: '0.94rem' }}>
               Manage your assigned peer review submissions.
             </p>

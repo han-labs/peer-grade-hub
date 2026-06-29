@@ -207,7 +207,7 @@ function PeerReviewPage() {
             <>
               <section className="peer-assignment-header">
                 <div>
-                  <p className="eyebrow">Peer Review Workspace</p>
+                  <p className="eyebrow" style={{ color: 'var(--neutral-text)' }}>PEER REVIEW WORKSPACE</p>
                   <h1>Submit Peer Review</h1>
                   <p className="peer-assignment-header__summary">
                     Evaluate the target group's submission fairly. Provide constructiveness in your comments.
