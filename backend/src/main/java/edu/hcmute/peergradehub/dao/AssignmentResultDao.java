@@ -17,6 +17,7 @@ import edu.hcmute.peergradehub.entity.AssignmentResult;
 public interface AssignmentResultDao extends JpaRepository<AssignmentResult, Long> {
     Optional<AssignmentResult> findByAssignmentIdAndGroupId(Long assignmentId, Long groupId);
     boolean existsByAssignmentIdAndGroupId(Long assignmentId, Long groupId);
+    boolean existsByGroupId(Long groupId);
 
      // ===== NEW FOR UC-09 =====
 

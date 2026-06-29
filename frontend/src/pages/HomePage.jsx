@@ -25,7 +25,7 @@ const ROLE_CONTENT = {
     description: 'Keep courses, group work, peer reviews, and published results organized.',
     stats: [
       { label: 'Courses', value: '-', hint: 'Join course support is coming next', icon: BookOpen },
-      { label: 'Peer reviews', value: '1', hint: 'Sample review task available', icon: ClipboardCheck },
+      { label: 'Peer reviews', value: '1', hint: 'Review task available', icon: ClipboardCheck },
       { label: 'Account status', value: 'Active', hint: 'Ready to participate', icon: CheckCircle2 },
     ],
     sections: [
@@ -37,7 +37,7 @@ const ROLE_CONTENT = {
           {
             title: 'Submit Peer Review',
             description: 'Open your assigned review task, inspect the submission, then submit score and feedback.',
-            status: 'Sample',
+            status: 'Available',
             meta: 'Peer review task',
             action: 'Submit Review',
             path: '/peer-reviews/tasks/1',
@@ -109,8 +109,8 @@ const ROLE_CONTENT = {
             description: 'Generate groups, adjust formation deadlines, and review group membership.',
             status: 'Available',
             meta: 'Course workspace',
-            action: 'Choose Course',
-            path: '/lecturer/courses',
+            action: 'Manage Groups',
+            path: '/lecturer/manage-groups',
             icon: UsersRound,
             tone: 'yellow',
           },
@@ -134,7 +134,7 @@ const ROLE_CONTENT = {
           {
             title: 'Assign Peer Review',
             description: 'Create reviewer-to-target group pairs and check review coverage.',
-            status: 'Sample',
+            status: 'Available',
             meta: 'Peer review assignment',
             action: 'Assign Peer Review',
             path: '/lecturer/assignments/1/peer-review-assignments',
@@ -144,10 +144,10 @@ const ROLE_CONTENT = {
           {
             title: 'Monitor Progress',
             description: 'Track submissions, peer review completion, and evidence by group.',
-            status: 'Sample',
-            meta: 'Progress dashboard',
+            status: 'Available',
+            meta: 'Course and assignment progress',
             action: 'Monitor Progress',
-            path: '/lecturer/courses/2/assignments/2/progress',
+            path: '/lecturer/progress',
             icon: Activity,
             tone: 'blue',
           },

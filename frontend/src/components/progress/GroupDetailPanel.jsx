@@ -36,7 +36,32 @@ function EmptyEvidence({ title, description }) {
   )
 }
 
+function getDetailAttentionItems(detail) {
+  const items = []
+
+  if (!detail.submission) {
+    items.push('No submission')
+  } else if (detail.submission.status === 'LATE') {
+    items.push('Late submission')
+  } else if (['DRAFT', 'RETURNED'].includes(detail.submission.status)) {
+    items.push('Submission incomplete')
+  }
+
+  const incompleteReviews = detail.outgoingReviews.filter((review) => review.reviewStatus !== 'SUBMITTED')
+  if (incompleteReviews.length > 0) {
+    items.push(`${incompleteReviews.length} unfinished review${incompleteReviews.length === 1 ? '' : 's'}`)
+  }
+
+  if (detail.receivedReviewEvidence.length === 0) {
+    items.push('No received evidence')
+  }
+
+  return items
+}
+
 function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetry }) {
+  const attentionItems = detail ? getDetailAttentionItems(detail) : []
+
   return (
     <div className="monitor-drawer-backdrop" role="presentation">
       <aside
@@ -74,6 +99,47 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
             </div>
           ) : detail ? (
             <>
+              <section className="detail-overview-card" aria-labelledby="detail-overview-heading">
+                <div>
+                  <p className="eyebrow">Overview</p>
+                  <h3 id="detail-overview-heading">{detail.group.name}</h3>
+                  <p>
+                    {attentionItems.length > 0
+                      ? 'Review these signals before making grading decisions.'
+                      : 'This group has no immediate monitoring alerts.'}
+                  </p>
+                </div>
+                <div className="detail-overview-card__metrics">
+                  <span>
+                    <strong>{detail.submission ? humanize(detail.submission.status) : 'none'}</strong>
+                    Submission
+                  </span>
+                  <span>
+                    <strong>{detail.outgoingReviews.length}</strong>
+                    Assigned reviews
+                  </span>
+                  <span>
+                    <strong>{detail.receivedReviewEvidence.length}</strong>
+                    Received evidence
+                  </span>
+                </div>
+                <div className="detail-overview-card__signals">
+                  {attentionItems.length === 0 ? (
+                    <span className="detail-signal detail-signal--clear">
+                      <CheckCircle2 size={15} aria-hidden="true" />
+                      On track
+                    </span>
+                  ) : (
+                    attentionItems.map((item) => (
+                      <span className="detail-signal" key={item}>
+                        <AlertCircle size={15} aria-hidden="true" />
+                        {item}
+                      </span>
+                    ))
+                  )}
+                </div>
+              </section>
+
               <section className="detail-section" aria-labelledby="submission-detail-heading">
                 <div className="detail-section__heading">
                   <span><Send size={18} aria-hidden="true" /></span>
@@ -114,15 +180,15 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
                 <div className="detail-section__heading">
                   <span><ShieldCheck size={18} aria-hidden="true" /></span>
                   <div>
-                    <p className="eyebrow">Review work</p>
-                    <h3 id="outgoing-reviews-heading">Outgoing reviews</h3>
+                    <p className="eyebrow">Assigned review work</p>
+                    <h3 id="outgoing-reviews-heading">Reviewer tasks</h3>
                   </div>
                   <span className="detail-count">{detail.outgoingReviews.length}</span>
                 </div>
 
                 {detail.outgoingReviews.length === 0 ? (
                   <EmptyEvidence
-                    title="No outgoing review tasks"
+                    title="No assigned review tasks"
                     description="This group has no review tasks for the selected assignment."
                   />
                 ) : (

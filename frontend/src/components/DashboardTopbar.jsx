@@ -69,10 +69,10 @@ const ROLE_NAV_GROUPS = {
         },
         {
           label: 'Manage Groups',
-          to: '/lecturer/courses',
+          to: '/lecturer/manage-groups',
           icon: UsersRound,
           status: 'Available',
-          activeLabels: ['Group Management'],
+          activeLabels: ['Group Management', 'Manage Groups'],
         },
         {
           label: 'Manage Assignments',
@@ -90,17 +90,17 @@ const ROLE_NAV_GROUPS = {
           label: 'Assign Peer Review',
           to: '/lecturer/assignments/1/peer-review-assignments',
           icon: ClipboardCheck,
-          status: 'Sample',
+          status: 'Available',
           activeLabels: ['Peer review assignments'],
           activeMatcher: (pathname) => pathname.includes('/peer-review-assignments'),
         },
         {
           label: 'Monitor Progress',
-          to: '/lecturer/courses/2/assignments/2/progress',
+          to: '/lecturer/progress',
           icon: BarChart3,
-          status: 'Sample',
-          activeLabels: ['Monitor progress'],
-          activeMatcher: (pathname) => pathname.includes('/progress'),
+          status: 'Available',
+          activeLabels: ['Monitor Progress', 'Monitor progress'],
+          activeMatcher: (pathname) => pathname === '/lecturer/progress' || pathname.includes('/progress'),
         },
         {
           label: 'Manage Final Grades',
@@ -129,19 +129,20 @@ const ROLE_NAV_GROUPS = {
         icon: BookOpen,
         status: 'Available',
         activeLabels: ['My Courses'],
+        activeMatcher: (pathname) => pathname.startsWith('/student/courses'),
       },
       {
         label: 'View Results',
-        to: '/student/courses',  
+        to: '/student/courses',
         icon: Eye,
         status: 'Available',
-        activeMatcher: (pathname) => pathname.includes('/results') || pathname.includes('/student/courses'),
+        activeMatcher: (pathname) => pathname.includes('/results'),
       },
       {
         label: 'Submit Peer Review',
         to: '/peer-reviews/tasks/1',
         icon: ClipboardCheck,
-        status: 'Sample',
+        status: 'Available',
         activeLabels: ['Submit Peer Review'],
         activeMatcher: (pathname) => pathname.includes('/peer-reviews/tasks'),
       },
@@ -150,6 +151,7 @@ const ROLE_NAV_GROUPS = {
     ],
   },
 ],
+
 }
 
 function getInitials(fullName) {

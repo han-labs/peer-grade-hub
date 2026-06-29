@@ -2,6 +2,9 @@ package edu.hcmute.peergradehub.service.impl;
 
 import edu.hcmute.peergradehub.dao.GroupMemberDao;
 import edu.hcmute.peergradehub.dao.StudentGroupDao;
+import edu.hcmute.peergradehub.dao.AssignmentSubmissionDao;
+import edu.hcmute.peergradehub.dao.AssignmentResultDao;
+import edu.hcmute.peergradehub.dao.PeerReviewAssignmentDao;
 import edu.hcmute.peergradehub.entity.Course;
 import edu.hcmute.peergradehub.entity.GroupMember;
 import edu.hcmute.peergradehub.entity.StudentGroup;
@@ -10,8 +13,10 @@ import edu.hcmute.peergradehub.enumeration.UserRole;
 import edu.hcmute.peergradehub.service.GroupService;
 import edu.hcmute.peergradehub.dao.CourseDao;
 import edu.hcmute.peergradehub.dao.UserDao;
+import edu.hcmute.peergradehub.dto.request.group.AddGroupsRequest;
 import edu.hcmute.peergradehub.dto.request.group.GenerateGroupsRequest;
 import edu.hcmute.peergradehub.dto.request.group.UpdateGroupDeadlineRequest;
+import edu.hcmute.peergradehub.dto.request.group.UpdateMaxGroupSizeRequest;
 import edu.hcmute.peergradehub.dto.response.group.GroupActionResponse;
 import edu.hcmute.peergradehub.dto.response.group.GroupManagementResponse;
 import edu.hcmute.peergradehub.enumeration.CourseStatus;
@@ -41,6 +46,9 @@ public class GroupServiceImpl implements GroupService {
     private final UserDao userDao;
     private final CourseDao courseDao;
     private final GroupMapper groupMapper;
+    private final AssignmentSubmissionDao assignmentSubmissionDao;
+    private final AssignmentResultDao assignmentResultDao;
+    private final PeerReviewAssignmentDao peerReviewAssignmentDao;
 
     @Override
     @Transactional
@@ -250,5 +258,114 @@ public class GroupServiceImpl implements GroupService {
         studentGroupRepository.saveAll(groups);
 
         return groupMapper.toActionResponse("Groups unlocked successfully.", buildManagementResponse(course));
+    }
+
+    @Override
+    @Transactional
+    public GroupActionResponse addGroups(Long courseId, AddGroupsRequest request, Long actorId) {
+        Course course = validateActorAndCourseForGroupManagement(courseId, actorId);
+        ensureCourseModifiable(course);
+
+        if (request.count() == null || request.count() < 1) {
+            throw new BadRequestException("Number of groups to add must be at least 1.");
+        }
+        if (request.maxMembers() == null || request.maxMembers() < 1) {
+            throw new BadRequestException("Max Group Size must be at least 1.");
+        }
+
+        List<StudentGroup> existingGroups = studentGroupRepository.findByCourseId(courseId);
+        if (!existingGroups.isEmpty() && existingGroups.get(0).getGroupStatus() == GroupStatus.LOCKED) {
+            throw new BadRequestException("Groups are locked. Please unlock groups before modifying group configuration.");
+        }
+
+        int maxGroupNumber = 0;
+        for (StudentGroup group : existingGroups) {
+            if (group.getGroupName().startsWith("Group ")) {
+                try {
+                    int num = Integer.parseInt(group.getGroupName().substring(6).trim());
+                    maxGroupNumber = Math.max(maxGroupNumber, num);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+
+        List<StudentGroup> newGroups = new ArrayList<>();
+        for (int i = 1; i <= request.count(); i++) {
+            maxGroupNumber++;
+            String groupName = "Group " + maxGroupNumber;
+            StudentGroup newGroup = StudentGroup.builder()
+                    .groupName(groupName)
+                    .maxMembers(request.maxMembers())
+                    .course(course)
+                    .groupStatus(GroupStatus.FORMING)
+                    .build();
+            newGroups.add(newGroup);
+        }
+        studentGroupRepository.saveAll(newGroups);
+
+        return groupMapper.toActionResponse("Groups added successfully.", buildManagementResponse(course));
+    }
+
+    @Override
+    @Transactional
+    public GroupActionResponse updateMaxGroupSize(Long courseId, UpdateMaxGroupSizeRequest request, Long actorId) {
+        Course course = validateActorAndCourseForGroupManagement(courseId, actorId);
+        ensureCourseModifiable(course);
+
+        if (request.maxGroupSize() == null || request.maxGroupSize() < 1) {
+            throw new BadRequestException("Max Group Size must be at least 1.");
+        }
+
+        List<StudentGroup> existingGroups = studentGroupRepository.findByCourseId(courseId);
+        if (!existingGroups.isEmpty() && existingGroups.get(0).getGroupStatus() == GroupStatus.LOCKED) {
+            throw new BadRequestException("Groups are locked. Please unlock groups before modifying group configuration.");
+        }
+
+        for (StudentGroup group : existingGroups) {
+            int currentMembersCount = Math.toIntExact(groupMemberRepository.countByGroupId(group.getId()));
+            if (request.maxGroupSize() < currentMembersCount) {
+                throw new BadRequestException("Max Group Size cannot be smaller than the current member count of an existing group.");
+            }
+        }
+
+        for (StudentGroup group : existingGroups) {
+            group.setMaxMembers(request.maxGroupSize());
+        }
+        studentGroupRepository.saveAll(existingGroups);
+
+        return groupMapper.toActionResponse("Max group size updated successfully.", buildManagementResponse(course));
+    }
+
+    @Override
+    @Transactional
+    public GroupActionResponse deleteGroup(Long courseId, Long groupId, Long actorId) {
+        Course course = validateActorAndCourseForGroupManagement(courseId, actorId);
+        ensureCourseModifiable(course);
+
+        StudentGroup group = studentGroupRepository.findById(groupId)
+                .orElseThrow(() -> new NotFoundException("Group not found"));
+
+        if (!group.getCourse().getId().equals(courseId)) {
+            throw new BadRequestException("Group does not belong to the specified course.");
+        }
+
+        List<StudentGroup> existingGroups = studentGroupRepository.findByCourseId(courseId);
+        if (!existingGroups.isEmpty() && existingGroups.get(0).getGroupStatus() == GroupStatus.LOCKED) {
+            throw new BadRequestException("Groups are locked. Please unlock groups before modifying group configuration.");
+        }
+
+        long memberCount = groupMemberRepository.countByGroupId(groupId);
+        if (memberCount > 0) {
+            throw new BadRequestException("Only empty groups can be deleted.");
+        }
+
+        if (assignmentSubmissionDao.existsByGroupId(groupId) ||
+            assignmentResultDao.existsByGroupId(groupId) ||
+            peerReviewAssignmentDao.existsByReviewerGroupId(groupId) ||
+            peerReviewAssignmentDao.existsByRevieweeGroupId(groupId)) {
+            throw new BadRequestException("This group cannot be deleted because it has related assessment data.");
+        }
+
+        studentGroupRepository.delete(group);
+        return groupMapper.toActionResponse("Group deleted successfully.", buildManagementResponse(course));
     }
 }
