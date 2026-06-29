@@ -391,7 +391,7 @@ function StudentWorkboard({ dashboardData, onOpen }) {
       <WorkboardCard
         action={assignedReviews > 0 ? 'Open review task' : null}
         meta="Peer review"
-        onClick={() => onOpen('/peer-reviews/tasks/1')}
+        onClick={() => onOpen('/peer-reviews')}
         title="Peer Reviews"
       >
         <div className="workboard-metric-row">

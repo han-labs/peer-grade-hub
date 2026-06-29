@@ -78,27 +78,14 @@ export default function PeerReviewTasksPage() {
           className="back-link"
           type="button"
           onClick={() => navigate('/dashboard')}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--neutral-text)',
-            fontSize: '0.84rem',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: 0,
-            marginBottom: '20px',
-            cursor: 'pointer',
-          }}
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={17} aria-hidden="true" />
           Back to Dashboard
         </button>
 
         <section className="welcome-band" style={{ marginBottom: '32px' }}>
           <div>
-            <p className="dashboard-date">UC-07 Peer Review</p>
+            <p className="dashboard-date">Task queue</p>
             <h1 style={{ margin: '8px 0 4px', fontSize: '1.75rem', fontWeight: '800' }}>Peer Review Tasks</h1>
             <p style={{ margin: 0, color: 'var(--neutral-text)', fontSize: '0.94rem' }}>
               Manage your assigned peer review submissions.
