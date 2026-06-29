@@ -19,7 +19,9 @@ export default function StudentAssignmentsPage() {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
+    const loadingTimer = window.setTimeout(() => {
+      if (mounted) setLoading(true);
+    }, 0);
 
     getStudentAssignments(lessonId, token)
       .then((response) => {
@@ -41,7 +43,10 @@ export default function StudentAssignmentsPage() {
         if (mounted) setLoading(false);
       });
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      window.clearTimeout(loadingTimer);
+    };
   }, [lessonId, token, logout, navigate]);
 
   if (loading) return <LoadingScreen label="Loading assignments..." />;

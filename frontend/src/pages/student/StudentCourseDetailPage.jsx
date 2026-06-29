@@ -19,7 +19,9 @@ export default function StudentCourseDetailPage() {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
+    const loadingTimer = window.setTimeout(() => {
+      if (mounted) setLoading(true);
+    }, 0);
 
     getStudentLessons(courseId, token)
       .then((response) => {
@@ -42,7 +44,10 @@ export default function StudentCourseDetailPage() {
         if (mounted) setLoading(false);
       });
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      window.clearTimeout(loadingTimer);
+    };
   }, [courseId, token, logout, navigate]);
 
   if (loading) return <LoadingScreen label="Loading lessons..." />;

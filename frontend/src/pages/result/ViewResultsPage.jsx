@@ -49,7 +49,7 @@ function AccessRestricted() {
 /**
  * Not Published State
  */
-function NotPublishedState({ message, assignmentTitle }) {
+function NotPublishedState({ message }) {
   return (
     <div className="result-not-published">
       <div className="result-not-published__icon">
@@ -191,10 +191,7 @@ export default function ViewResultsPage() {
             <ArrowLeft size={17} aria-hidden="true" />
             Dashboard
           </button>
-          <NotPublishedState 
-            message={data.message} 
-            assignmentTitle={data.assignmentTitle} 
-          />
+          <NotPublishedState message={data.message} />
         </main>
       </div>
     );
