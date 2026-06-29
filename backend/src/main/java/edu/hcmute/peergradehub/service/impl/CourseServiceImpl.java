@@ -180,4 +180,44 @@ public class CourseServiceImpl implements CourseService {
         return courseMapper.toWorkspace(savedCourse, lessons, materialsByLessonId);
     }
 
+    @Override
+    @Transactional
+    public CourseWorkspaceResponse archiveCourse(Long courseId, Long actorId) {
+        validateLecturer(actorId);
+        Course course = courseRepository.findByIdAndLecturerId(courseId, actorId)
+                .orElseThrow(() -> new ForbiddenException("You are not authorized to manage this course."));
+        
+        course.setCourseStatus(CourseStatus.ARCHIVED);
+        Course savedCourse = courseRepository.save(course);
+
+        List<Lesson> lessons = lessonDao.findByCourseId(courseId);
+        Map<Long, List<LessonMaterial>> materialsByLessonId = lessons.stream()
+                .collect(Collectors.toMap(
+                        Lesson::getId,
+                        lesson -> lessonMaterialDao.findByLessonId(lesson.getId())
+                ));
+
+        return courseMapper.toWorkspace(savedCourse, lessons, materialsByLessonId);
+    }
+
+    @Override
+    @Transactional
+    public CourseWorkspaceResponse unarchiveCourse(Long courseId, Long actorId) {
+        validateLecturer(actorId);
+        Course course = courseRepository.findByIdAndLecturerId(courseId, actorId)
+                .orElseThrow(() -> new ForbiddenException("You are not authorized to manage this course."));
+        
+        course.setCourseStatus(CourseStatus.ACTIVE);
+        Course savedCourse = courseRepository.save(course);
+
+        List<Lesson> lessons = lessonDao.findByCourseId(courseId);
+        Map<Long, List<LessonMaterial>> materialsByLessonId = lessons.stream()
+                .collect(Collectors.toMap(
+                        Lesson::getId,
+                        lesson -> lessonMaterialDao.findByLessonId(lesson.getId())
+                ));
+
+        return courseMapper.toWorkspace(savedCourse, lessons, materialsByLessonId);
+    }
+
 }

@@ -5,6 +5,12 @@ import {
   updateCourse,
   createLesson,
   createLessonMaterial,
+  updateLessonMaterial,
+  deleteLessonMaterial,
+  deleteLesson,
+  updateLesson,
+  archiveCourse,
+  unarchiveCourse,
 } from '../api/courseApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
@@ -22,6 +28,9 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  Trash2,
+  Archive,
+  RotateCcw,
 } from 'lucide-react'
 
 function CourseWorkspacePage() {
@@ -32,6 +41,7 @@ function CourseWorkspacePage() {
   const [workspace, setWorkspace] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [successMessage, setSuccessMessage] = useState(null)
 
   // Edit Course State
   const [isEditingCourse, setIsEditingCourse] = useState(false)
@@ -49,6 +59,10 @@ function CourseWorkspacePage() {
   const [lessonTitle, setLessonTitle] = useState('')
   const [lessonLoading, setLessonLoading] = useState(false)
   const [lessonError, setLessonError] = useState(null)
+  const [deletingLessonId, setDeletingLessonId] = useState(null)
+  const [editingLessonId, setEditingLessonId] = useState(null)
+  const [editLessonTitle, setEditLessonTitle] = useState('')
+  const [editLessonLoading, setEditLessonLoading] = useState(false)
 
   // Add Material State (lessonId -> form state)
   const [addingMaterialForLesson, setAddingMaterialForLesson] = useState(null)
@@ -62,6 +76,18 @@ function CourseWorkspacePage() {
   const [materialFileType, setMaterialFileType] = useState('')
   const [materialLoading, setMaterialLoading] = useState(false)
   const [materialError, setMaterialError] = useState(null)
+  const [deletingMaterialId, setDeletingMaterialId] = useState(null)
+  const [editingMaterialId, setEditingMaterialId] = useState(null)
+  const [editMaterialType, setEditMaterialType] = useState('LINK')
+  const [editMaterialTitle, setEditMaterialTitle] = useState('')
+  const [editMaterialUrl, setEditMaterialUrl] = useState('')
+  const [editMaterialLabel, setEditMaterialLabel] = useState('')
+  const [editMaterialFileName, setEditMaterialFileName] = useState('')
+  const [editMaterialFilePath, setEditMaterialFilePath] = useState('')
+  const [editMaterialFileSizeMb, setEditMaterialFileSizeMb] = useState('')
+  const [editMaterialFileType, setEditMaterialFileType] = useState('')
+  const [editMaterialLoading, setEditMaterialLoading] = useState(false)
+  const [isStatusChanging, setIsStatusChanging] = useState(false)
 
   const [copySuccess, setCopySuccess] = useState('')
 
@@ -69,13 +95,14 @@ function CourseWorkspacePage() {
     try {
       setLoading(true)
       setError(null)
-      const data = await getCourseWorkspace(courseId, token)
+      const response = await getCourseWorkspace(courseId, token)
+      const data = response.data || response
       setWorkspace(data)
       setEditCourseData({
-        courseName: data.course.courseName,
-        classCode: data.course.classCode,
-        semester: data.course.semester,
-        description: data.course.description || '',
+        courseName: data?.course?.courseName || '',
+        classCode: data?.course?.classCode || '',
+        semester: data?.course?.semester || '',
+        description: data?.course?.description || '',
       })
     } catch (err) {
       setError(err.message || 'Failed to load course workspace')
@@ -100,11 +127,13 @@ function CourseWorkspacePage() {
   const handleUpdateCourse = async (e) => {
     e.preventDefault()
     setEditCourseError(null)
+    setSuccessMessage(null)
     setEditCourseLoading(true)
     try {
       await updateCourse(courseId, editCourseData, token)
       await fetchWorkspace()
       setIsEditingCourse(false)
+      setSuccessMessage('Course updated successfully.')
     } catch (err) {
       setEditCourseError(err.message || 'Failed to update course')
     } finally {
@@ -115,12 +144,14 @@ function CourseWorkspacePage() {
   const handleCreateLesson = async (e) => {
     e.preventDefault()
     setLessonError(null)
+    setSuccessMessage(null)
     setLessonLoading(true)
     try {
       await createLesson(courseId, { title: lessonTitle }, token)
       setLessonTitle('')
       setIsAddingLesson(false)
       await fetchWorkspace()
+      setSuccessMessage('Lesson created successfully.')
     } catch (err) {
       setLessonError(err.message || 'Failed to create lesson')
     } finally {
@@ -128,9 +159,27 @@ function CourseWorkspacePage() {
     }
   }
 
+  const handleUpdateLesson = async (e, lessonId) => {
+    e.preventDefault()
+    setLessonError(null)
+    setSuccessMessage(null)
+    setEditLessonLoading(true)
+    try {
+      await updateLesson(courseId, lessonId, { title: editLessonTitle }, token)
+      setEditingLessonId(null)
+      await fetchWorkspace()
+      setSuccessMessage('Lesson updated successfully.')
+    } catch (err) {
+      setLessonError(err.message || 'Failed to update lesson')
+    } finally {
+      setEditLessonLoading(false)
+    }
+  }
+
   const handleCreateMaterial = async (e, lessonId) => {
     e.preventDefault()
     setMaterialError(null)
+    setSuccessMessage(null)
     let requestPayload = { materialType, title: materialTitle }
 
     if (materialType === 'LINK') {
@@ -174,10 +223,121 @@ function CourseWorkspacePage() {
       setMaterialFileType('')
       setAddingMaterialForLesson(null)
       await fetchWorkspace()
+      setSuccessMessage(materialType === 'LINK' ? 'Link material added successfully.' : 'File material added successfully.')
     } catch (err) {
       setMaterialError(err.message || 'Failed to add material')
     } finally {
       setMaterialLoading(false)
+    }
+  }
+
+  const handleUpdateMaterial = async (e, lessonId, materialId) => {
+    e.preventDefault()
+    setMaterialError(null)
+    setSuccessMessage(null)
+    let requestPayload = { materialType: editMaterialType, title: editMaterialTitle }
+
+    if (editMaterialType === 'LINK') {
+      const trimmedUrl = editMaterialUrl.trim()
+      if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+        setMaterialError('Invalid URL. Please enter a valid link.')
+        return
+      }
+
+      requestPayload = {
+        ...requestPayload,
+        url: trimmedUrl,
+        label: editMaterialLabel,
+      }
+    } else {
+      if (!editMaterialFileName || !editMaterialFilePath || !editMaterialFileSizeMb || !editMaterialFileType) {
+        setMaterialError('All file material fields (File Name, File Path, File Size MB, File Type) are required.')
+        return
+      }
+
+      requestPayload = {
+        ...requestPayload,
+        fileName: editMaterialFileName,
+        filePath: editMaterialFilePath,
+        fileSizeMb: parseFloat(editMaterialFileSizeMb),
+        fileType: editMaterialFileType,
+      }
+    }
+
+    setEditMaterialLoading(true)
+    try {
+      await updateLessonMaterial(courseId, lessonId, materialId, requestPayload, token)
+      setEditingMaterialId(null)
+      await fetchWorkspace()
+      setSuccessMessage('Lesson material updated successfully.')
+    } catch (err) {
+      setMaterialError(err.message || 'Failed to update material')
+    } finally {
+      setEditMaterialLoading(false)
+    }
+  }
+
+  const handleDeleteMaterial = async (lessonId, materialId) => {
+    if (!window.confirm('Delete this material?')) return
+    setMaterialError(null)
+    setSuccessMessage(null)
+    setDeletingMaterialId(materialId)
+    try {
+      await deleteLessonMaterial(courseId, lessonId, materialId, token)
+      setSuccessMessage('Lesson material deleted successfully.')
+      await fetchWorkspace()
+    } catch (err) {
+      setMaterialError(err.message || 'Failed to delete material')
+    } finally {
+      setDeletingMaterialId(null)
+    }
+  }
+
+  const handleDeleteLesson = async (lessonId) => {
+    if (!window.confirm('Delete this lesson? This will also remove its materials.')) return
+    setLessonError(null)
+    setSuccessMessage(null)
+    setDeletingLessonId(lessonId)
+    try {
+      await deleteLesson(courseId, lessonId, token)
+      setSuccessMessage('Lesson deleted successfully.')
+      await fetchWorkspace()
+    } catch (err) {
+      setLessonError(err.message || 'Failed to delete lesson')
+    } finally {
+      setDeletingLessonId(null)
+    }
+  }
+
+  const handleArchiveCourse = async () => {
+    if (!window.confirm('Archive this course? Editing will be disabled until it is reactivated.')) return
+    setIsStatusChanging(true)
+    setError(null)
+    setSuccessMessage(null)
+    try {
+      await archiveCourse(courseId, token)
+      setSuccessMessage('Course archived successfully.')
+      await fetchWorkspace()
+    } catch (err) {
+      setError(err.message || 'Failed to archive course')
+    } finally {
+      setIsStatusChanging(false)
+    }
+  }
+
+  const handleUnarchiveCourse = async () => {
+    if (!window.confirm('Reactivate this course?')) return
+    setIsStatusChanging(true)
+    setError(null)
+    setSuccessMessage(null)
+    try {
+      await unarchiveCourse(courseId, token)
+      setSuccessMessage('Course reactivated successfully.')
+      await fetchWorkspace()
+    } catch (err) {
+      setError(err.message || 'Failed to reactivate course')
+    } finally {
+      setIsStatusChanging(false)
     }
   }
 
@@ -218,23 +378,59 @@ function CourseWorkspacePage() {
             <AlertCircle size={18} />
             <span>{error}</span>
           </div>
-        ) : workspace ? (
-          <div className="dashboard-grid">
-            <div className="workspace-section">
+        ) : workspace && workspace.course ? (
+          <>
+            {successMessage && (
+              <div className="form-alert" style={{ marginBottom: '24px', background: 'var(--positive-bg)', color: 'var(--positive-text)', border: '1px solid #c3e6cb' }}>
+                <CheckCircle2 size={18} />
+                <span>{successMessage}</span>
+              </div>
+            )}
+            <div className="dashboard-grid">
+              <div className="workspace-section">
               <div className="section-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <p className="eyebrow">Course Details</p>
                   <h2>{workspace.course.courseName}</h2>
                   <p style={{ marginTop: '8px', color: 'var(--neutral-text)' }}>{workspace.course.description}</p>
                 </div>
-                <button 
-                  className="icon-button" 
-                  onClick={() => setIsEditingCourse(!isEditingCourse)}
-                  title="Edit Course"
-                >
-                  <Edit2 size={18} />
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {workspace.course.courseStatus === 'ACTIVE' ? (
+                    <button 
+                      className="logout-button" 
+                      onClick={handleArchiveCourse}
+                      disabled={isStatusChanging}
+                      style={{ background: 'var(--neutral-text)', color: '#fff', borderColor: 'var(--neutral-text)' }}
+                    >
+                      {isStatusChanging ? <Loader2 size={16} className="button-spinner" /> : <Archive size={16} />} Archive
+                    </button>
+                  ) : (
+                    <button 
+                      className="primary-button" 
+                      onClick={handleUnarchiveCourse}
+                      disabled={isStatusChanging}
+                    >
+                      {isStatusChanging ? <Loader2 size={16} className="button-spinner" /> : <RotateCcw size={16} />} Reactivate
+                    </button>
+                  )}
+                  {workspace.course.courseStatus === 'ACTIVE' && (
+                    <button 
+                      className="icon-button" 
+                      onClick={() => setIsEditingCourse(!isEditingCourse)}
+                      title="Edit Course"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {workspace.course.courseStatus === 'ARCHIVED' && (
+                <div className="form-alert" style={{ marginBottom: '24px', background: 'var(--yellow-soft)', color: '#8a6d3b', borderColor: '#faebcc' }}>
+                  <AlertCircle size={18} />
+                  <span>This course is archived. Editing is disabled until the course is reactivated.</span>
+                </div>
+              )}
 
               {isEditingCourse ? (
                 <form className="login-form" onSubmit={handleUpdateCourse} style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-subtle)', marginBottom: '32px' }}>
@@ -305,16 +501,14 @@ function CourseWorkspacePage() {
 
               <div className="section-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '40px' }}>
                 <div>
-                  <p className="eyebrow">Course Content</p>
+                  <p className="eyebrow">Content</p>
                   <h2>Lessons</h2>
                 </div>
-                <button 
-                  className="logout-button" 
-                  onClick={() => setIsAddingLesson(!isAddingLesson)}
-                  style={{ gap: '6px' }}
-                >
-                  <Plus size={16} /> Add Lesson
-                </button>
+                {workspace.course.courseStatus === 'ACTIVE' && (
+                  <button className="primary-button" onClick={() => setIsAddingLesson(!isAddingLesson)}>
+                    <Plus size={16} /> Add Lesson
+                  </button>
+                )}
               </div>
 
               {isAddingLesson && (
@@ -346,17 +540,62 @@ function CourseWorkspacePage() {
                   {workspace.lessons.map(lesson => (
                     <div key={lesson.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-subtle)', borderRadius: '12px', overflow: 'hidden' }}>
                       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafbf9' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{lesson.title}</h3>
-                        <button 
-                          className="logout-button" 
-                          style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
-                          onClick={() => {
-                            setAddingMaterialForLesson(addingMaterialForLesson === lesson.id ? null : lesson.id)
-                            setMaterialError(null)
-                          }}
-                        >
-                          <Plus size={14} /> Add Material
-                        </button>
+                        {editingLessonId === lesson.id ? (
+                          <form onSubmit={(e) => handleUpdateLesson(e, lesson.id)} style={{ display: 'flex', gap: '8px', flex: 1, marginRight: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <input
+                              required
+                              type="text"
+                              value={editLessonTitle}
+                              onChange={(e) => setEditLessonTitle(e.target.value)}
+                              disabled={editLessonLoading}
+                              style={{ flex: '1 1 200px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-subtle)', minWidth: 0 }}
+                            />
+                            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                              <button type="submit" className="primary-button" style={{ padding: '6px 12px' }} disabled={editLessonLoading}>
+                                {editLessonLoading ? <Loader2 size={14} className="button-spinner" /> : 'Save'}
+                              </button>
+                              <button type="button" className="logout-button" style={{ padding: '6px 12px' }} onClick={() => setEditingLessonId(null)} disabled={editLessonLoading}>
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{lesson.title}</h3>
+                        )}
+                        {workspace.course.courseStatus === 'ACTIVE' && editingLessonId !== lesson.id && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="icon-button"
+                              onClick={() => {
+                                setEditingLessonId(lesson.id)
+                                setEditLessonTitle(lesson.title)
+                                setLessonError(null)
+                              }}
+                              title="Edit lesson"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button 
+                              className="icon-button" 
+                              style={{ color: 'var(--danger)' }}
+                              onClick={() => handleDeleteLesson(lesson.id)}
+                              disabled={deletingLessonId === lesson.id}
+                              title="Delete lesson"
+                            >
+                              {deletingLessonId === lesson.id ? <Loader2 size={14} className="button-spinner" /> : <Trash2 size={14} />}
+                            </button>
+                            <button 
+                              className="logout-button" 
+                              style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
+                              onClick={() => {
+                                setAddingMaterialForLesson(addingMaterialForLesson === lesson.id ? null : lesson.id)
+                                setMaterialError(null)
+                              }}
+                            >
+                              <Plus size={14} /> Add Material
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {addingMaterialForLesson === lesson.id && (
@@ -437,28 +676,123 @@ function CourseWorkspacePage() {
                           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '12px' }}>
                             {lesson.materials.map(material => (
                               <li key={material.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '12px', background: 'var(--page-bg)', borderRadius: '8px', border: '1px solid #eef0eb' }}>
-                                <div style={{ 
-                                  width: '36px', height: '36px', borderRadius: '8px', display: 'grid', placeItems: 'center', flexShrink: 0,
-                                  color: material.materialType === 'LINK' ? 'var(--blue)' : 'var(--purple)',
-                                  background: material.materialType === 'LINK' ? 'var(--blue-soft)' : 'var(--purple-soft)'
-                                }}>
-                                  {material.materialType === 'LINK' ? <LinkIcon size={18} /> : <File size={18} />}
-                                </div>
-                                <div>
-                                  <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem' }}>{material.title}</h4>
-                                  {material.materialType === 'LINK' ? (
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--neutral-text)' }}>
-                                      {material.label && <span style={{ marginRight: '8px', fontWeight: 600 }}>{material.label}</span>}
-                                      <a href={material.url} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', textDecoration: 'none' }}>{material.url}</a>
+                                {editingMaterialId === material.id ? (
+                                  <form onSubmit={(e) => handleUpdateMaterial(e, lesson.id, material.id)} style={{ width: '100%' }}>
+                                    <h4 style={{ margin: '0 0 16px 0', fontSize: '0.95rem' }}>Edit Material</h4>
+                                    {materialError && (
+                                      <div className="form-alert" style={{ marginBottom: '16px' }}>
+                                        <AlertCircle size={18} />
+                                        <span>{materialError}</span>
+                                      </div>
+                                    )}
+                                    <div style={{ display: 'grid', gap: '12px' }}>
+                                      <label className="form-field">
+                                        Title *
+                                        <input required type="text" value={editMaterialTitle} onChange={e => setEditMaterialTitle(e.target.value)} disabled={editMaterialLoading} />
+                                      </label>
+                                      {editMaterialType === 'LINK' ? (
+                                        <>
+                                          <label className="form-field">
+                                            URL *
+                                            <input required type="text" value={editMaterialUrl} onChange={e => setEditMaterialUrl(e.target.value)} disabled={editMaterialLoading} />
+                                          </label>
+                                          <label className="form-field">
+                                            Label
+                                            <input type="text" value={editMaterialLabel} onChange={e => setEditMaterialLabel(e.target.value)} disabled={editMaterialLoading} />
+                                          </label>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <label className="form-field">
+                                            File Name *
+                                            <input required type="text" value={editMaterialFileName} onChange={e => setEditMaterialFileName(e.target.value)} disabled={editMaterialLoading} />
+                                          </label>
+                                          <label className="form-field">
+                                            File Path *
+                                            <input required type="text" value={editMaterialFilePath} onChange={e => setEditMaterialFilePath(e.target.value)} disabled={editMaterialLoading} />
+                                          </label>
+                                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                            <label className="form-field">
+                                              File Size (MB) *
+                                              <input required type="number" step="0.01" value={editMaterialFileSizeMb} onChange={e => setEditMaterialFileSizeMb(e.target.value)} disabled={editMaterialLoading} />
+                                            </label>
+                                            <label className="form-field">
+                                              File Type *
+                                              <input required type="text" value={editMaterialFileType} onChange={e => setEditMaterialFileType(e.target.value)} disabled={editMaterialLoading} />
+                                            </label>
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
-                                  ) : (
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--neutral-text)' }}>
-                                      <span>{material.fileName}</span>
-                                      <span style={{ margin: '0 8px' }}>•</span>
-                                      <span>{material.fileSizeMb} MB</span>
+                                    <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                                      <button type="submit" className="primary-button" disabled={editMaterialLoading}>
+                                        {editMaterialLoading ? <Loader2 size={16} className="button-spinner" /> : 'Save Changes'}
+                                      </button>
+                                      <button type="button" className="logout-button" onClick={() => setEditingMaterialId(null)} disabled={editMaterialLoading}>
+                                        Cancel
+                                      </button>
                                     </div>
-                                  )}
-                                </div>
+                                  </form>
+                                ) : (
+                                  <>
+                                    <div style={{ 
+                                      width: '36px', height: '36px', borderRadius: '8px', display: 'grid', placeItems: 'center', flexShrink: 0,
+                                      color: material.materialType === 'LINK' ? 'var(--blue)' : 'var(--purple)',
+                                      background: material.materialType === 'LINK' ? 'var(--blue-soft)' : 'var(--purple-soft)'
+                                    }}>
+                                      {material.materialType === 'LINK' ? <LinkIcon size={18} /> : <File size={18} />}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                      <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem' }}>{material.title}</h4>
+                                      {material.materialType === 'LINK' ? (
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--neutral-text)' }}>
+                                          {material.label && <span style={{ marginRight: '8px', fontWeight: 600 }}>{material.label}</span>}
+                                          <a href={material.url} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', textDecoration: 'none' }}>{material.url}</a>
+                                        </div>
+                                      ) : (
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--neutral-text)' }}>
+                                          <span>{material.fileName}</span>
+                                          <span style={{ margin: '0 8px' }}>•</span>
+                                          <span>{material.fileSizeMb} MB</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    {workspace.course.courseStatus === 'ACTIVE' && (
+                                      <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+                                        <button 
+                                          className="icon-button"
+                                          onClick={() => {
+                                            setEditingMaterialId(material.id)
+                                            setEditMaterialType(material.materialType)
+                                            setEditMaterialTitle(material.title || '')
+                                            if (material.materialType === 'LINK') {
+                                              setEditMaterialUrl(material.url || '')
+                                              setEditMaterialLabel(material.label || '')
+                                            } else {
+                                              setEditMaterialFileName(material.fileName || '')
+                                              setEditMaterialFilePath(material.filePath || '')
+                                              setEditMaterialFileSizeMb(material.fileSizeMb || '')
+                                              setEditMaterialFileType(material.fileType || '')
+                                            }
+                                            setMaterialError(null)
+                                          }}
+                                          title="Edit material"
+                                        >
+                                          <Edit2 size={16} />
+                                        </button>
+                                        <button 
+                                          className="icon-button" 
+                                          style={{ color: 'var(--danger)' }}
+                                          onClick={() => handleDeleteMaterial(lesson.id, material.id)}
+                                          disabled={deletingMaterialId === material.id}
+                                          title="Delete material"
+                                        >
+                                          {deletingMaterialId === material.id ? <Loader2 size={16} className="button-spinner" /> : <Trash2 size={16} />}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -507,6 +841,7 @@ function CourseWorkspacePage() {
               </div>
             </aside>
           </div>
+          </>
         ) : null}
       </main>
     </div>

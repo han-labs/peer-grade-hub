@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getLecturerCourses, createCourse } from '../api/courseApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
-import { BookOpen, Plus, Loader2, AlertCircle, ArrowUpRight, GraduationCap } from 'lucide-react'
+import { BookOpen, Plus, Loader2, AlertCircle, ArrowUpRight, GraduationCap, CheckCircle2 } from 'lucide-react'
 
 function ManageCoursesPage() {
   const { user, token } = useAuth()
@@ -20,6 +20,8 @@ function ManageCoursesPage() {
   const [description, setDescription] = useState('')
   const [createLoading, setCreateLoading] = useState(false)
   const [createError, setCreateError] = useState(null)
+  const [successMessage, setSuccessMessage] = useState(null)
+  const [isCreatingCourse, setIsCreatingCourse] = useState(false)
 
   useEffect(() => {
     if (user.role !== 'LECTURER') return;
@@ -51,6 +53,7 @@ function ManageCoursesPage() {
   const handleCreateCourse = async (e) => {
     e.preventDefault()
     setCreateError(null)
+    setSuccessMessage(null)
 
     if (!courseName.trim() || !classCode.trim() || !semester.trim()) {
       setCreateError('Course Name, Class Code, and Semester are required. Please do not leave them empty.')
@@ -76,6 +79,8 @@ function ManageCoursesPage() {
       setClassCode('')
       setSemester('')
       setDescription('')
+      setSuccessMessage('Course created successfully.')
+      setIsCreatingCourse(false)
     } catch (err) {
       setCreateError(err.message || 'Failed to create course')
     } finally {
@@ -101,24 +106,95 @@ function ManageCoursesPage() {
     <div className="dashboard-shell">
       <DashboardTopbar icon={BookOpen} label="Manage Courses" />
 
-      <main className="dashboard-main">
-        <section className="welcome-band">
+      <main className="courses-page">
+        <div className="courses-page__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <p className="dashboard-date">Course management</p>
-            <h1>Course Portfolio</h1>
-            <p>Create and manage your courses. Open a course workspace to configure groups and assignments.</p>
+            <p className="eyebrow">Teaching workspace</p>
+            <h1>Manage Courses</h1>
+            <p>Create courses, update course details, and open course workspaces.</p>
           </div>
-        </section>
+          {!isCreatingCourse && (
+            <button className="primary-button" onClick={() => { setIsCreatingCourse(true); setSuccessMessage(null); }}>
+              <Plus size={16} /> New Course
+            </button>
+          )}
+        </div>
 
-        <section className="dashboard-grid" style={{ marginTop: '32px' }}>
-          <div className="workspace-section">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Your courses</p>
-                <h2>Active Courses</h2>
-              </div>
+        {successMessage && !isCreatingCourse && (
+          <div className="form-alert" style={{ marginBottom: '24px', background: 'var(--positive-bg)', color: 'var(--positive-text)', border: '1px solid #c3e6cb' }}>
+            <CheckCircle2 size={18} />
+            <span>{successMessage}</span>
+          </div>
+        )}
+
+        {isCreatingCourse ? (
+          <div className="create-course-panel" style={{ padding: '24px', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-subtle)', marginBottom: '32px' }}>
+            <div className="section-heading" style={{ marginBottom: '20px' }}>
+              <h2>Create Course</h2>
             </div>
+            <form className="login-form" onSubmit={handleCreateCourse}>
+              {createError && (
+                <div className="form-alert" style={{ marginBottom: '16px' }}>
+                  <AlertCircle size={18} />
+                  <span>{createError}</span>
+                </div>
+              )}
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <label className="form-field">
+                  Course Name *
+                  <input
+                    type="text"
+                    placeholder="e.g. Object-Oriented Software Engineering"
+                    value={courseName}
+                    onChange={e => setCourseName(e.target.value)}
+                    disabled={createLoading}
+                  />
+                </label>
+                <label className="form-field">
+                  Class Code *
+                  <input
+                    type="text"
+                    placeholder="e.g. OOSE-2026"
+                    value={classCode}
+                    onChange={e => setClassCode(e.target.value)}
+                    disabled={createLoading}
+                  />
+                </label>
+                <label className="form-field">
+                  Semester *
+                  <input
+                    type="text"
+                    placeholder="e.g. Fall 2026"
+                    value={semester}
+                    onChange={e => setSemester(e.target.value)}
+                    disabled={createLoading}
+                  />
+                </label>
+                <label className="form-field">
+                  Description
+                  <input
+                    type="text"
+                    placeholder="Brief description of the course"
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    disabled={createLoading}
+                  />
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <button type="submit" className="primary-button" disabled={createLoading} style={{ flex: 1, maxWidth: '200px' }}>
+                  {createLoading ? <Loader2 size={18} className="button-spinner" /> : <Plus size={18} />} Create Course
+                </button>
+                <button type="button" className="logout-button" onClick={() => { setIsCreatingCourse(false); setCreateError(null); }} disabled={createLoading}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <>
             {loading ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--neutral-text)', marginTop: '20px' }}>
                 <Loader2 size={18} className="loading-spinner" />
@@ -130,119 +206,54 @@ function ManageCoursesPage() {
                 <span>{error}</span>
               </div>
             ) : courses.length === 0 ? (
-              <p style={{ color: 'var(--neutral-text)', marginTop: '20px' }}>You haven't created any courses yet.</p>
+              <div className="empty-state">
+                <BookOpen size={32} />
+                <h3>No courses found</h3>
+                <p>You haven't created any courses yet.</p>
+              </div>
             ) : (
-              <div className="lecturer-demo-grid">
+              <div className="course-grid">
                 {courses.map(course => (
-                  <article key={course.id} className="demo-feature">
-                    <div className="demo-feature__icon">
-                      <GraduationCap size={23} aria-hidden="true" />
-                    </div>
-                    <div className="demo-feature__copy">
-                      <div className="demo-feature__meta">
-                        <span>{course.classCode}</span>
-                        <small>{course.semester}</small>
-                      </div>
-                      <h2>{course.courseName}</h2>
-                      <p style={{ marginBottom: '8px' }}>{course.description}</p>
-                      {course.invitationCode && (
-                        <p style={{ fontSize: '0.8rem', color: 'var(--ink)' }}>
-                          <strong>Join Code:</strong> {course.invitationCode}
-                        </p>
-                      )}
-                      <p style={{ fontSize: '0.8rem' }}>
-                        <span className="status-badge" style={{ display: 'inline-flex', marginTop: '4px' }}>
-                          <span aria-hidden="true" />
-                          {course.courseStatus}
+                  <div className="course-card" key={course.id}>
+                    <div className="course-card__header">
+                      <div className="course-card__badge">
+                        <span className={`status-badge status-badge--${course.courseStatus?.toLowerCase() || 'active'}`}>
+                          {course.courseStatus || 'ACTIVE'}
                         </span>
-                      </p>
+                      </div>
                     </div>
-                    <button
-                      className="demo-feature__action"
-                      type="button"
+                    <div className="course-card__body">
+                      <h3 className="course-card__title">{course.courseName}</h3>
+                      <div className="course-card__meta">
+                        <span>
+                          <span className="meta-label">Class Code</span>
+                          <strong>{course.classCode}</strong>
+                        </span>
+                        <span>
+                          <span className="meta-label">Semester</span>
+                          <strong>{course.semester}</strong>
+                        </span>
+                      </div>
+                      {course.description && (
+                        <p className="course-card__description">{course.description}</p>
+                      )}
+                      <div className="course-card__invitation">
+                        <span>Invitation code</span>
+                        <code>{course.invitationCode || '—'}</code>
+                      </div>
+                    </div>
+                    <button 
+                      className="course-card__action"
                       onClick={() => navigate(`/lecturer/courses/${course.id}/workspace`)}
                     >
-                      Open Workspace
-                      <ArrowUpRight size={18} aria-hidden="true" />
+                      Open Workspace <ArrowUpRight size={16} />
                     </button>
-                  </article>
+                  </div>
                 ))}
               </div>
             )}
-          </div>
-
-          <aside className="profile-panel">
-            <div className="profile-panel__heading">
-              <div>
-                <p className="eyebrow">New Course</p>
-                <h2>Create Course</h2>
-              </div>
-            </div>
-
-            <form className="login-form" onSubmit={handleCreateCourse} style={{ marginTop: '20px' }}>
-              {createError && (
-                <div className="form-alert">
-                  <AlertCircle size={18} />
-                  <span>{createError}</span>
-                </div>
-              )}
-
-              <label className="form-field">
-                Course Name *
-                <input
-                  type="text"
-                  placeholder="e.g. Object-Oriented Software Engineering"
-                  value={courseName}
-                  onChange={e => setCourseName(e.target.value)}
-                  disabled={createLoading}
-                />
-              </label>
-
-              <label className="form-field">
-                Class Code *
-                <input
-                  type="text"
-                  placeholder="e.g. OOSE-2026"
-                  value={classCode}
-                  onChange={e => setClassCode(e.target.value)}
-                  disabled={createLoading}
-                />
-              </label>
-
-              <label className="form-field">
-                Semester *
-                <input
-                  type="text"
-                  placeholder="e.g. Fall 2026"
-                  value={semester}
-                  onChange={e => setSemester(e.target.value)}
-                  disabled={createLoading}
-                />
-              </label>
-
-              <label className="form-field">
-                Description
-                <input
-                  type="text"
-                  placeholder="Brief description of the course"
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  disabled={createLoading}
-                />
-              </label>
-
-              <button 
-                type="submit" 
-                className="primary-button" 
-                disabled={createLoading}
-                style={{ marginTop: '10px' }}
-              >
-                {createLoading ? <Loader2 size={18} className="button-spinner" /> : <Plus size={18} />}
-                Create Course
-              </button>
-            </form>
-          </aside>
-        </section>
+          </>
+        )}
       </main>
     </div>
   )

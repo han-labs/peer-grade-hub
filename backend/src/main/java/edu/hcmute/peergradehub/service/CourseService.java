@@ -17,4 +17,6 @@ public interface CourseService {
     CourseWorkspaceResponse getCourseWorkspace(Long courseId, Long actorId);
     CourseWorkspaceResponse updateCourse(Long courseId, UpdateCourseRequest request, Long actorId);
     List<CourseSummaryResponse> getActiveCourses(Long actorId);
+    CourseWorkspaceResponse archiveCourse(Long courseId, Long actorId);
+    CourseWorkspaceResponse unarchiveCourse(Long courseId, Long actorId);
 }

@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Collections;
 import edu.hcmute.peergradehub.dto.response.lesson.LessonAssignmentsResponse;
 import edu.hcmute.peergradehub.dao.AssignmentDao;
+import edu.hcmute.peergradehub.dao.LessonMaterialDao;
+import edu.hcmute.peergradehub.entity.LessonMaterial;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,7 @@ public class LessonServiceImpl implements LessonService {
     private final CourseDao courseDao;
     private final CourseMapper courseMapper;
     private final AssignmentDao assignmentDao; 
+    private final LessonMaterialDao lessonMaterialDao;
     private final LessonMapper lessonMapper;
     @Override
     @Transactional
@@ -80,6 +83,42 @@ public class LessonServiceImpl implements LessonService {
     }
 
     @Override
+    @Transactional
+    public LessonResponse updateLesson(Long courseId, Long lessonId, CreateLessonRequest request, Long actorId) {
+        User actor = userDao.findById(actorId)
+                .orElseThrow(() -> new NotFoundException("Actor not found."));
+
+        if (actor.getUserRole() != UserRole.LECTURER || actor.getStatus() != UserStatus.ACTIVE) {
+            throw new ForbiddenException("You are not authorized to perform this action.");
+        }
+
+        Course course = courseDao.findByIdAndLecturerId(courseId, actorId)
+                .orElseThrow(() -> new ForbiddenException("You are not authorized to manage this course."));
+
+        if (course.getCourseStatus() != CourseStatus.ACTIVE) {
+            throw new BadRequestException("This course is archived and cannot be modified.");
+        }
+
+        if (!StringUtils.hasText(request.title())) {
+            throw new BadRequestException("Lesson title is required.");
+        }
+
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new NotFoundException("Lesson not found."));
+
+        if (lesson.getCourse() == null || !lesson.getCourse().getId().equals(courseId)) {
+            throw new ForbiddenException("You are not authorized to update this lesson.");
+        }
+
+        lesson.setTitle(request.title());
+        Lesson savedLesson = lessonRepository.save(lesson);
+
+        List<LessonMaterial> materials = lessonMaterialDao.findByLessonId(lessonId);
+
+        return courseMapper.toLessonResponse(savedLesson, materials != null ? materials : Collections.emptyList());
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public LessonAssignmentsResponse getLessonAssignments(Long lessonId, Long actorId) {
         // 1. Lấy lesson
@@ -104,4 +143,39 @@ public class LessonServiceImpl implements LessonService {
         return lessonMapper.toLessonAssignmentsResponse(lesson, course, assignments);
     }
 
+    @Override
+    @Transactional
+    public void deleteLesson(Long courseId, Long lessonId, Long actorId) {
+        User actor = userDao.findById(actorId)
+                .orElseThrow(() -> new NotFoundException("Actor not found."));
+
+        if (actor.getUserRole() != UserRole.LECTURER || actor.getStatus() != UserStatus.ACTIVE) {
+            throw new ForbiddenException("You are not authorized to perform this action.");
+        }
+
+        Course course = courseDao.findByIdAndLecturerId(courseId, actorId)
+                .orElseThrow(() -> new ForbiddenException("You are not authorized to manage this course."));
+
+        if (course.getCourseStatus() != CourseStatus.ACTIVE) {
+            throw new BadRequestException("This course is archived and cannot be modified.");
+        }
+
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new NotFoundException("Lesson not found."));
+
+        if (lesson.getCourse() == null || !lesson.getCourse().getId().equals(courseId)) {
+            throw new ForbiddenException("You are not authorized to delete this lesson.");
+        }
+
+        if (assignmentDao.existsByLessonId(lessonId)) {
+            throw new BadRequestException("This lesson cannot be deleted because it has related assignments or assessment data.");
+        }
+
+        List<LessonMaterial> materials = lessonMaterialDao.findByLessonId(lessonId);
+        if (materials != null && !materials.isEmpty()) {
+            lessonMaterialDao.deleteAll(materials);
+        }
+
+        lessonRepository.delete(lesson);
+    }
 }

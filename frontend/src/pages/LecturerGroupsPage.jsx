@@ -1,4 +1,3 @@
-// frontend/src/pages/LecturerCoursesPage.jsx
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
@@ -6,9 +5,9 @@ import { getLecturerCourses } from '../api/courseApi'
 import { ApiError } from '../api/httpClient'
 import DashboardTopbar from '../components/DashboardTopbar'
 import LoadingScreen from '../components/LoadingScreen'
-import { BookOpen, ArrowRight } from 'lucide-react'
+import { UsersRound, ArrowRight } from 'lucide-react'
 
-export default function LecturerCoursesPage() {
+export default function LecturerGroupsPage() {
   const { token, logout } = useAuth()
   const navigate = useNavigate()
   const [courses, setCourses] = useState([])
@@ -38,7 +37,7 @@ export default function LecturerCoursesPage() {
   }, [fetchCourses])
 
   const handleSelectCourse = (courseId) => {
-    navigate(`/lecturer/courses/${courseId}/lessons`)
+    navigate(`/lecturer/courses/${courseId}/groups`)
   }
 
   if (loading) return <LoadingScreen label="Loading your courses..." />
@@ -46,7 +45,7 @@ export default function LecturerCoursesPage() {
   if (error) {
     return (
       <div className="dashboard-shell">
-        <DashboardTopbar icon={BookOpen} label="My Courses" />
+        <DashboardTopbar icon={UsersRound} label="Manage Groups" />
         <main className="courses-page">
           <div className="error-state">
             <p>{error}</p>
@@ -59,18 +58,18 @@ export default function LecturerCoursesPage() {
 
   return (
     <div className="dashboard-shell">
-      <DashboardTopbar icon={BookOpen} label="My Courses" />
+      <DashboardTopbar icon={UsersRound} label="Manage Groups" />
 
       <main className="courses-page">
         <div className="courses-page__header">
           <p className="eyebrow">Teaching workspace</p>
-          <h1>My Courses</h1>
-          <p>Select a course to view its lessons and manage content.</p>
+          <h1>Select Course for Group Management</h1>
+          <p>Select a course to view and manage its student groups.</p>
         </div>
 
         {courses.length === 0 ? (
           <div className="empty-state">
-            <BookOpen size={32} />
+            <UsersRound size={32} />
             <h3>No courses found</h3>
             <p>You are not assigned to any course yet.</p>
           </div>
@@ -109,7 +108,7 @@ export default function LecturerCoursesPage() {
                   className="course-card__action"
                   onClick={() => handleSelectCourse(course.id)}
                 >
-                  View Lessons <ArrowRight size={16} />
+                  Manage Groups <ArrowRight size={16} />
                 </button>
               </div>
             ))}

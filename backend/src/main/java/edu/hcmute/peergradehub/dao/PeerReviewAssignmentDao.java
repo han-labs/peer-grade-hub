@@ -17,6 +17,8 @@ public interface PeerReviewAssignmentDao extends JpaRepository<PeerReviewAssignm
     List<PeerReviewAssignment> findByAssignmentId(Long assignmentId);
     List<PeerReviewAssignment> findByReviewerGroupId(Long reviewerGroupId);
     List<PeerReviewAssignment> findByRevieweeGroupId(Long revieweeGroupId);
+    boolean existsByReviewerGroupId(Long reviewerGroupId);
+    boolean existsByRevieweeGroupId(Long revieweeGroupId);
     Optional<PeerReviewAssignment> findByAssignmentIdAndReviewerGroupIdAndRevieweeGroupId(
             Long assignmentId,
             Long reviewerGroupId,

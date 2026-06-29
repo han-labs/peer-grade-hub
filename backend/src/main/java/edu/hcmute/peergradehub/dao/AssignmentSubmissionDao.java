@@ -18,6 +18,7 @@ public interface AssignmentSubmissionDao extends JpaRepository<AssignmentSubmiss
     List<AssignmentSubmission> findByGroupId(Long groupId);
     Optional<AssignmentSubmission> findByAssignmentIdAndGroupId(Long assignmentId, Long groupId);
     boolean existsByAssignmentIdAndGroupId(Long assignmentId, Long groupId);
+    boolean existsByGroupId(Long groupId);
 
     // ===== NEW FOR UC-09 =====
     @Query("SELECT s FROM AssignmentSubmission s " +

@@ -49,3 +49,29 @@ export async function unlockGroups(courseId, token) {
   })
   return response
 }
+
+export async function addGroups(courseId, request, token) {
+  const response = await apiRequest(`/courses/${courseId}/groups/add`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+    token,
+  })
+  return response
+}
+
+export async function updateMaxGroupSize(courseId, request, token) {
+  const response = await apiRequest(`/courses/${courseId}/groups/max-size`, {
+    method: 'PUT',
+    body: JSON.stringify(request),
+    token,
+  })
+  return response
+}
+
+export async function deleteGroup(courseId, groupId, token) {
+  const response = await apiRequest(`/courses/${courseId}/groups/${groupId}`, {
+    method: 'DELETE',
+    token,
+  })
+  return response
+}

@@ -49,14 +49,34 @@ export const createCourse = async (request, token) => {
     return response;
 };
 
-/**
- * Update a course
- * PUT /api/courses/{courseId}
- */
 export const updateCourse = async (courseId, request, token) => {
     const response = await apiRequest(`/courses/${courseId}`, {
         method: 'PUT',
         body: JSON.stringify(request),
+        token,
+    });
+    return response;
+};
+
+/**
+ * Archive a course
+ * PUT /api/courses/{courseId}/archive
+ */
+export const archiveCourse = async (courseId, token) => {
+    const response = await apiRequest(`/courses/${courseId}/archive`, {
+        method: 'PUT',
+        token,
+    });
+    return response;
+};
+
+/**
+ * Unarchive a course
+ * PUT /api/courses/{courseId}/unarchive
+ */
+export const unarchiveCourse = async (courseId, token) => {
+    const response = await apiRequest(`/courses/${courseId}/unarchive`, {
+        method: 'PUT',
         token,
     });
     return response;
@@ -76,6 +96,19 @@ export const createLesson = async (courseId, request, token) => {
 };
 
 /**
+ * Update a lesson
+ * PUT /api/courses/{courseId}/lessons/{lessonId}
+ */
+export const updateLesson = async (courseId, lessonId, request, token) => {
+    const response = await apiRequest(`/courses/${courseId}/lessons/${lessonId}`, {
+        method: 'PUT',
+        body: JSON.stringify(request),
+        token,
+    });
+    return response;
+};
+
+/**
  * Create a lesson material
  * POST /api/courses/{courseId}/lessons/{lessonId}/materials
  */
@@ -85,6 +118,52 @@ export const createLessonMaterial = async (courseId, lessonId, request, token) =
         {
             method: 'POST',
             body: JSON.stringify(request),
+            token,
+        }
+    );
+    return response;
+};
+
+/**
+ * Update a lesson material
+ * PUT /api/courses/{courseId}/lessons/{lessonId}/materials/{materialId}
+ */
+export const updateLessonMaterial = async (courseId, lessonId, materialId, request, token) => {
+    const response = await apiRequest(
+        `/courses/${courseId}/lessons/${lessonId}/materials/${materialId}`,
+        {
+            method: 'PUT',
+            body: JSON.stringify(request),
+            token,
+        }
+    );
+    return response;
+};
+
+/**
+ * Delete a lesson material
+ * DELETE /api/courses/{courseId}/lessons/{lessonId}/materials/{materialId}
+ */
+export const deleteLessonMaterial = async (courseId, lessonId, materialId, token) => {
+    const response = await apiRequest(
+        `/courses/${courseId}/lessons/${lessonId}/materials/${materialId}`,
+        {
+            method: 'DELETE',
+            token,
+        }
+    );
+    return response;
+};
+
+/**
+ * Delete a lesson
+ * DELETE /api/courses/{courseId}/lessons/{lessonId}
+ */
+export const deleteLesson = async (courseId, lessonId, token) => {
+    const response = await apiRequest(
+        `/courses/${courseId}/lessons/${lessonId}`,
+        {
+            method: 'DELETE',
             token,
         }
     );

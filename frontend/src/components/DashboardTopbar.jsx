@@ -68,10 +68,10 @@ const ROLE_NAV_GROUPS = {
         },
         {
           label: 'Manage Groups',
-          to: '/lecturer/courses',
+          to: '/lecturer/manage-groups',
           icon: UsersRound,
           status: 'Available',
-          activeLabels: ['Group Management'],
+          activeLabels: ['Group Management', 'Manage Groups'],
         },
         {
           label: 'Manage Assignments',
