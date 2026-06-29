@@ -2897,6 +2897,51 @@ button:disabled {
   font-size: 0.95rem;
 }
 
+.courses-page--student {
+  padding-top: 42px;
+}
+
+.courses-page--student .courses-page__header {
+  margin-bottom: 24px;
+}
+
+.courses-page--student .courses-page__header h1 {
+  font-size: clamp(1.75rem, 3vw, 2.55rem);
+}
+
+.course-invitation-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.75fr) minmax(300px, 1fr);
+  gap: 18px;
+  align-items: end;
+  margin: 0 0 34px;
+  padding: 18px 20px;
+}
+
+.course-invitation-card--link {
+  align-items: center;
+}
+
+.course-invitation-card h2 {
+  margin: 4px 0 6px;
+  font-size: 1.05rem;
+}
+
+.course-invitation-card p:not(.eyebrow) {
+  color: var(--neutral-text);
+  font-size: 0.86rem;
+}
+
+.field-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+
 /* Course Grid */
 .course-grid {
   display: grid;
@@ -3428,5 +3473,276 @@ button:disabled {
 
   .lesson-assignments-page__breadcrumb {
     font-size: 0.75rem;
+  }
+}
+
+/* UC-05 Student Participation */
+.student-participation-page {
+  padding: 32px clamp(20px, 4vw, 48px) 56px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.dashboard-main.student-participation-page {
+  width: min(1180px, calc(100% - 40px));
+  max-width: none;
+  margin: 0 auto;
+  padding: 54px 0 72px;
+}
+
+.lecturer-sidebar ~ .dashboard-main.student-participation-page {
+  width: min(1180px, calc(100% - 328px));
+  margin-left: 296px;
+  margin-right: auto;
+}
+
+.student-participation-header {
+  margin: 18px 0 24px;
+}
+
+.student-participation-header h1 {
+  margin: 4px 0 8px;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  line-height: 1.12;
+}
+
+.student-participation-header p:not(.eyebrow) {
+  color: var(--neutral-text);
+  margin: 0;
+}
+
+.invitation-panel,
+.current-group-panel,
+.group-selection-card {
+  background: #fff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.invitation-panel {
+  padding: 24px;
+}
+
+.invitation-panel--manual {
+  max-width: 760px;
+}
+
+.invitation-panel__main {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.invitation-panel__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f4efe4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.invitation-panel h2,
+.current-group-panel h2,
+.group-selection-card h3 {
+  margin: 8px 0;
+}
+
+.invitation-panel p,
+.current-group-panel p,
+.group-selection-card p {
+  color: var(--neutral-text);
+}
+
+.invitation-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.invitation-detail-grid span {
+  background: #f8f6f1;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.invitation-detail-grid small {
+  display: block;
+  color: var(--neutral-text);
+  margin-bottom: 6px;
+}
+
+.invitation-detail-grid strong {
+  display: block;
+  color: var(--primary-text);
+  overflow-wrap: anywhere;
+}
+
+.student-action-row,
+.group-selection-card__action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.success-message {
+  border: 1px solid #d6ead0;
+  background: var(--positive-bg);
+  color: var(--positive-text);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.invitation-code-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 24px;
+}
+
+.invitation-code-field {
+  display: grid;
+  gap: 7px;
+}
+
+.invitation-code-field span {
+  color: var(--neutral-text);
+  font-size: 0.86rem;
+}
+
+.invitation-code-field input {
+  min-height: 42px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: #fff;
+  color: var(--primary-text);
+  font: inherit;
+}
+
+.invitation-code-field input:focus {
+  border-color: #9b9b9b;
+  outline: none;
+}
+
+.inline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--neutral-text);
+  font-weight: 600;
+}
+
+.group-deadline-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.current-group-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 20px;
+  margin: 18px 0 24px;
+}
+
+.current-group-panel h2 {
+  font-size: 1.25rem;
+}
+
+.group-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.group-selection-card {
+  padding: 18px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.group-selection-card__header {
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.group-status-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.member-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+  min-height: 36px;
+}
+
+.member-pill {
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #f8f6f1;
+  color: var(--primary-text);
+  font-size: 0.85rem;
+}
+
+.member-list__empty {
+  color: var(--neutral-text);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .course-invitation-card,
+  .invitation-code-form {
+    grid-template-columns: 1fr;
+  }
+
+  .invitation-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .current-group-panel,
+  .student-action-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-action-row,
+  .group-selection-card__action {
+    justify-content: stretch;
+  }
+}
+
+@media (max-width: 1040px) {
+  .lecturer-sidebar ~ .dashboard-main.student-participation-page,
+  .dashboard-main.student-participation-page {
+    width: min(100% - 40px, 1180px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-main.student-participation-page {
+    width: min(100% - 28px, 1180px);
+    padding: 36px 0 54px;
   }
 }

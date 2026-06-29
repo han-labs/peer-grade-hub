@@ -20,6 +20,9 @@ public interface GroupMemberDao extends JpaRepository<GroupMember, Long> {
     List<GroupMember> findByGroupIdIn(List<Long> groupIds);
     Optional<GroupMember> findByIdAndGroupId(Long id, Long groupId);
 
+    @Query("SELECT gm FROM GroupMember gm WHERE gm.group.course.id = :courseId AND gm.user.id = :userId")
+    Optional<GroupMember> findByCourseIdAndUserId(@Param("courseId") Long courseId, @Param("userId") Long userId);
+
     @Query("SELECT COUNT(gm) > 0 FROM GroupMember gm WHERE gm.group.course.id = :courseId AND gm.user.id = :userId")
     boolean existsByCourseIdAndUserId(@Param("courseId") Long courseId, @Param("userId") Long userId);
 }

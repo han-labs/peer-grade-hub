@@ -11,13 +11,14 @@ function getDashboardPath(role) {
 function ProtectedRoute({ allowedRoles, children }) {
   const { user, isInitializing } = useAuth()
   const location = useLocation()
+  const intendedPath = `${location.pathname}${location.search}${location.hash}`
 
   if (isInitializing) {
     return <LoadingScreen label="Restoring your workspace" />
   }
 
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    return <Navigate to="/login" replace state={{ from: intendedPath }} />
   }
 
   if (allowedRoles?.length && !allowedRoles.includes(user.role)) {

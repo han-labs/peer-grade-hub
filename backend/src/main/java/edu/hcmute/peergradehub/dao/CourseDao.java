@@ -14,6 +14,7 @@ import edu.hcmute.peergradehub.enumeration.CourseStatus;
 @Repository
 public interface CourseDao extends JpaRepository<Course, Long> {
     Optional<Course> findByClassCode(String classCode);
+    Optional<Course> findByInvitationCode(String invitationCode);
     boolean existsByClassCode(String classCode);
     List<Course> findByLecturerId(Long lecturerId);
     Optional<Course> findByIdAndLecturerId(Long courseId, Long lecturerId);

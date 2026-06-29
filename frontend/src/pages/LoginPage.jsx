@@ -11,7 +11,7 @@ import {
   UsersRound,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { getBackendHealth } from '../api/authApi.js'
 import { ApiError } from '../api/httpClient.js'
 import { useAuth } from '../auth/useAuth.js'
@@ -28,8 +28,16 @@ const DEMO_ACCOUNTS = [
 
 const ALLOWED_DASHBOARD_PATHS = new Set(['/student', '/lecturer', '/admin'])
 
+function safeInternalRedirect(value) {
+  if (typeof value !== 'string') return null
+  if (!value.startsWith('/') || value.startsWith('//')) return null
+  if (value === '/login') return null
+  return value
+}
+
 function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuth()
   const [form, setForm] = useState({
     usernameOrEmail: '',
@@ -92,9 +100,11 @@ function LoginPage() {
         form.password,
         form.rememberMe,
       )
-      const destination = ALLOWED_DASHBOARD_PATHS.has(result.dashboardPath)
+      const preservedDestination = safeInternalRedirect(location.state?.from)
+      const defaultDestination = ALLOWED_DASHBOARD_PATHS.has(result.dashboardPath)
         ? result.dashboardPath
         : '/dashboard'
+      const destination = preservedDestination ?? defaultDestination
       navigate(destination, { replace: true })
     } catch (error) {
       setErrorMessage(

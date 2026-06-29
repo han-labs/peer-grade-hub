@@ -64,12 +64,24 @@ export default function StudentCoursesPage() {
     <div className="dashboard-shell">
       <DashboardTopbar icon={BookOpen} label="My Courses" />
 
-      <main className="courses-page">
+      <main className="courses-page courses-page--student">
         <div className="courses-page__header">
           <p className="eyebrow">Student workspace</p>
           <h1>My Active Courses</h1>
           <p>Select a course to view lessons and assignments.</p>
         </div>
+
+        <section className="course-invitation-card course-invitation-card--link" aria-labelledby="course-invitation-title">
+          <div>
+            <p className="eyebrow">Join a course</p>
+            <h2 id="course-invitation-title">Need to join another course?</h2>
+            <p>Use the dedicated join page to enter an invitation code from your lecturer.</p>
+          </div>
+          <button className="compact-primary-action" type="button" onClick={() => navigate('/join')}>
+            Join a new course
+            <ArrowRight size={16} />
+          </button>
+        </section>
 
         {courses.length === 0 ? (
           <div className="empty-state">

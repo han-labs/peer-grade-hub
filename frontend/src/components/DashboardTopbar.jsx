@@ -122,7 +122,15 @@ const ROLE_NAV_GROUPS = {
           status: 'Available',
           activePaths: ['/dashboard', '/student', '/student/dashboard'],
         },
-        { label: 'Join Course / Group', icon: UsersRound, status: 'Soon' },
+        {
+          label: 'Join Course / Group',
+          to: '/join',
+          icon: UsersRound,
+          status: 'Available',
+          activeMatcher: (pathname) => pathname === '/join'
+            || pathname.startsWith('/join/')
+            || /^\/student\/courses\/[^/]+\/groups$/.test(pathname),
+        },
         { label: 'Submit Assignment', icon: FileText, status: 'Soon' },
         {
           label: 'Submit Peer Review',

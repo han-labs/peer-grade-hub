@@ -21,6 +21,8 @@ import ViewResultsPage from './pages/result/ViewResultsPage.jsx';
 import StudentCoursesPage from './pages/student/StudentCoursesPage.jsx';
 import StudentCourseDetailPage from './pages/student/StudentCourseDetailPage.jsx';
 import StudentAssignmentsPage from './pages/student/StudentAssignmentsPage.jsx';
+import InvitationJoinPage from './pages/student/InvitationJoinPage.jsx'
+import GroupSelectionPage from './pages/student/GroupSelectionPage.jsx'
 import PeerReviewTasksPage from './pages/PeerReviewTasksPage.jsx'
 
 function PublicOnlyRoute({ children }) {
@@ -154,6 +156,30 @@ function App() {
         }
       />
       {/* UC-10: Student Navigation */}
+      <Route
+        path="/join"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <InvitationJoinPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/join/:invitationCode"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <InvitationJoinPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/courses/:courseId/groups"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <GroupSelectionPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/student/courses"
         element={
