@@ -11,6 +11,7 @@ import GroupManagementPage from './pages/GroupManagementPage.jsx'
 import MonitorProgressPage from './pages/MonitorProgressPage.jsx'
 import GradingPage from './pages/grade/GradingPage.jsx'
 import LecturerCoursesPage from './pages/LecturerCoursesPage.jsx'
+import LecturerGroupsPage from './pages/LecturerGroupsPage.jsx'
 import CourseLessonsPage from './pages/CourseLessonsPage.jsx'
 import LessonAssignmentsPage from './pages/LessonAssignmentsPage.jsx'
 import PeerReviewPage from './pages/PeerReviewPage.jsx'
@@ -83,6 +84,15 @@ function App() {
         element={
           <ProtectedRoute>
             <GroupManagementPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/lecturer/manage-groups"
+        element={
+          <ProtectedRoute allowedRoles={['LECTURER']}>
+            <LecturerGroupsPage />
           </ProtectedRoute>
         }
       />

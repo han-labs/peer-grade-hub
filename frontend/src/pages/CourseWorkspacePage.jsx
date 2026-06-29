@@ -112,11 +112,13 @@ function CourseWorkspacePage() {
   const handleUpdateCourse = async (e) => {
     e.preventDefault()
     setEditCourseError(null)
+    setSuccessMessage(null)
     setEditCourseLoading(true)
     try {
       await updateCourse(courseId, editCourseData, token)
       await fetchWorkspace()
       setIsEditingCourse(false)
+      setSuccessMessage('Course updated successfully.')
     } catch (err) {
       setEditCourseError(err.message || 'Failed to update course')
     } finally {
@@ -127,12 +129,14 @@ function CourseWorkspacePage() {
   const handleCreateLesson = async (e) => {
     e.preventDefault()
     setLessonError(null)
+    setSuccessMessage(null)
     setLessonLoading(true)
     try {
       await createLesson(courseId, { title: lessonTitle }, token)
       setLessonTitle('')
       setIsAddingLesson(false)
       await fetchWorkspace()
+      setSuccessMessage('Lesson created successfully.')
     } catch (err) {
       setLessonError(err.message || 'Failed to create lesson')
     } finally {
@@ -143,6 +147,7 @@ function CourseWorkspacePage() {
   const handleCreateMaterial = async (e, lessonId) => {
     e.preventDefault()
     setMaterialError(null)
+    setSuccessMessage(null)
     let requestPayload = { materialType, title: materialTitle }
 
     if (materialType === 'LINK') {
@@ -186,6 +191,7 @@ function CourseWorkspacePage() {
       setMaterialFileType('')
       setAddingMaterialForLesson(null)
       await fetchWorkspace()
+      setSuccessMessage(materialType === 'LINK' ? 'Link material added successfully.' : 'File material added successfully.')
     } catch (err) {
       setMaterialError(err.message || 'Failed to add material')
     } finally {
