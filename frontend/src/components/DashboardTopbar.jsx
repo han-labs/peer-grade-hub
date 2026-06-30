@@ -149,7 +149,13 @@ const ROLE_NAV_GROUPS = {
           activeLabels: ['Submit Peer Review'],
           activeMatcher: (pathname) => pathname.startsWith('/peer-review-tasks'),
         },
-        { label: 'View Results', icon: Gauge, status: 'Soon' },
+        {
+        label: 'View Results',
+        to: '/student/courses',        
+        icon: Gauge,                   
+        status: 'Available',           
+        activeMatcher: (pathname) => pathname.includes('/results') || pathname.includes('/student/courses'),
+        }
       ],
     },
   ],
