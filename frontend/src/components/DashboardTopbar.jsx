@@ -131,7 +131,16 @@ const ROLE_NAV_GROUPS = {
             || pathname.startsWith('/join/')
             || /^\/student\/courses\/[^/]+\/groups$/.test(pathname),
         },
-        { label: 'Submit Assignment', icon: FileText, status: 'Soon' },
+        {
+          label: 'Submit Assignment',
+          to: '/student/assignments',
+          icon: FileText,
+          status: 'Available',
+          activeMatcher: (pathname) => pathname === '/student/assignments'
+            || /^\/student\/assignments\/[^/]+\/submission$/.test(pathname)
+            || /^\/student\/courses\/[^/]+\/assignments\/[^/]+\/submissions\/[^/]+$/.test(pathname)
+            || /^\/student\/courses\/[^/]+\/lessons\/[^/]+\/assignments$/.test(pathname),
+        },
         {
           label: 'Submit Peer Review',
           to: '/peer-review-tasks',

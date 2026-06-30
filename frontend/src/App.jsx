@@ -23,6 +23,8 @@ import StudentCourseDetailPage from './pages/student/StudentCourseDetailPage.jsx
 import StudentAssignmentsPage from './pages/student/StudentAssignmentsPage.jsx';
 import InvitationJoinPage from './pages/student/InvitationJoinPage.jsx'
 import GroupSelectionPage from './pages/student/GroupSelectionPage.jsx'
+import AssignmentSubmissionPage from './pages/student/AssignmentSubmissionPage.jsx'
+import StudentSubmissionDetailPage from './pages/student/StudentSubmissionDetailPage.jsx'
 import PeerReviewTasksPage from './pages/PeerReviewTasksPage.jsx'
 
 function PublicOnlyRoute({ children }) {
@@ -197,10 +199,34 @@ function App() {
         }
       />
       <Route
+        path="/student/assignments"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <StudentAssignmentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/student/courses/:courseId/lessons/:lessonId/assignments"
         element={
           <ProtectedRoute allowedRoles={['STUDENT']}>
             <StudentAssignmentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/assignments/:assignmentId/submission"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <AssignmentSubmissionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/courses/:courseId/assignments/:assignmentId/submissions/:submissionId"
+        element={
+          <ProtectedRoute allowedRoles={['STUDENT']}>
+            <StudentSubmissionDetailPage />
           </ProtectedRoute>
         }
       />

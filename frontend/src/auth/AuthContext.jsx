@@ -8,6 +8,16 @@ import {
 } from './authStorage.js'
 import { AuthContext } from './authContextValue.js'
 
+function normalizeRole(role) {
+  return typeof role === 'string' && role.startsWith('ROLE_')
+    ? role.slice(5)
+    : role
+}
+
+function normalizeUser(user) {
+  return user ? { ...user, role: normalizeRole(user.role) } : user
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(() => readStoredSession())
   const [user, setUser] = useState(null)
@@ -31,7 +41,7 @@ export function AuthProvider({ children }) {
       try {
         const currentUser = await authApi.getCurrentUser(session.token)
         if (!cancelled) {
-          setUser(currentUser)
+          setUser(normalizeUser(currentUser))
         }
       } catch (error) {
         if (!cancelled && (error instanceof ApiError ? error.status === 401 : true)) {
@@ -62,8 +72,9 @@ export function AuthProvider({ children }) {
 
     storeSession(nextSession, rememberMe)
     setSession(nextSession)
-    setUser(result.user)
-    return result
+    const normalizedUser = normalizeUser(result.user)
+    setUser(normalizedUser)
+    return { ...result, user: normalizedUser }
   }, [])
 
   const value = useMemo(

@@ -8,10 +8,17 @@ function getDashboardPath(role) {
   return '/student'
 }
 
+function normalizeRole(role) {
+  return typeof role === 'string' && role.startsWith('ROLE_')
+    ? role.slice(5)
+    : role
+}
+
 function ProtectedRoute({ allowedRoles, children }) {
   const { user, isInitializing } = useAuth()
   const location = useLocation()
   const intendedPath = `${location.pathname}${location.search}${location.hash}`
+  const userRole = normalizeRole(user?.role)
 
   if (isInitializing) {
     return <LoadingScreen label="Restoring your workspace" />
@@ -21,8 +28,8 @@ function ProtectedRoute({ allowedRoles, children }) {
     return <Navigate to="/login" replace state={{ from: intendedPath }} />
   }
 
-  if (allowedRoles?.length && !allowedRoles.includes(user.role)) {
-    return <Navigate to={getDashboardPath(user.role)} replace />
+  if (allowedRoles?.length && !allowedRoles.includes(userRole)) {
+    return <Navigate to={getDashboardPath(userRole)} replace />
   }
 
   return children

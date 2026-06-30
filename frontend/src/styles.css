@@ -3329,6 +3329,39 @@ button:disabled {
 }
 
 /* Assignment Grid */
+.assignment-subtabs {
+  align-items: center;
+  background: #f8f6f1;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+}
+
+.assignment-subtab {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--neutral-text);
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 800;
+  padding: 10px 14px;
+  transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+
+.assignment-subtab:hover {
+  color: var(--primary-text);
+}
+
+.assignment-subtab--active {
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(29, 37, 34, 0.08);
+  color: var(--primary-text);
+}
+
 .assignment-grid {
   display: grid;
   gap: 16px;
@@ -3419,6 +3452,8 @@ button:disabled {
 
 .assignment-card__action {
   margin-top: 16px;
+  display: grid;
+  gap: 8px;
 }
 
 .assignment-card__btn {
@@ -3442,6 +3477,26 @@ button:disabled {
   transform: translateY(-1px);
   background: #29322f;
   box-shadow: 0 4px 12px rgba(29, 37, 34, 0.15);
+}
+
+.assignment-card__btn:disabled {
+  background: #e5e1d8;
+  border-color: #e5e1d8;
+  box-shadow: none;
+  color: var(--neutral-text);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.assignment-card__btn--secondary {
+  color: var(--primary-text);
+  background: transparent;
+  border-color: var(--border-subtle);
+}
+
+.assignment-card__btn--secondary:hover {
+  background: #f8f6f1;
+  box-shadow: none;
 }
 
 /* Empty State */
@@ -3474,6 +3529,296 @@ button:disabled {
   .lesson-assignments-page__breadcrumb {
     font-size: 0.75rem;
   }
+}
+
+/* UC-06 Assignment Submission */
+.assignment-submission-page {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 54px 0 72px;
+}
+
+.lecturer-sidebar ~ .dashboard-main.assignment-submission-page {
+  width: min(1180px, calc(100% - 328px));
+  margin-left: 296px;
+  margin-right: auto;
+}
+
+.assignment-submission-hero {
+  margin-top: 18px;
+}
+
+.submission-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.deadline-card,
+.submission-panel {
+  background: #fff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.deadline-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 18px 20px;
+}
+
+.deadline-card h2 {
+  margin: 4px 0 6px;
+  font-size: 1.15rem;
+}
+
+.deadline-card p {
+  margin: 0;
+  color: var(--neutral-text);
+}
+
+.deadline-card--warning {
+  border-color: #f0d391;
+  background: #fffaf0;
+}
+
+.assignment-submission-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.75fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.submission-form {
+  display: grid;
+  gap: 18px;
+}
+
+.submission-panel {
+  padding: 20px;
+}
+
+.submission-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.submission-panel__header h2 {
+  margin: 4px 0 0;
+  font-size: 1.12rem;
+}
+
+.submission-panel__header p:not(.eyebrow) {
+  margin: 6px 0 0;
+  color: var(--neutral-text);
+  font-size: 0.86rem;
+}
+
+.submission-detail-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.submission-field {
+  display: grid;
+  gap: 7px;
+}
+
+.submission-field span {
+  color: var(--neutral-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.submission-field input,
+.submission-field textarea {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--primary-text);
+  font: inherit;
+}
+
+.submission-field textarea {
+  resize: vertical;
+}
+
+.submission-field input:focus,
+.submission-field textarea:focus {
+  border-color: #9b9b9b;
+  outline: none;
+}
+
+.submission-row-list {
+  display: grid;
+  gap: 12px;
+}
+
+.submission-link-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(180px, 1.2fr) minmax(110px, 0.7fr) 38px;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: #fbfaf7;
+}
+
+.submission-remove-button {
+  align-self: end;
+}
+
+.submission-file-picker {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submission-file-picker input {
+  display: none;
+}
+
+.submission-file-list,
+.submission-attachment-list {
+  display: grid;
+  gap: 10px;
+}
+
+.submission-file-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(120px, 0.6fr) 38px;
+  gap: 12px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: #fbfaf7;
+}
+
+.submission-file-row strong,
+.submission-attachment-item strong {
+  display: block;
+  color: var(--primary-text);
+}
+
+.submission-file-row small,
+.submission-attachment-item small {
+  display: block;
+  margin-top: 3px;
+  color: var(--neutral-text);
+  font-size: 0.78rem;
+}
+
+.submission-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+}
+
+.submission-submit-row p,
+.submission-muted {
+  color: var(--neutral-text);
+  margin: 0;
+}
+
+.submission-inline-error {
+  margin-bottom: 18px;
+}
+
+.current-submission-panel {
+  position: sticky;
+  top: 92px;
+}
+
+.current-submission-detail dl {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.current-submission-detail dt {
+  color: var(--neutral-text);
+  font-size: 0.76rem;
+}
+
+.current-submission-detail dd {
+  margin: 2px 0 0;
+  color: var(--primary-text);
+  font-weight: 600;
+}
+
+.current-submission-note {
+  margin: 0 0 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8f6f1;
+  color: var(--primary-text);
+  line-height: 1.55;
+}
+
+.current-submission-detail-link {
+  align-items: center;
+  background: #fbfaf7;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.current-submission-detail-link span {
+  color: var(--neutral-text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.current-submission-detail-link a {
+  color: #246a9f;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.submission-attachment-item {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  background: #fbfaf7;
+}
+
+.submission-attachment-item__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef6fb;
+  color: #2f6f9f;
 }
 
 /* UC-05 Student Participation */
@@ -3733,16 +4078,39 @@ button:disabled {
 
 @media (max-width: 1040px) {
   .lecturer-sidebar ~ .dashboard-main.student-participation-page,
-  .dashboard-main.student-participation-page {
+  .dashboard-main.student-participation-page,
+  .lecturer-sidebar ~ .dashboard-main.assignment-submission-page,
+  .dashboard-main.assignment-submission-page {
     width: min(100% - 40px, 1180px);
     margin-left: auto;
     margin-right: auto;
   }
+
+  .assignment-submission-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .current-submission-panel {
+    position: static;
+  }
 }
 
 @media (max-width: 640px) {
-  .dashboard-main.student-participation-page {
+  .dashboard-main.student-participation-page,
+  .dashboard-main.assignment-submission-page {
     width: min(100% - 28px, 1180px);
     padding: 36px 0 54px;
+  }
+
+  .deadline-card,
+  .submission-panel__header,
+  .submission-submit-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .submission-link-row,
+  .submission-file-row {
+    grid-template-columns: 1fr;
   }
 }

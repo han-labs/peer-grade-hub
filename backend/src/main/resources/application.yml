@@ -7,6 +7,11 @@ spring:
   application:
     name: peergradehub
 
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE_MB:20}MB
+      max-request-size: ${MAX_REQUEST_SIZE_MB:100}MB
+
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:peergradehub}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
     username: ${DB_USERNAME:peergrade}
