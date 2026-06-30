@@ -57,5 +57,6 @@ public class GradingEvidenceResponse {
         private String url;
         private String attachmentType; // "FILE" or "LINK"
         private Double fileSizeMb;
+        private String downloadUrl; 
     }
 }

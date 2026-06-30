@@ -1,12 +1,30 @@
 // frontend/src/components/result/ShowcaseSubmissionCard.jsx
-import { FileText, Link2, Calendar, User, Eye, EyeOff } from 'lucide-react';
+import { FileText, Link2, Calendar, User, Eye, EyeOff, Download } from 'lucide-react';
+import { useAuth } from '../../auth/useAuth';
+import { downloadSubmissionFile } from '../../api/studentSubmissionApi';
 import PeerFeedbackList from './PeerFeedbackList';
+
+/**
+ * Trigger download file từ blob
+ */
+function triggerBlobDownload(blob, fileName) {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
 
 /**
  * One group's submission in the Class Gallery
  * BR-15: Only shows final score if the group's grade is published
  */
 export default function ShowcaseSubmissionCard({ submission, isCurrentGroup }) {
+  const { token } = useAuth();
+  
   if (!submission) return null;
 
   const {
@@ -23,6 +41,29 @@ export default function ShowcaseSubmissionCard({ submission, isCurrentGroup }) {
 
   const hasScore = isPublished && finalScore !== null && finalScore !== undefined;
   const hasAttachments = attachments.length > 0;
+
+  /**
+   * Xử lý click download file
+   */
+  const handleDownload = async (attachment) => {
+    // Nếu là LINK, mở tab mới
+    if (attachment.attachmentType === 'LINK') {
+      const url = attachment.openUrl || attachment.url;
+      if (url) window.open(url, '_blank');
+      return;
+    }
+
+    // Nếu là FILE, download qua API
+    if (attachment.attachmentType === 'FILE' && attachment.downloadUrl) {
+      try {
+        const { blob, fileName } = await downloadSubmissionFile(attachment.downloadUrl, token);
+        triggerBlobDownload(blob, fileName);
+      } catch (error) {
+        console.error('Download failed:', error);
+        alert(error.message || 'File is not available for download.');
+      }
+    }
+  };
 
   return (
     <div className="showcase-submission-card">
@@ -92,11 +133,24 @@ export default function ShowcaseSubmissionCard({ submission, isCurrentGroup }) {
           <div className="showcase-submission-card__attachments">
             {attachments.map((att, index) => {
               const isLink = att.attachmentType === 'LINK';
+              const key = att.attachmentId || index;
+
               return (
-                <span className="showcase-submission-card__attachment" key={index}>
+                <button
+                  key={key}
+                  className="showcase-submission-card__attachment"
+                  onClick={() => handleDownload(att)}
+                  title={isLink ? 'Open link' : `Download ${att.fileName || att.title}`}
+                >
                   {isLink ? <Link2 size={12} /> : <FileText size={12} />}
                   {att.title || att.fileName || att.url || 'Attachment'}
-                </span>
+                  {att.fileSizeMb && (
+                    <span className="showcase-submission-card__attachment-size">
+                      ({att.fileSizeMb} MB)
+                    </span>
+                  )}
+                  {!isLink && <Download size={12} />}
+                </button>
               );
             })}
           </div>

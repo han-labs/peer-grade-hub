@@ -49,7 +49,7 @@ import java.util.Locale;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
+import edu.hcmute.peergradehub.dao.AssignmentResultDao;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -93,7 +93,7 @@ public class StudentSubmissionFacadeImpl implements StudentSubmissionFacade {
     private final StudentGroupDao studentGroupDao;
     private final AssignmentSubmissionDao assignmentSubmissionDao;
     private final SubmissionAttachmentDao submissionAttachmentDao;
-
+    private final AssignmentResultDao assignmentResultDao;
     @Value("${app.file.upload-dir:uploads}")
     private String uploadDir;
 
@@ -643,32 +643,48 @@ public class StudentSubmissionFacadeImpl implements StudentSubmissionFacade {
     }
 
     private void validateDownloadPermission(User actor, AssignmentSubmission submission) {
-        Course course = getCourse(submission.getAssignment());
-        if (actor.getUserRole() == UserRole.STUDENT && actor.isActive()) {
-            StudentGroup actorGroup = studentGroupDao.findGroupByStudentAndCourse(actor.getId(), course.getId())
-                    .orElseThrow(() -> new ForbiddenException("You are not allowed to download this file."));
-            if (!submission.getGroup().getId().equals(actorGroup.getId())) {
-                throw new ForbiddenException("You are not allowed to download this file.");
+    Course course = getCourse(submission.getAssignment());
+    Assignment assignment = submission.getAssignment();
+    
+    // Nếu là STUDENT
+    if (actor.getUserRole() == UserRole.STUDENT && actor.isActive()) {
+        StudentGroup actorGroup = studentGroupDao.findGroupByStudentAndCourse(actor.getId(), course.getId())
+                .orElseThrow(() -> new ForbiddenException("You are not allowed to download this file."));
+        
+        // Cho phép download file của group mình
+        if (submission.getGroup().getId().equals(actorGroup.getId())) {
+            return;
+        }
+        
+        // ===== THÊM: Cho phép download file của group đã publish nếu showcase mode = true =====
+        if (Boolean.TRUE.equals(assignment.getShowcaseMode())) {
+            // Kiểm tra group này đã publish chưa
+            boolean isPublished = assignmentResultDao.existsPublishedByAssignmentIdAndGroupId(
+                    assignment.getId(), submission.getGroup().getId()
+            );
+            if (isPublished) {
+                return;  // Cho phép download
             }
-            return;
         }
-
-        if (actor.getUserRole() == UserRole.LECTURER
-                && actor.isActive()
-                && course.getLecturer() != null
-                && course.getLecturer().getId().equals(actor.getId())) {
-            return;
-        }
-
+        
         throw new ForbiddenException("You are not allowed to download this file.");
     }
+
+    // Nếu là LECTURER
+    if (actor.getUserRole() == UserRole.LECTURER && actor.isActive()
+            && course.getLecturer() != null && course.getLecturer().getId().equals(actor.getId())) {
+        return;
+    }
+
+    throw new ForbiddenException("You are not allowed to download this file.");
+}
 
     private Path resolveStoredFilePath(String filePath) {
         String storedPath = trimToNull(filePath);
         if (storedPath == null) {
             throw new NotFoundException(FILE_UNAVAILABLE_MESSAGE);
         }
-
+        
         Path uploadRoot = uploadRootPath();
         Path candidatePath = Path.of(storedPath);
         Path resolvedPath = candidatePath.isAbsolute()

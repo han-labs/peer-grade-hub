@@ -98,7 +98,10 @@ export default function GroupGradeCard({
           )}
           <EvidencePanel
             hasSubmission={group.hasSubmission}
-            submission={group}
+            submittedAt={group.submittedAt}
+            submitterName={group.submitterName}
+            submissionNote={group.submissionNote}
+            attachments={group.attachments}
             hasPeerReview={group.hasPeerReview}
             peerReviews={group.peerReviews}
             isPublished={isPublished}

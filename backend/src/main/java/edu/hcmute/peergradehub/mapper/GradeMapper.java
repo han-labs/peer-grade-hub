@@ -20,7 +20,7 @@ import edu.hcmute.peergradehub.entity.AssignmentSubmission;
 import edu.hcmute.peergradehub.entity.PeerReview;
 import edu.hcmute.peergradehub.entity.StudentGroup;
 import edu.hcmute.peergradehub.entity.SubmissionAttachment;
-
+import edu.hcmute.peergradehub.enumeration.SubmissionAttachmentType;
 @Component
 public class GradeMapper {
 
@@ -249,20 +249,30 @@ public class GradeMapper {
     // ===== Submission Attachment Info =====
 
     public GradingEvidenceResponse.SubmissionAttachmentInfo toSubmissionAttachmentInfo(
-            SubmissionAttachment attachment
-    ) {
-        if (attachment == null) {
-            return null;
-        }
-        return GradingEvidenceResponse.SubmissionAttachmentInfo.builder()
-                .title(attachment.getTitle())
-                .fileName(attachment.getFileName())
-                .filePath(attachment.getFilePath())
-                .url(attachment.getUrl())
-                .attachmentType(attachment.getAttachmentType() == null ? null : 
-                        attachment.getAttachmentType().name())
-                .fileSizeMb(attachment.getFileSizeMb())
-                .build();
+        SubmissionAttachment attachment
+) {
+    if (attachment == null) {
+        return null;
     }
+    
+    // Tạo downloadUrl cho FILE
+    String downloadUrl = null;
+    if (attachment.getAttachmentType() == SubmissionAttachmentType.FILE) {
+        Long submissionId = attachment.getAssignmentSubmission().getId();
+        Long fileId = attachment.getId();
+        downloadUrl = String.format("/submissions/%d/files/%d/download", submissionId, fileId);
+    }
+    
+    return GradingEvidenceResponse.SubmissionAttachmentInfo.builder()
+            .title(attachment.getTitle())
+            .fileName(attachment.getFileName())
+            .filePath(attachment.getFilePath())
+            .url(attachment.getUrl())
+            .attachmentType(attachment.getAttachmentType() == null ? null : 
+                    attachment.getAttachmentType().name())
+            .fileSizeMb(attachment.getFileSizeMb())
+            .downloadUrl(downloadUrl)  
+            .build();
+}
     
 }

@@ -34,6 +34,7 @@ import edu.hcmute.peergradehub.entity.AssignmentResult;
 import edu.hcmute.peergradehub.entity.AssignmentSubmission;
 import edu.hcmute.peergradehub.entity.PeerReview;
 import edu.hcmute.peergradehub.entity.StudentGroup;
+import edu.hcmute.peergradehub.entity.SubmissionAttachment;
 import edu.hcmute.peergradehub.entity.User;
 import edu.hcmute.peergradehub.exception.BadRequestException;
 import edu.hcmute.peergradehub.exception.ForbiddenException;
@@ -73,115 +74,134 @@ public class GradeServiceImpl implements GradeService {
     // ============================================================
 
     @Override
-@Transactional(readOnly = true)
-public GradingDataResponse getGradingData(Long assignmentId, Long lecturerId) {
-    log.info("Fetching grading data for assignment: {} by lecturer: {}", assignmentId, lecturerId);
+    @Transactional(readOnly = true)
+    public GradingDataResponse getGradingData(Long assignmentId, Long lecturerId) {
+        log.info("Fetching grading data for assignment: {} by lecturer: {}", assignmentId, lecturerId);
 
-    // 1. Validate lecturer permission
-    Assignment assignment = validateLecturerPermission(assignmentId, lecturerId);
+        // 1. Validate lecturer permission
+        Assignment assignment = validateLecturerPermission(assignmentId, lecturerId);
 
-    // 2. Get all groups for this course
-    Long courseId = assignment.getLesson().getCourse().getId();
-    List<StudentGroup> groups = studentGroupDao.findByCourseIdWithMembers(courseId);
+        // 2. Get all groups for this course
+        Long courseId = assignment.getLesson().getCourse().getId();
+        List<StudentGroup> groups = studentGroupDao.findByCourseIdWithMembers(courseId);
 
-    // 3. Get all submissions for this assignment
-    List<AssignmentSubmission> submissions = assignmentSubmissionDao
-            .findByAssignmentIdWithGroupAndSubmitter(assignmentId);
-    Map<Long, AssignmentSubmission> submissionMap = submissions.stream()
-            .collect(Collectors.toMap(
-                    s -> s.getGroup().getId(),
-                    s -> s,
-                    (existing, replacement) -> existing
-            ));
+        // 3. Get all submissions for this assignment
+        List<AssignmentSubmission> submissions = assignmentSubmissionDao
+                .findByAssignmentIdWithGroupAndSubmitter(assignmentId);
+        Map<Long, AssignmentSubmission> submissionMap = submissions.stream()
+                .collect(Collectors.toMap(
+                        s -> s.getGroup().getId(),
+                        s -> s,
+                        (existing, replacement) -> existing
+                ));
 
-    // 4. Get all peer reviews for this assignment
-    List<PeerReview> peerReviews = peerReviewDao.findByAssignmentId(assignmentId);
-    Map<Long, List<PeerReview>> peerReviewsByRevieweeGroup = new HashMap<>();
-    
-    
-    Map<Long, List<PeerReviewEvidenceResponse>> peerReviewEvidenceMap = new HashMap<>();
-    
-    for (PeerReview review : peerReviews) {
-        Long revieweeGroupId = review.getPeerReviewAssignment().getRevieweeGroup().getId();
-        peerReviewsByRevieweeGroup.computeIfAbsent(revieweeGroupId, k -> new ArrayList<>())
-                .add(review);
-        
-        // Build peer review evidence response
-        StudentGroup reviewerGroup = review.getPeerReviewAssignment().getReviewerGroup();
-        PeerReviewEvidenceResponse evidence = gradeMapper.toPeerReviewEvidenceResponse(review, reviewerGroup);
-        peerReviewEvidenceMap.computeIfAbsent(revieweeGroupId, k -> new ArrayList<>())
-                .add(evidence);
-    }
-
-    // 5. Get all existing results for this assignment
-    List<AssignmentResult> results = assignmentResultDao
-            .findByAssignmentIdWithGroupAndPublishers(assignmentId);
-    Map<Long, AssignmentResult> resultMap = results.stream()
-            .collect(Collectors.toMap(
-                    r -> r.getGroup().getId(),
-                    r -> r,
-                    (existing, replacement) -> existing
-            ));
-
-    // 6. Build response for each group
-    List<GradingEvidenceResponse> evidenceResponses = new ArrayList<>();
-    for (StudentGroup group : groups) {
-        Long groupId = group.getId();
-        Boolean hasSubmission = submissionMap.containsKey(groupId);
-        Boolean hasPeerReview = peerReviewsByRevieweeGroup.containsKey(groupId);
-        Long peerReviewCount = hasPeerReview ? (long) peerReviewsByRevieweeGroup.get(groupId).size() : 0L;
-        List<PeerReviewEvidenceResponse> peerReviewList = peerReviewEvidenceMap.getOrDefault(groupId, new ArrayList<>());
-        
-        AssignmentSubmission submission = submissionMap.get(groupId);
-        AssignmentResult result = resultMap.get(groupId);
-        
-        String publishedByName = null;
-        if (result != null && result.getPublished() && result.getPublishedBy() != null) {
-            publishedByName = result.getPublishedBy().getFullName();
+        // ===== Lấy attachments cho từng submission =====
+        Map<Long, List<GradingEvidenceResponse.SubmissionAttachmentInfo>> attachmentMap = new HashMap<>();
+        for (AssignmentSubmission submission : submissions) {
+            Long groupId = submission.getGroup().getId();
+            List<GradingEvidenceResponse.SubmissionAttachmentInfo> attachments = new ArrayList<>();
+            
+            if (submission.getAttachments() != null && !submission.getAttachments().isEmpty()) {
+                for (SubmissionAttachment attachment : submission.getAttachments()) {
+                    GradingEvidenceResponse.SubmissionAttachmentInfo info = gradeMapper.toSubmissionAttachmentInfo(attachment);
+                    if (info != null) {
+                        attachments.add(info);
+                    }
+                }
+            }
+            attachmentMap.put(groupId, attachments);
         }
+
+        // 4. Get all peer reviews for this assignment
+        List<PeerReview> peerReviews = peerReviewDao.findByAssignmentId(assignmentId);
+        Map<Long, List<PeerReview>> peerReviewsByRevieweeGroup = new HashMap<>();
+        Map<Long, List<PeerReviewEvidenceResponse>> peerReviewEvidenceMap = new HashMap<>();
         
-        
-        GradingEvidenceResponse evidence = gradeMapper.toGradingEvidenceResponse(
-                group,
-                hasSubmission,
-                submission,
-                hasPeerReview,
-                peerReviewCount,
-                peerReviewList,
-                result,
-                publishedByName,
-                hasSubmission // canPublish = has submission
+        for (PeerReview review : peerReviews) {
+            Long revieweeGroupId = review.getPeerReviewAssignment().getRevieweeGroup().getId();
+            peerReviewsByRevieweeGroup.computeIfAbsent(revieweeGroupId, k -> new ArrayList<>())
+                    .add(review);
+            
+            StudentGroup reviewerGroup = review.getPeerReviewAssignment().getReviewerGroup();
+            PeerReviewEvidenceResponse evidence = gradeMapper.toPeerReviewEvidenceResponse(review, reviewerGroup);
+            peerReviewEvidenceMap.computeIfAbsent(revieweeGroupId, k -> new ArrayList<>())
+                    .add(evidence);
+        }
+
+        // 5. Get all existing results for this assignment
+        List<AssignmentResult> results = assignmentResultDao
+                .findByAssignmentIdWithGroupAndPublishers(assignmentId);
+        Map<Long, AssignmentResult> resultMap = results.stream()
+                .collect(Collectors.toMap(
+                        r -> r.getGroup().getId(),
+                        r -> r,
+                        (existing, replacement) -> existing
+                ));
+
+        // 6. Build response for each group
+        List<GradingEvidenceResponse> evidenceResponses = new ArrayList<>();
+        for (StudentGroup group : groups) {
+            Long groupId = group.getId();
+            Boolean hasSubmission = submissionMap.containsKey(groupId);
+            Boolean hasPeerReview = peerReviewsByRevieweeGroup.containsKey(groupId);
+            Long peerReviewCount = hasPeerReview ? (long) peerReviewsByRevieweeGroup.get(groupId).size() : 0L;
+            List<PeerReviewEvidenceResponse> peerReviewList = peerReviewEvidenceMap.getOrDefault(groupId, new ArrayList<>());
+            
+            AssignmentSubmission submission = submissionMap.get(groupId);
+            AssignmentResult result = resultMap.get(groupId);
+            
+            String publishedByName = null;
+            if (result != null && result.getPublished() && result.getPublishedBy() != null) {
+                publishedByName = result.getPublishedBy().getFullName();
+            }
+            
+            GradingEvidenceResponse evidence = gradeMapper.toGradingEvidenceResponse(
+                    group,
+                    hasSubmission,
+                    submission,
+                    hasPeerReview,
+                    peerReviewCount,
+                    peerReviewList,
+                    result,
+                    publishedByName,
+                    hasSubmission
+            );
+            
+            // ===== SET ATTACHMENTS =====
+            List<GradingEvidenceResponse.SubmissionAttachmentInfo> attachments = attachmentMap.getOrDefault(groupId, new ArrayList<>());
+            evidence.setAttachments(attachments);
+            
+            evidenceResponses.add(evidence);
+        }
+
+        // 7. Calculate statistics
+        Long submittedCount = groups.stream()
+                .filter(g -> submissionMap.containsKey(g.getId()))
+                .count();
+        Long reviewedCount = groups.stream()
+                .filter(g -> peerReviewsByRevieweeGroup.containsKey(g.getId()))
+                .count();
+
+        String lecturerName = userDao.findById(lecturerId)
+                .map(User::getFullName)
+                .orElse("Unknown Lecturer");
+
+        // 8. Build and return response
+        return new GradingDataResponse(
+                assignment.getId(),
+                assignment.getTitle(),
+                assignment.getDescription(),
+                gradeMapper.formatDateTime(assignment.getSubmissionDeadline()),
+                gradeMapper.formatDateTime(assignment.getReviewDeadline()),
+                assignment.getShowcaseMode(),
+                evidenceResponses,
+                lecturerName,
+                lecturerId,
+                (long) groups.size(),
+                submittedCount,
+                reviewedCount
         );
-        evidenceResponses.add(evidence);
     }
-
-    Long submittedCount = groups.stream()
-            .filter(g -> submissionMap.containsKey(g.getId()))
-            .count();
-    Long reviewedCount = groups.stream()
-            .filter(g -> peerReviewsByRevieweeGroup.containsKey(g.getId()))
-            .count();
-
-    String lecturerName = userDao.findById(lecturerId)
-            .map(User::getFullName)
-            .orElse("Unknown Lecturer");
-
-    
-    return new GradingDataResponse(
-            assignment.getId(),
-            assignment.getTitle(),
-            assignment.getDescription(),
-            gradeMapper.formatDateTime(assignment.getSubmissionDeadline()),
-            gradeMapper.formatDateTime(assignment.getReviewDeadline()),
-            assignment.getShowcaseMode(),
-            evidenceResponses,
-            lecturerName,
-            lecturerId,
-            (long) groups.size(),
-            submittedCount,
-            reviewedCount
-    );
-}
 
     @Override
     @Transactional
@@ -189,20 +209,16 @@ public GradingDataResponse getGradingData(Long assignmentId, Long lecturerId) {
         log.info("Publishing grades for assignment: {} by lecturer: {}", 
                 request.getAssignmentId(), lecturerId);
 
-        // 1. Validate - Exception 2.3: No group selected
         if (request.getGroupIds() == null || request.getGroupIds().isEmpty()) {
             throw GradeValidationException.noGroupSelected();
         }
 
-        // 2. Validate lecturer permission
         Assignment assignment = validateLecturerPermission(request.getAssignmentId(), lecturerId);
 
-        // 3. Get lecturer name for response
         String lecturerName = userDao.findById(lecturerId)
                 .map(User::getFullName)
                 .orElse("Unknown Lecturer");
 
-        // 4. Process each group
         List<PublishGradeResponse.PublishedGroupResult> results = new ArrayList<>();
         Map<Long, PublishGradeRequest.GradeEntry> gradeEntryMap = request.getGrades().stream()
                 .collect(Collectors.toMap(
@@ -220,7 +236,6 @@ public GradingDataResponse getGradingData(Long assignmentId, Long lecturerId) {
             results.add(result);
         }
 
-        // 5. Build response
         return gradeMapper.toPublishGradeResponse(assignment, results, lecturerName);
     }
 
@@ -230,15 +245,12 @@ public GradingDataResponse getGradingData(Long assignmentId, Long lecturerId) {
         log.info("Toggling showcase mode for assignment: {} to {} by lecturer: {}", 
                 request.getAssignmentId(), request.getEnabled(), lecturerId);
 
-        // 1. Validate lecturer permission
         Assignment assignment = validateLecturerPermission(request.getAssignmentId(), lecturerId);
 
-        // 2. Update showcase mode
         try {
             int updated = assignmentDao.updateShowcaseMode(request.getAssignmentId(), request.getEnabled());
             
             if (updated == 0) {
-                // Exception 4.1: Could not change Showcase Mode
                 throw new BadRequestException(
                     "Could not change Showcase Mode due to a system error. Please try again."
                 );
@@ -269,83 +281,75 @@ public GradingDataResponse getGradingData(Long assignmentId, Long lecturerId) {
     // ============================================================
 
     @Override
-@Transactional
-public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturerId) {
-    log.info("Saving grade draft for assignment: {}, group: {} by lecturer: {}", 
-            request.getAssignmentId(), request.getGroupId(), lecturerId);
+    @Transactional
+    public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturerId) {
+        log.info("Saving grade draft for assignment: {}, group: {} by lecturer: {}", 
+                request.getAssignmentId(), request.getGroupId(), lecturerId);
 
-    // 1. Validate lecturer permission
-    Assignment assignment = validateLecturerPermission(request.getAssignmentId(), lecturerId);
+        Assignment assignment = validateLecturerPermission(request.getAssignmentId(), lecturerId);
 
-    // 2. Validate comment length (Exception 2.2)
-    if (!validateCommentLength(request.getComment())) {
-        throw GradeValidationException.commentTooLong();
+        if (!validateCommentLength(request.getComment())) {
+            throw GradeValidationException.commentTooLong();
+        }
+
+        StudentGroup group = studentGroupDao.findById(request.getGroupId())
+                .orElseThrow(() -> new NotFoundException("Group not found"));
+
+        Optional<AssignmentResult> existingResult = assignmentResultDao
+                .findByAssignmentIdAndGroupId(request.getAssignmentId(), request.getGroupId());
+
+        AssignmentResult result;
+        if (existingResult.isPresent()) {
+            result = existingResult.get();
+            result.setScore(request.getScore());
+            result.setFinalComment(request.getComment());
+            result.setPublished(false);
+            result.setPublishedAt(null);
+            result.setPublishedBy(null);
+            result.setGradedAt(LocalDateTime.now());
+            result.setGradedBy(userDao.findById(lecturerId).orElse(null));
+            result = assignmentResultDao.save(result);
+        } else {
+            result = AssignmentResult.builder()
+                    .assignment(assignment)
+                    .group(group)
+                    .score(request.getScore())
+                    .finalComment(request.getComment())
+                    .published(false)
+                    .gradedAt(LocalDateTime.now())
+                    .gradedBy(userDao.findById(lecturerId).orElse(null))
+                    .build();
+            result = assignmentResultDao.save(result);
+        }
+
+        return gradeMapper.toGradeDraftResponse(
+                request.getAssignmentId(),
+                assignment.getTitle(),
+                request.getGroupId(),
+                group.getGroupName(),
+                result.getScore(),
+                result.getFinalComment(),
+                false,
+                "Grades have been saved as draft. Students cannot view them until they are published."
+        );
     }
 
-    // 3. Get group
-    StudentGroup group = studentGroupDao.findById(request.getGroupId())
-            .orElseThrow(() -> new NotFoundException("Group not found"));
-
-    // 4. Save or update draft
-    Optional<AssignmentResult> existingResult = assignmentResultDao
-            .findByAssignmentIdAndGroupId(request.getAssignmentId(), request.getGroupId());
-
-    AssignmentResult result;
-    if (existingResult.isPresent()) {
-        result = existingResult.get();
-        // Nếu score rỗng/null thì set null, không set 0
-        result.setScore(request.getScore());  // Nếu null thì lưu null
-        result.setFinalComment(request.getComment());
-        result.setPublished(false);
-        result.setPublishedAt(null);
-        result.setPublishedBy(null);
-        result.setGradedAt(LocalDateTime.now());
-        result.setGradedBy(userDao.findById(lecturerId).orElse(null));
-        result = assignmentResultDao.save(result);
-    } else {
-        result = AssignmentResult.builder()
-                .assignment(assignment)
-                .group(group)
-                .score(request.getScore())  // Nếu null thì lưu null
-                .finalComment(request.getComment())
-                .published(false)
-                .gradedAt(LocalDateTime.now())
-                .gradedBy(userDao.findById(lecturerId).orElse(null))
-                .build();
-        result = assignmentResultDao.save(result);
-    }
-
-    return gradeMapper.toGradeDraftResponse(
-            request.getAssignmentId(),
-            assignment.getTitle(),
-            request.getGroupId(),
-            group.getGroupName(),
-            result.getScore(),
-            result.getFinalComment(),
-            false,
-            "Grades have been saved as draft. Students cannot view them until they are published."
-    );
-}
     @Override
     @Transactional
     public GradeDraftResponse unpublishGrade(UnpublishGradeRequest request, Long lecturerId) {
         log.info("Unpublishing grade for assignment: {}, group: {} by lecturer: {}", 
                 request.getAssignmentId(), request.getGroupId(), lecturerId);
 
-        // 1. Validate lecturer permission
         Assignment assignment = validateLecturerPermission(request.getAssignmentId(), lecturerId);
 
-        // 2. Find existing result
         AssignmentResult result = assignmentResultDao
                 .findByAssignmentIdAndGroupId(request.getAssignmentId(), request.getGroupId())
                 .orElseThrow(() -> new NotFoundException("Grade result not found"));
 
-        // 3. Check if already unpublished
         if (!result.getPublished()) {
             throw new BadRequestException("Grade is already unpublished");
         }
 
-        // 4. Unpublish
         result.setPublished(false);
         result.setUnpublishedAt(LocalDateTime.now());
         result.setUnpublishedBy(userDao.findById(lecturerId).orElse(null));
@@ -353,7 +357,6 @@ public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturer
         result.setPublishedBy(null);
         assignmentResultDao.save(result);
 
-        // 5. Get group name
         String groupName = result.getGroup().getGroupName();
 
         return gradeMapper.toGradeDraftResponseWithUnpublish(
@@ -403,10 +406,6 @@ public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturer
     // ===== PRIVATE HELPER METHODS =====
     // ============================================================
 
-    /**
-     * Validate that the lecturer has permission to grade this assignment.
-     * Throws ForbiddenException if not authorized.
-     */
     private Assignment validateLecturerPermission(Long assignmentId, Long lecturerId) {
         Assignment assignment = assignmentDao.findByIdWithCourseAndLecturer(assignmentId)
                 .orElseThrow(() -> new NotFoundException("Assignment not found"));
@@ -419,10 +418,6 @@ public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturer
         return assignment;
     }
 
-    /**
-     * Process publishing a grade for a single group.
-     * Handles all validation and exceptions.
-     */
     private PublishGradeResponse.PublishedGroupResult processGroupPublish(
             Assignment assignment,
             Long groupId,
@@ -433,7 +428,6 @@ public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturer
                 .map(StudentGroup::getGroupName)
                 .orElse("Unknown Group");
 
-        // 1. Check if grade entry exists
         if (gradeEntry == null) {
             return gradeMapper.toPublishedGroupResult(
                     groupId,
@@ -446,35 +440,29 @@ public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturer
             );
         }
 
-        // 2. Validate grade format (Exception 2.1)
         if (!validateGradeFormat(gradeEntry.getScore())) {
             throw GradeValidationException.invalidScore();
         }
 
-        // 3. Validate comment length (Exception 2.2)
         if (gradeEntry.getComment() != null && !validateCommentLength(gradeEntry.getComment())) {
             throw GradeValidationException.commentTooLong();
         }
 
-        // 4. Check submission (Exception 3.1)
         try {
             boolean hasSubmission = groupHasSubmission(assignment.getId(), groupId);
             if (!hasSubmission) {
                 throw new NoSubmissionException(groupId, groupName);
             }
         } catch (NoSubmissionException e) {
-            // Log và throw lại để GlobalExceptionHandler bắt
             throw e;
         }
 
-        // 5. Check peer review (Exception 3.2 - Warning)
         boolean hasPeerReview = groupHasPeerReview(assignment.getId(), groupId);
-            String warning = null;
-            if (!hasPeerReview) {
-                warning = "[" + groupName + "] has not received any peer review. Do you still want to publish the grade?";
+        String warning = null;
+        if (!hasPeerReview) {
+            warning = "[" + groupName + "] has not received any peer review. Do you still want to publish the grade?";
         }
 
-        // 6. Save or update result
         try {
             Optional<AssignmentResult> existingResult = assignmentResultDao
                     .findByAssignmentIdAndGroupId(assignment.getId(), groupId);
@@ -522,17 +510,12 @@ public GradeDraftResponse saveDraft(SaveDraftGradeRequest request, Long lecturer
 
         } catch (Exception e) {
             log.error("Error publishing grade for group {}: {}", groupId, e.getMessage());
-            // Exception 2.4: System error
             throw new BadRequestException(
                 "Final grade could not be saved due to a system error. Please try again."
             );
         }
     }
 
-    /**
-     * Get all groups for a course with member information.
-     * Used internally for building grading data.
-     */
     private List<StudentGroup> getGroupsForCourse(Long courseId) {
         return studentGroupDao.findByCourseIdWithMembers(courseId);
     }

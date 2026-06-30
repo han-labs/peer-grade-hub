@@ -68,7 +68,7 @@ export default function GradeForm({
             value={localComment}
             onChange={handleCommentChange}
             disabled={isPublished}
-            // ❌ ĐÃ BỎ maxLength={2000}
+            
             rows={3}
             className="grade-form__comment-input"
             placeholder="Enter your feedback for this group..."
@@ -90,7 +90,7 @@ export default function GradeForm({
               {isLoading ? 'Unpublishing...' : 'Unpublish'}
             </button>
             <span className="grade-form__published-badge">
-              ✅ Published
+              Published
             </span>
           </>
         ) : (

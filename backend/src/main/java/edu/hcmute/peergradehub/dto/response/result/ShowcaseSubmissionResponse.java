@@ -1,12 +1,12 @@
 package edu.hcmute.peergradehub.dto.response.result;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * One group's submission in the Class Gallery.
@@ -37,11 +37,16 @@ public class ShowcaseSubmissionResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AttachmentInfo {
-        private String title;
-        private String fileName;
-        private String filePath;
-        private String url;
-        private String attachmentType; // "FILE" or "LINK"
-        private Double fileSizeMb;
-    }
+    private Long attachmentId;      
+    private String attachmentType;
+    private String title;
+    private String fileName;
+    private String filePath;
+    private String fileType;
+    private Double fileSizeMb;
+    private String url;
+    private String label;
+    private String downloadUrl;      
+    private String openUrl;         
+}
 }
