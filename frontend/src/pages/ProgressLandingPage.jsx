@@ -16,6 +16,7 @@ import { ApiError } from '../api/httpClient.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 import LoadingScreen from '../components/LoadingScreen.jsx'
+import ProgressAssistant from '../components/progress/ProgressAssistant.jsx'
 import '../progress.css'
 
 function countUpcomingDeadlines(courses) {
@@ -453,6 +454,7 @@ function ProgressLandingPage() {
           </>
         )}
       </main>
+      <ProgressAssistant contextType="overview" data={{ courses }} />
     </div>
   )
 }

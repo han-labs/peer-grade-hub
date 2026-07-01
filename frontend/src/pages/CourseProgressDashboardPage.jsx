@@ -15,6 +15,7 @@ import { ApiError } from '../api/httpClient.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 import LoadingScreen from '../components/LoadingScreen.jsx'
+import ProgressAssistant from '../components/progress/ProgressAssistant.jsx'
 import '../progress.css'
 
 function formatDateTime(value) {
@@ -324,6 +325,10 @@ function CourseProgressDashboardPage() {
           </>
         ) : null}
       </main>
+      <ProgressAssistant
+        contextType="course"
+        data={{ assignments, courseWorkspace }}
+      />
     </div>
   )
 }

@@ -19,6 +19,7 @@ import { ApiError } from '../api/httpClient.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 import GroupDetailPanel from '../components/progress/GroupDetailPanel.jsx'
+import ProgressAssistant from '../components/progress/ProgressAssistant.jsx'
 import '../progress.css'
 
 const PRIMARY_FILTERS = [
@@ -541,6 +542,12 @@ function MonitorProgressPage() {
           error={detailError}
           onClose={closeGroupDetail}
           onRetry={() => loadGroupDetail(selectedGroup)}
+        />
+      )}
+      {isLecturer && (
+        <ProgressAssistant
+          contextType="assignment"
+          data={{ dashboard, groups }}
         />
       )}
     </div>
