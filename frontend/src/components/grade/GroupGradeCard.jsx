@@ -49,10 +49,7 @@ export default function GroupGradeCard({
       <div className="group-grade-card__header" onClick={handleToggleExpand}>
         <div className="group-grade-card__info">
           <span className="group-grade-card__name">{group.groupName}</span>
-          <span className="group-grade-card__member-count">
-            <Users size={14} />
-            {group.memberCount || 0} members
-          </span>
+          
         </div>
 
         <div className="group-grade-card__meta">

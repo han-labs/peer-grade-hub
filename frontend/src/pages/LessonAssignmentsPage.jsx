@@ -6,7 +6,9 @@ import {
   FileText, 
   Plus, 
   AlertCircle, 
-  CheckCircle2 
+  CheckCircle2,
+  Gauge,
+  ClipboardList
 } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
 import { getLessonAssignments } from '../api/lessonApi'
@@ -106,9 +108,33 @@ export default function LessonAssignmentsPage() {
 
   if (loading && !showFormPanel) return <LoadingScreen label="Loading assignments..." />
 
+  if (error && !showFormPanel) {
+    return (
+      <div className="dashboard-shell">
+        <DashboardTopbar icon={Gauge} label="Manage Final Grades" />
+        <main className="lesson-assignments-page">
+          <button
+            className="back-link"
+            type="button"
+            onClick={() => navigate(`/lecturer/courses/${courseId}/lessons`)}
+          >
+            <ArrowLeft size={17} aria-hidden="true" />
+            Back to lessons
+          </button>
+          <div className="error-state">
+            <p>{error}</p>
+            <button className="secondary-action" onClick={fetchAssignments}>
+              Retry
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="dashboard-shell">
-      <DashboardTopbar icon={FileText} label="Lesson Assignments" />
+      <DashboardTopbar icon={Gauge} label="Manage Final Grades" />
 
       <main className="lesson-assignments-page">
         <button className="back-link" type="button" onClick={() => navigate(`/lecturer/courses/${courseId}/lessons`)}>
@@ -126,28 +152,27 @@ export default function LessonAssignmentsPage() {
             <div className="lesson-assignments-page__title-section">
               <h1>Assignments</h1>
               <p className="lesson-assignments-page__subtitle">
-                Select an assignment to review submissions and manage final grades.
+                Select an assignment to grade.
               </p>
             </div>
           </div>
-          {!showFormPanel && (
-            <button className="primary-button" onClick={handleOpenCreateForm}>
-              <Plus size={16} /> New Assignment
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span className="stat-chip">
+              <ClipboardList size={16} />
+              {assignments.length} {assignments.length === 1 ? 'assignment' : 'assignments'}
+            </span>
+            {!showFormPanel && (
+              <button className="primary-button" onClick={handleOpenCreateForm}>
+                <Plus size={16} /> New Assignment
+              </button>
+            )}
+          </div>
         </div>
 
         {successMessage && !showFormPanel && (
           <div className="form-alert" style={{ marginBottom: '24px', background: 'var(--positive-bg)', color: 'var(--positive-text)', border: '1px solid #c3e6cb' }}>
             <CheckCircle2 size={18} />
             <span>{successMessage}</span>
-          </div>
-        )}
-
-        {error && !showFormPanel && (
-          <div className="form-alert" style={{ marginBottom: '24px' }}>
-            <AlertCircle size={18} />
-            <span>{error}</span>
           </div>
         )}
 

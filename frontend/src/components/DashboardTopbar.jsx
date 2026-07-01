@@ -4,7 +4,6 @@ import {
   ClipboardCheck,
   FileText,
   Gauge,
-  GraduationCap,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -12,6 +11,7 @@ import {
   UserRound,
   UsersRound,
   X,
+  GraduationCap
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
@@ -73,15 +73,13 @@ const ROLE_NAV_GROUPS = {
           status: 'Available',
           activeLabels: ['Group Management', 'Manage Groups'],
         },
-        /*
         {
-          label: 'Manage Assignments',
+          label: 'Manage Final Grades',
           to: '/lecturer/my-courses',
           icon: GraduationCap,
           status: 'Available',
           activeLabels: ['My Courses', 'Course Lessons', 'Lesson Assignments'],
         },
-        */
       ],
     },
     {
@@ -103,15 +101,6 @@ const ROLE_NAV_GROUPS = {
           activeLabels: ['Monitor Progress', 'Monitor progress'],
           activeMatcher: (pathname) => pathname === '/lecturer/progress' || pathname.includes('/progress'),
         },
-        /*
-        {
-          label: 'Manage Final Grades',
-          to: '/lecturer/my-courses',
-          icon: Gauge,
-          status: 'Available',
-          activeLabels: ['Manage Final Grades'],
-        },
-        */
       ],
     },
   ],

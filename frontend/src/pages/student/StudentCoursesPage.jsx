@@ -121,7 +121,9 @@ export default function StudentCoursesPage() {
                 </div>
                 <button
                   className="course-card__action"
-                  onClick={() => navigate(`/student/courses/${course.id}/lessons`)}
+                  onClick={() => navigate(`/student/courses/${course.id}/lessons`, {
+                    state: { courseName: course.courseName }
+                  })}
                 >
                   View Lessons <ArrowRight size={16} />
                 </button>
