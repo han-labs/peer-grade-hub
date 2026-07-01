@@ -634,34 +634,34 @@ function CourseWorkspacePage() {
               )}
 
               {workspace.lessons && workspace.lessons.length > 0 ? (
-                <div style={{ display: 'grid', gap: '20px' }}>
+                <div style={{ display: 'grid', gap: '32px' }}>
                   {workspace.lessons.map(lesson => (
-                    <div key={lesson.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-subtle)', borderRadius: '12px', overflow: 'hidden' }}>
-                      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafbf9' }}>
+                    <div key={lesson.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-subtle)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '24px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
                         {editingLessonId === lesson.id ? (
-                          <form onSubmit={(e) => handleUpdateLesson(e, lesson.id)} style={{ display: 'flex', gap: '8px', flex: 1, marginRight: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <form onSubmit={(e) => handleUpdateLesson(e, lesson.id)} style={{ display: 'flex', gap: '12px', flex: 1, marginRight: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
                             <input
                               required
                               type="text"
                               value={editLessonTitle}
                               onChange={(e) => setEditLessonTitle(e.target.value)}
                               disabled={editLessonLoading}
-                              style={{ flex: '1 1 200px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-subtle)', minWidth: 0 }}
+                              style={{ flex: '1 1 250px', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-subtle)', minWidth: 0 }}
                             />
                             <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                              <button type="submit" className="primary-button" style={{ padding: '6px 12px' }} disabled={editLessonLoading}>
-                                {editLessonLoading ? <Loader2 size={14} className="button-spinner" /> : 'Save'}
+                              <button type="submit" className="primary-button" style={{ padding: '8px 16px' }} disabled={editLessonLoading}>
+                                {editLessonLoading ? <Loader2 size={16} className="button-spinner" /> : 'Save'}
                               </button>
-                              <button type="button" className="logout-button" style={{ padding: '6px 12px' }} onClick={() => setEditingLessonId(null)} disabled={editLessonLoading}>
+                              <button type="button" className="logout-button" style={{ padding: '8px 16px' }} onClick={() => setEditingLessonId(null)} disabled={editLessonLoading}>
                                 Cancel
                               </button>
                             </div>
                           </form>
                         ) : (
-                          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{lesson.title}</h3>
+                          <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)' }}>{lesson.title}</h3>
                         )}
                         {workspace.course.courseStatus === 'ACTIVE' && editingLessonId !== lesson.id && (
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             <button
                               className="icon-button"
                               onClick={() => {
@@ -670,21 +670,23 @@ function CourseWorkspacePage() {
                                 setLessonError(null)
                               }}
                               title="Edit lesson"
+                              style={{ background: 'var(--page-bg)', padding: '6px', borderRadius: '6px' }}
                             >
-                              <Edit2 size={14} />
+                              <Edit2 size={16} />
                             </button>
                             <button
                               className="icon-button"
-                              style={{ color: 'var(--danger)' }}
+                              style={{ color: 'var(--danger)', background: 'var(--page-bg)', padding: '6px', borderRadius: '6px' }}
                               onClick={() => handleDeleteLesson(lesson.id)}
                               disabled={deletingLessonId === lesson.id}
                               title="Delete lesson"
                             >
-                              {deletingLessonId === lesson.id ? <Loader2 size={14} className="button-spinner" /> : <Trash2 size={14} />}
+                              {deletingLessonId === lesson.id ? <Loader2 size={16} className="button-spinner" /> : <Trash2 size={16} />}
                             </button>
+                            <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)', margin: '0 4px' }} />
                             <button
                               className="logout-button"
-                              style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
+                              style={{ padding: '0 16px', minHeight: '36px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--page-bg)' }}
                               onClick={() => {
                                 setAddingMaterialForLesson(addingMaterialForLesson === lesson.id ? null : lesson.id)
                                 setMaterialError(null)
@@ -692,11 +694,11 @@ function CourseWorkspacePage() {
                                 setEditingAssignment(null)
                               }}
                             >
-                              <Plus size={14} /> Add Material
+                              <Plus size={16} /> Material
                             </button>
                             <button
-                              className="logout-button"
-                              style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
+                              className="primary-button"
+                              style={{ padding: '0 16px', minHeight: '36px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}
                               onClick={() => {
                                 setAddingAssignmentForLesson(addingAssignmentForLesson === lesson.id ? null : lesson.id)
                                 setEditingAssignment(null)
@@ -704,7 +706,7 @@ function CourseWorkspacePage() {
                                 setAddingMaterialForLesson(null)
                               }}
                             >
-                              <Plus size={14} /> Add Assignment
+                              <Plus size={16} /> Assignment
                             </button>
                           </div>
                         )}
@@ -826,11 +828,15 @@ function CourseWorkspacePage() {
                         />
                       )}
 
-                      <div style={{ padding: '12px 20px' }}>
+                      <div style={{ padding: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                          <BookOpen size={18} style={{ color: 'var(--purple)' }} />
+                          <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Materials</h4>
+                        </div>
                         {lesson.materials && lesson.materials.length > 0 ? (
-                          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '12px' }}>
+                          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '16px' }}>
                             {lesson.materials.map(material => (
-                              <li key={material.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '12px', background: 'var(--page-bg)', borderRadius: '8px', border: '1px solid #eef0eb' }}>
+                              <li key={material.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px', background: 'var(--page-bg)', borderRadius: '12px', border: '1px solid var(--border-subtle)', transition: 'box-shadow 0.2s', ...(!editingMaterialId ? { alignItems: 'center' } : {}) }}>
                                 {editingMaterialId === material.id ? (
                                   <form onSubmit={(e) => handleUpdateMaterial(e, lesson.id, material.id)} style={{ width: '100%' }}>
                                     <h4 style={{ margin: '0 0 16px 0', fontSize: '0.95rem' }}>Edit Material</h4>
@@ -917,34 +923,36 @@ function CourseWorkspacePage() {
                                 ) : (
                                   <>
                                     <div style={{
-                                      width: '36px', height: '36px', borderRadius: '8px', display: 'grid', placeItems: 'center', flexShrink: 0,
+                                      width: '40px', height: '40px', borderRadius: '10px', display: 'grid', placeItems: 'center', flexShrink: 0,
                                       color: material.materialType === 'LINK' ? 'var(--blue)' : 'var(--purple)',
                                       background: material.materialType === 'LINK' ? 'var(--blue-soft)' : 'var(--purple-soft)'
                                     }}>
-                                      {material.materialType === 'LINK' ? <LinkIcon size={18} /> : <File size={18} />}
+                                      {material.materialType === 'LINK' ? <LinkIcon size={20} /> : <File size={20} />}
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                      <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem' }}>{material.title}</h4>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 600, color: 'var(--text-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{material.title}</h4>
                                       {material.materialType === 'LINK' ? (
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--neutral-text)' }}>
-                                          {material.label && <span style={{ marginRight: '8px', fontWeight: 600 }}>{material.label}</span>}
-                                          <a href={material.url} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', textDecoration: 'none' }}>{material.url}</a>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--neutral-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          {material.label && <span style={{ fontWeight: 600 }}>{material.label}</span>}
+                                          {material.label && <span style={{ color: 'var(--border-subtle)' }}>|</span>}
+                                          <a href={material.url} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', textDecoration: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{material.url}</a>
                                         </div>
                                       ) : (
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--neutral-text)' }}>
-                                          <span>{material.fileName}</span>
-                                          <span style={{ margin: '0 8px' }}>•</span>
-                                          <span>{material.fileSizeMb} MB</span>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--neutral-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{material.fileName}</span>
+                                          <span style={{ color: 'var(--border-subtle)' }}>•</span>
+                                          <span style={{ whiteSpace: 'nowrap' }}>{material.fileSizeMb} MB</span>
                                         </div>
                                       )}
                                     </div>
                                     {workspace.course.courseStatus === 'ACTIVE' && (
-                                      <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+                                      <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
                                         {material.materialType === 'FILE' && (
                                           <button
                                             className="icon-button"
                                             onClick={() => handleDownloadMaterial(lesson.id, material.id)}
                                             title="Download material"
+                                            style={{ background: '#fff' }}
                                           >
                                             <Download size={16} />
                                           </button>
@@ -967,12 +975,13 @@ function CourseWorkspacePage() {
                                             setMaterialError(null)
                                           }}
                                           title="Edit material"
+                                          style={{ background: '#fff' }}
                                         >
                                           <Edit2 size={16} />
                                         </button>
                                         <button
                                           className="icon-button"
-                                          style={{ color: 'var(--danger)' }}
+                                          style={{ color: 'var(--danger)', background: '#fff' }}
                                           onClick={() => handleDeleteMaterial(lesson.id, material.id)}
                                           disabled={deletingMaterialId === material.id}
                                           title="Delete material"
@@ -987,18 +996,20 @@ function CourseWorkspacePage() {
                             ))}
                           </ul>
                         ) : (
-                          <p style={{ margin: '8px 0', fontSize: '0.85rem', color: 'var(--neutral-text)' }}>No materials added yet.</p>
+                          <div style={{ padding: '16px', background: 'var(--page-bg)', borderRadius: '8px', border: '1px dashed var(--border-subtle)', display: 'inline-block' }}>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--neutral-text)' }}>No materials added yet.</p>
+                          </div>
                         )}
                       </div>
 
                       {/* Assignments Section */}
-                      <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-subtle)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                          <ClipboardList size={16} style={{ color: 'var(--blue)' }} />
-                          <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Assignments</h4>
+                      <div style={{ padding: '24px', borderTop: '1px solid var(--border-subtle)', background: 'var(--page-bg)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                          <ClipboardList size={18} style={{ color: 'var(--blue)' }} />
+                          <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Assignments</h4>
                         </div>
                         {lessonsAssignments[lesson.id] && lessonsAssignments[lesson.id].length > 0 ? (
-                          <div className="assignment-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                          <div className="assignment-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
                             {lessonsAssignments[lesson.id].map(assignment => (
                               <AssignmentCard
                                 key={assignment.id}
@@ -1020,7 +1031,9 @@ function CourseWorkspacePage() {
                             ))}
                           </div>
                         ) : (
-                          <p style={{ margin: '8px 0', fontSize: '0.85rem', color: 'var(--neutral-text)' }}>No assignments added yet.</p>
+                          <div style={{ padding: '16px', background: '#fff', borderRadius: '8px', border: '1px dashed var(--border-subtle)', display: 'inline-block' }}>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--neutral-text)' }}>No assignments added yet.</p>
+                          </div>
                         )}
                       </div>
                     </div>

@@ -372,20 +372,22 @@ function GroupManagementPage() {
                     const canDelete = isEmpty && !isLocked && courseDetails?.courseStatus !== 'ARCHIVED'
                     
                     return (
-                    <article key={gId || group.groupName} className="demo-feature" style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <article key={gId || group.groupName} style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--card-bg)', border: '1px solid var(--border-subtle)', borderRadius: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <div style={{ flexShrink: 0, marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                           <span className="status-badge" style={{ margin: 0 }}>
                             <span aria-hidden="true" />
                             {group.groupStatus}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <small style={{ fontWeight: 500, color: 'var(--neutral-text)' }}>{group.memberCount} / {group.maxMembers} members</small>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--neutral-text)', background: 'var(--page-bg)', padding: '4px 12px', borderRadius: '20px' }}>
+                              {group.memberCount} / {group.maxMembers}
+                            </span>
                             {canDelete && (
                               <button
                                 type="button"
                                 className="icon-button"
-                                style={{ color: 'var(--danger)', opacity: deletingGroupId === gId ? 0.5 : 1, padding: '4px' }}
+                                style={{ color: 'var(--danger)', opacity: deletingGroupId === gId ? 0.5 : 1, padding: '6px', background: '#fff', borderRadius: '6px' }}
                                 onClick={() => handleDeleteGroup(gId)}
                                 disabled={deletingGroupId !== null}
                                 title="Delete Group"
@@ -395,23 +397,23 @@ function GroupManagementPage() {
                             )}
                           </div>
                         </div>
-                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-color)' }}>{group.groupName}</h3>
+                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)' }}>{group.groupName}</h3>
                       </div>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                         {isLocked && (
-                          <div style={{ marginBottom: '12px', padding: '8px 10px', background: 'var(--yellow-soft)', color: 'var(--yellow)', borderRadius: '6px', fontSize: '0.75rem', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                            <Lock size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
+                          <div style={{ marginBottom: '16px', padding: '10px 12px', background: 'var(--yellow-soft)', color: '#8a6d3b', borderRadius: '8px', fontSize: '0.8rem', display: 'flex', alignItems: 'flex-start', gap: '8px', border: '1px solid #faebcc' }}>
+                            <Lock size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#8a6d3b' }} />
                             <span style={{ lineHeight: 1.4 }}>Groups are locked. Roster modifications are not allowed.</span>
                           </div>
                         )}
                         <div style={{ 
-                          maxHeight: '220px', 
+                          maxHeight: '280px', 
                           overflowY: 'auto', 
-                          paddingRight: '4px',
+                          paddingRight: '6px',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '8px'
+                          gap: '12px'
                         }}>
                           {group.members && group.members.length > 0 ? (
                             group.members.map((member) => {
@@ -424,25 +426,26 @@ function GroupManagementPage() {
                                   display: 'flex', 
                                   alignItems: 'center', 
                                   justifyContent: 'space-between', 
-                                  padding: '10px 12px',
-                                  background: 'var(--page-bg)',
+                                  padding: '12px 16px',
+                                  background: '#fff',
                                   border: '1px solid var(--border-subtle)',
-                                  borderRadius: '8px'
+                                  borderRadius: '10px',
+                                  transition: 'box-shadow 0.2s'
                                 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                                    <div style={{ background: 'var(--blue-soft)', color: 'var(--blue)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                      <User size={16} />
+                                    <div style={{ background: 'var(--blue-soft)', color: 'var(--blue)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                      <User size={18} />
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                                      <span style={{ fontWeight: 500, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mName}</span>
-                                      {mSub && <span style={{ fontSize: '0.75rem', color: 'var(--neutral-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mSub}</span>}
+                                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mName}</span>
+                                      {mSub && <span style={{ fontSize: '0.8rem', color: 'var(--neutral-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mSub}</span>}
                                     </div>
                                   </div>
                                   {!isLocked && (
                                     <button
                                       type="button"
                                       className="icon-button"
-                                      style={{ color: 'var(--danger)', opacity: removingMemberId === mId ? 0.5 : 1, padding: '4px', flexShrink: 0, marginLeft: '8px' }}
+                                      style={{ color: 'var(--danger)', opacity: removingMemberId === mId ? 0.5 : 1, padding: '6px', flexShrink: 0, marginLeft: '12px', background: 'var(--page-bg)' }}
                                       onClick={() => handleRemoveMember(gId, mId)}
                                       disabled={removingMemberId !== null}
                                       title="Remove Member"
@@ -454,7 +457,9 @@ function GroupManagementPage() {
                               )
                             })
                           ) : (
-                            <p style={{ margin: '8px 0', fontSize: '0.85rem', color: 'var(--neutral-text)', fontStyle: 'italic' }}>No members yet</p>
+                            <div style={{ padding: '16px', background: '#fff', borderRadius: '10px', border: '1px dashed var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--neutral-text)' }}>No members yet</p>
+                            </div>
                           )}
                         </div>
                       </div>
