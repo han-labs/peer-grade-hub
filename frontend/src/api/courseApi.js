@@ -183,7 +183,7 @@ export const uploadLessonMaterialFile = async (courseId, lessonId, formData, tok
         });
     } catch (err) {
         if (err.message === 'Failed to fetch') {
-            throw new Error("File upload failed. Please make sure the file is within the allowed size limit and try again.");
+            throw new Error("File upload failed. Please make sure the file is within the allowed size limit and try again.", { cause: err });
         }
         throw err;
     }
@@ -212,7 +212,7 @@ export const updateLessonMaterialFile = async (courseId, lessonId, materialId, f
         });
     } catch (err) {
         if (err.message === 'Failed to fetch') {
-            throw new Error("File upload failed. Please make sure the file is within the allowed size limit and try again.");
+            throw new Error("File upload failed. Please make sure the file is within the allowed size limit and try again.", { cause: err });
         }
         throw err;
     }

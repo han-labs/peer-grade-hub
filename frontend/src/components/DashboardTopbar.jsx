@@ -87,10 +87,10 @@ const ROLE_NAV_GROUPS = {
       items: [
         {
           label: 'Assign Peer Review',
-          to: '/lecturer/assignments/1/peer-review-assignments',
+          to: '/lecturer/peer-review-assignments',
           icon: ClipboardCheck,
           status: 'Available',
-          activeLabels: ['Peer review assignments'],
+          activeLabels: ['Assign Peer Review', 'Peer review assignments'],
           activeMatcher: (pathname) => pathname.includes('/peer-review-assignments'),
         },
         {

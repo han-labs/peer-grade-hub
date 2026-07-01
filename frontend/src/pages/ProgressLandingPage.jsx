@@ -10,32 +10,13 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getProgressDashboard } from '../api/progressApi.js'
 import { getLecturerProgressWorkspace } from '../api/progressWorkspaceApi.js'
 import { ApiError } from '../api/httpClient.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
 import LoadingScreen from '../components/LoadingScreen.jsx'
 import '../progress.css'
-
-function formatDateTime(value) {
-  if (!value) return 'Not scheduled'
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
-
-function getNearestDeadline(assignments) {
-  const now = Date.now()
-  const dates = assignments
-    .flatMap((assignment) => [assignment.submissionDeadline, assignment.reviewDeadline])
-    .filter(Boolean)
-    .map((value) => new Date(value))
-    .filter((date) => !Number.isNaN(date.getTime()) && date.getTime() >= now)
-    .sort((first, second) => first.getTime() - second.getTime())
-
-  return dates[0] ?? null
-}
 
 function countUpcomingDeadlines(courses) {
   const now = Date.now()
@@ -51,6 +32,69 @@ function countUpcomingDeadlines(courses) {
       })
     }).length
   ), 0)
+}
+
+function formatShortDate(value) {
+  if (!value) return 'Not scheduled'
+  return new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+function getNextCourseCheck(course) {
+  const now = Date.now()
+  const upcoming = course.assignments
+    .flatMap((assignment) => [
+      { label: 'Submission', value: assignment.submissionDeadline },
+      { label: 'Review', value: assignment.reviewDeadline },
+    ])
+    .filter((item) => item.value)
+    .map((item) => ({ ...item, date: new Date(item.value) }))
+    .filter((item) => !Number.isNaN(item.date.getTime()) && item.date.getTime() >= now)
+    .sort((first, second) => first.date.getTime() - second.date.getTime())
+
+  return upcoming[0] ?? null
+}
+
+function isActiveCourse(course) {
+  return String(course.courseStatus ?? '').toUpperCase() === 'ACTIVE'
+}
+
+function assignmentNeedsAttention(assignment) {
+  const statistics = assignment.progress?.statistics
+  if (!statistics) return false
+
+  return statistics.pendingCount > 0
+    || statistics.lateCount > 0
+    || statistics.incompleteReviews > 0
+    || statistics.groupsWithNoReceivedReview > 0
+}
+
+function getCourseHealth(course) {
+  const monitoredAssignments = course.assignments.filter((assignment) => assignment.progress)
+  const attentionCount = course.assignments.filter(assignmentNeedsAttention).length
+
+  if (attentionCount > 0) {
+    return {
+      label: `${attentionCount} ${attentionCount === 1 ? 'issue' : 'issues'}`,
+      tone: 'warning',
+    }
+  }
+
+  if (monitoredAssignments.length === 0 && course.assignments.length > 0) {
+    return {
+      label: 'Progress not ready',
+      tone: 'neutral',
+    }
+  }
+
+  return {
+    label: 'On track',
+    tone: 'positive',
+  }
 }
 
 function AccessRestricted() {
@@ -75,7 +119,7 @@ function OverviewMetricCard({ icon: Icon, label, value, detail, tone = 'neutral'
   return (
     <article className={`progress-overview-metric progress-overview-metric--${tone}`}>
       <span>
-        <Icon size={18} aria-hidden="true" />
+        <Icon size={16} aria-hidden="true" />
       </span>
       <div>
         <strong>{value}</strong>
@@ -86,40 +130,52 @@ function OverviewMetricCard({ icon: Icon, label, value, detail, tone = 'neutral'
   )
 }
 
-function AssignmentsByCourseChart({ courses }) {
-  const maxAssignments = Math.max(1, ...courses.map((course) => course.assignments.length))
+function DonutChart({ centerLabel, centerValue, segments, title }) {
+  const visibleSegments = segments.filter((segment) => segment.value > 0)
+  const total = visibleSegments.reduce((sum, segment) => sum + segment.value, 0)
+  let cursor = 0
+  const gradient = total === 0
+    ? '#eef1ed 0 100%'
+    : visibleSegments.map((segment) => {
+      const start = cursor
+      const end = cursor + (segment.value / total) * 100
+      cursor = end
+      return `${segment.color} ${start}% ${end}%`
+    }).join(', ')
 
   return (
-    <section className="progress-overview-chart" aria-labelledby="assignments-by-course-heading">
-      <div className="monitor-section-heading">
-        <div>
-          <p className="eyebrow">Course workload</p>
-          <h2 id="assignments-by-course-heading">Assignments by course</h2>
+    <article className="progress-donut-card">
+      <div>
+        <h2>{title}</h2>
+      </div>
+      <div className="progress-donut-card__body">
+        <div
+          className="progress-donut"
+          style={{ background: `conic-gradient(${gradient})` }}
+          aria-label={`${title}: ${centerValue} ${centerLabel}`}
+        >
+          <span>
+            <strong>{centerValue}</strong>
+            {centerLabel}
+          </span>
+        </div>
+        <div className="progress-donut-legend">
+          {segments.map((segment) => (
+            <span key={segment.label}>
+              <i style={{ background: segment.color }} />
+              <strong>{segment.value}</strong>
+              {segment.label}
+            </span>
+          ))}
         </div>
       </div>
-      <div className="progress-course-bars">
-        {courses.map((course) => {
-          const width = `${Math.max(5, (course.assignments.length / maxAssignments) * 100)}%`
-          return (
-            <div className="progress-course-bar" key={course.id}>
-              <div>
-                <strong>{course.courseName}</strong>
-                <span>{course.classCode}</span>
-              </div>
-              <div className="progress-course-bar__track" aria-hidden="true">
-                <span style={{ width }} />
-              </div>
-              <small>{course.assignments.length}</small>
-            </div>
-          )
-        })}
-      </div>
-    </section>
+    </article>
   )
 }
 
 function CourseOverviewCard({ course, onOpenCourse }) {
-  const nearestDeadline = getNearestDeadline(course.assignments)
+  const health = getCourseHealth(course)
+  const nextCheck = getNextCourseCheck(course)
 
   return (
     <article className="progress-course-overview-card">
@@ -127,7 +183,6 @@ function CourseOverviewCard({ course, onOpenCourse }) {
         <div>
           <p className="eyebrow">{course.classCode}</p>
           <h2>{course.courseName}</h2>
-          {course.description && <p>{course.description}</p>}
         </div>
         <span className="monitor-badge monitor-badge--active">{course.courseStatus}</span>
       </div>
@@ -141,9 +196,17 @@ function CourseOverviewCard({ course, onOpenCourse }) {
           <ClipboardList size={15} aria-hidden="true" />
           {course.assignments.length} {course.assignments.length === 1 ? 'assignment' : 'assignments'}
         </span>
+        <span className={`progress-course-card__health progress-course-card__health--${health.tone}`}>
+          {health.label}
+        </span>
+      </div>
+
+      <div className="progress-course-card__next-check">
+        <CalendarClock size={15} aria-hidden="true" />
         <span>
-          <CalendarClock size={15} aria-hidden="true" />
-          Nearest: {formatDateTime(nearestDeadline)}
+          {nextCheck
+            ? `Next due · ${nextCheck.label} · ${formatShortDate(nextCheck.date)}`
+            : 'No upcoming due date'}
         </span>
       </div>
 
@@ -158,7 +221,7 @@ function CourseOverviewCard({ course, onOpenCourse }) {
           type="button"
           onClick={() => onOpenCourse(course.id)}
         >
-          Open course dashboard
+          Open progress
           <ArrowRight size={16} aria-hidden="true" />
         </button>
       )}
@@ -182,7 +245,31 @@ function ProgressLandingPage() {
 
     try {
       const courseOptions = await getLecturerProgressWorkspace(token)
-      setCourses(courseOptions)
+      const monitoredCourses = await Promise.all(
+        courseOptions.map(async (course) => {
+          const assignments = await Promise.all(
+            course.assignments.map(async (assignment) => {
+              try {
+                const progress = await getProgressDashboard(course.id, assignment.id, token)
+                return { ...assignment, progress }
+              } catch (progressError) {
+                if (progressError instanceof ApiError && progressError.status === 401) {
+                  throw progressError
+                }
+                return {
+                  ...assignment,
+                  progress: null,
+                  progressError: progressError.message || 'Progress unavailable',
+                }
+              }
+            }),
+          )
+
+          return { ...course, assignments }
+        }),
+      )
+
+      setCourses(monitoredCourses)
     } catch (loadError) {
       if (loadError instanceof ApiError && loadError.status === 401) {
         logout()
@@ -205,6 +292,51 @@ function ProgressLandingPage() {
     [courses],
   )
   const upcomingDeadlineCount = useMemo(() => countUpcomingDeadlines(courses), [courses])
+  const activeCourseCount = useMemo(
+    () => courses.filter(isActiveCourse).length,
+    [courses],
+  )
+  const attentionAssignmentCount = useMemo(
+    () => courses.reduce(
+      (total, course) => total + course.assignments.filter(assignmentNeedsAttention).length,
+      0,
+    ),
+    [courses],
+  )
+  const issueBreakdown = useMemo(() => courses.reduce((totals, course) => {
+    course.assignments.forEach((assignment) => {
+      const statistics = assignment.progress?.statistics
+      if (!statistics) return
+      totals.missing += Number(statistics.pendingCount ?? 0)
+      totals.incompleteReviews += Number(statistics.incompleteReviews ?? 0)
+      totals.noReceivedReview += Number(statistics.groupsWithNoReceivedReview ?? 0)
+    })
+    return totals
+  }, { missing: 0, incompleteReviews: 0, noReceivedReview: 0 }), [courses])
+  const overallSubmission = useMemo(() => courses.reduce((totals, course) => {
+    course.assignments.forEach((assignment) => {
+      const statistics = assignment.progress?.statistics
+      if (!statistics) return
+      const late = Number(statistics.lateCount ?? 0)
+      totals.submitted += Math.max(0, Number(statistics.submittedCount ?? 0) - late)
+      totals.notSubmitted += Number(statistics.pendingCount ?? 0)
+      totals.late += late
+    })
+    return totals
+  }, { submitted: 0, notSubmitted: 0, late: 0 }), [courses])
+  const overallReview = useMemo(() => courses.reduce((totals, course) => {
+    course.assignments.forEach((assignment) => {
+      const statistics = assignment.progress?.statistics
+      if (!statistics) return
+      totals.completed += Number(statistics.completedReviews ?? 0)
+      totals.incomplete += Number(statistics.incompleteReviews ?? 0)
+      totals.noReceivedReview += Number(statistics.groupsWithNoReceivedReview ?? 0)
+    })
+    return totals
+  }, { completed: 0, incomplete: 0, noReceivedReview: 0 }), [courses])
+  const totalSubmissionItems = overallSubmission.submitted + overallSubmission.notSubmitted + overallSubmission.late
+  const totalReviewItems = overallReview.completed + overallReview.incomplete + overallReview.noReceivedReview
+  const totalAttentionItems = issueBreakdown.missing + issueBreakdown.incompleteReviews + issueBreakdown.noReceivedReview
 
   if (!isLecturer) {
     return (
@@ -224,9 +356,8 @@ function ProgressLandingPage() {
       <main className="monitor-main">
         <section className="progress-landing-hero">
           <div>
-            <p className="eyebrow">Assessment monitoring</p>
             <h1>Monitor Progress</h1>
-            <p>Track submission and peer review progress across your courses.</p>
+            <p>Track submissions and peer reviews across your courses.</p>
           </div>
         </section>
 
@@ -244,48 +375,71 @@ function ProgressLandingPage() {
           <section className="monitor-page-state">
             <BookOpen size={28} aria-hidden="true" />
             <h1>No courses available</h1>
-            <p>Courses assigned to you will appear here once they are created.</p>
+            <p>Your courses will appear here once they are created.</p>
           </section>
         ) : (
           <>
+            <section className="progress-chart-grid" aria-label="Monitoring charts">
+              <DonutChart
+                centerLabel="group tasks"
+                centerValue={totalSubmissionItems}
+                segments={[
+                  { label: 'Submitted', value: overallSubmission.submitted, color: '#3a7d2a' },
+                  { label: 'Not submitted', value: overallSubmission.notSubmitted, color: '#d99a2b' },
+                  { label: 'Late', value: overallSubmission.late, color: '#c75f4a' },
+                ]}
+                title="Submission Overview"
+              />
+              <DonutChart
+                centerLabel="items"
+                centerValue={totalReviewItems}
+                segments={[
+                  { label: 'Completed reviews', value: overallReview.completed, color: '#3a7d2a' },
+                  { label: 'Incomplete reviews', value: overallReview.incomplete, color: '#2f6f9f' },
+                  { label: 'No received review', value: overallReview.noReceivedReview, color: '#c75f4a' },
+                ]}
+                title="Peer Review Overview"
+              />
+              <DonutChart
+                centerLabel="items"
+                centerValue={totalAttentionItems}
+                segments={[
+                  { label: 'Missing submissions', value: issueBreakdown.missing, color: '#d99a2b' },
+                  { label: 'Incomplete reviews', value: issueBreakdown.incompleteReviews, color: '#2f6f9f' },
+                  { label: 'No received review', value: issueBreakdown.noReceivedReview, color: '#c75f4a' },
+                ]}
+                title="Attention Breakdown"
+              />
+            </section>
+
             <section className="progress-overview-grid" aria-label="Progress overview">
               <OverviewMetricCard
                 icon={BookOpen}
-                label="Courses"
-                value={courses.length}
-                detail="available to monitor"
+                label="Active Courses"
+                value={activeCourseCount}
+                detail={`${courses.length} total`}
                 tone="green"
               />
               <OverviewMetricCard
                 icon={ClipboardList}
-                label="Assignments"
-                value={assignmentCount}
-                detail="found across courses"
-                tone="blue"
+                label="Assignments Needing Attention"
+                value={attentionAssignmentCount}
+                detail={`${assignmentCount} assignments`}
+                tone={attentionAssignmentCount > 0 ? 'warning' : 'green'}
               />
               <OverviewMetricCard
                 icon={CalendarClock}
-                label="Upcoming Deadlines"
+                label="Due Soon"
                 value={upcomingDeadlineCount}
-                detail="within the next 14 days"
+                detail="next 14 days"
                 tone={upcomingDeadlineCount > 0 ? 'warning' : 'green'}
               />
-              <OverviewMetricCard
-                icon={BarChart3}
-                label="Attention Review"
-                value="Per course"
-                detail="open a course dashboard for assignment-level signals"
-                tone="neutral"
-              />
             </section>
-
-            <AssignmentsByCourseChart courses={courses} />
 
             <section className="progress-course-list" aria-label="Courses">
               <div className="monitor-section-heading">
                 <div>
-                  <p className="eyebrow">Course dashboards</p>
-                  <h2>Choose a course to inspect</h2>
+                  <h2>Courses</h2>
                 </div>
               </div>
               {courses.map((course) => (

@@ -2,9 +2,6 @@ import {
   AlertCircle,
   ArrowLeft,
   BarChart3,
-  Bell,
-  ClipboardList,
-  FileClock,
   ListFilter,
   RefreshCw,
   ShieldAlert,
@@ -67,14 +64,6 @@ function AccessRestricted() {
   )
 }
 
-function pluralize(count, singular, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`
-}
-
-function formatPercent(value) {
-  return `${Number(value ?? 0).toFixed(2)}%`
-}
-
 function isMissingSubmission(group) {
   return !group.submissionStatus || ['DRAFT', 'RETURNED'].includes(group.submissionStatus)
 }
@@ -96,6 +85,19 @@ function hasAttentionSignal(group) {
     || !group.hasReceivedReview
 }
 
+function getAttentionPriority(group) {
+  return getAttentionItems(group).length
+}
+
+function sortGroupsByAttention(groupsToSort) {
+  return [...groupsToSort].sort((first, second) => {
+    const issueDifference = getAttentionPriority(second) - getAttentionPriority(first)
+    if (issueDifference !== 0) return issueDifference
+
+    return first.groupName.localeCompare(second.groupName)
+  })
+}
+
 function matchesFilter(group, filter) {
   switch (filter) {
     case 'INCOMPLETE':
@@ -115,75 +117,6 @@ function matchesFilter(group, filter) {
     default:
       return true
   }
-}
-
-function buildInsights(statistics) {
-  if (!statistics) return []
-
-  const insights = []
-
-  if (statistics.pendingCount > 0) {
-    insights.push({
-      tone: 'warning',
-      title: `${pluralize(statistics.pendingCount, 'group')} not submitted yet.`,
-      detail: 'Check these groups before grading or review follow-up.',
-    })
-  }
-
-  if (statistics.lateCount > 0) {
-    insights.push({
-      tone: 'danger',
-      title: `${pluralize(statistics.lateCount, 'group')} submitted late.`,
-      detail: 'Late work may need lecturer review before final grade decisions.',
-    })
-  }
-
-  if (statistics.incompleteReviews > 0) {
-    insights.push({
-      tone: 'warning',
-      title: `${pluralize(statistics.incompleteReviews, 'review task')} unfinished.`,
-      detail: 'Follow up with reviewer groups that still need to submit reviews.',
-    })
-  }
-
-  if (statistics.groupsWithNoReceivedReview > 0) {
-    insights.push({
-      tone: 'danger',
-      title: `${pluralize(statistics.groupsWithNoReceivedReview, 'group')} has not received any review assignment.`,
-      detail: 'Coverage gaps can affect fairness and final review evidence.',
-    })
-  }
-
-  if (Number(statistics.peerReviewCompletionRate ?? 0) < 100 && statistics.totalReviewAssignments > 0) {
-    insights.push({
-      tone: 'info',
-      title: `Peer review completion is ${formatPercent(statistics.peerReviewCompletionRate)}.`,
-      detail: 'Use the review filters to focus on incomplete reviewer work.',
-    })
-  }
-
-  if (insights.length === 0) {
-    insights.push({
-      tone: 'positive',
-      title: 'No urgent attention items detected.',
-      detail: 'Submissions and peer review coverage look complete for this assignment.',
-    })
-  }
-
-  return insights
-}
-
-function getDeadlineLabel(value) {
-  if (!value) return 'Not scheduled'
-
-  const deadline = new Date(value)
-  const now = new Date()
-  const diffDays = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-
-  if (diffDays < 0) return 'Closed'
-  if (diffDays === 0) return 'Due today'
-  if (diffDays === 1) return '1 day left'
-  return `${diffDays} days left`
 }
 
 function MetricPill({ label, value, tone = 'neutral' }) {
@@ -230,103 +163,21 @@ function ProgressKpiCard({ children, detail, headline, rate, title, tone }) {
       >
         <span style={{ width: `${safeRate}%` }} />
       </div>
-      <div className="metric-pill-row">
-        <MetricPill label="completion" value={formatPercent(rate)} tone="blue" />
-        {children}
-      </div>
+      <div className="metric-pill-row">{children}</div>
     </DecisionKpiCard>
   )
 }
 
-function AttentionMenu({ insights, isOpen, onToggle }) {
+function MonitoringContextCard({ assignment, course }) {
   return (
-    <div className="attention-menu">
-      <button
-        className="attention-menu__button"
-        type="button"
-        aria-expanded={isOpen}
-        aria-haspopup="dialog"
-        onClick={onToggle}
-      >
-        <Bell size={17} aria-hidden="true" />
-        Attention
-        <strong>{insights.length}</strong>
-      </button>
-
-      {isOpen && (
-        <div className="attention-menu__panel" role="dialog" aria-label="Attention summary">
-          <div className="attention-menu__heading">
-            <strong>Attention summary</strong>
-            <span>{insights.length} signal{insights.length === 1 ? '' : 's'}</span>
-          </div>
-          <div className="attention-menu__list">
-            {insights.map((insight) => (
-              <article className={`attention-menu__item attention-menu__item--${insight.tone}`} key={insight.title}>
-                <AlertCircle size={16} aria-hidden="true" />
-                <div>
-                  <strong>{insight.title}</strong>
-                  <p>{insight.detail}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function MonitoringContextCard({ assignment, course, insights, isAttentionOpen, onToggleAttention }) {
-  return (
-    <section className="monitor-context-card" aria-labelledby="monitor-context-heading">
-      <div className="monitor-context-card__content">
-        <p className="eyebrow">Selected assignment</p>
-        <h1 id="monitor-context-heading">Monitor Progress</h1>
+    <section className="monitor-context-card monitor-context-card--compact" aria-labelledby="monitor-context-heading">
+      <div>
+        <p className="progress-breadcrumb">Monitor Progress / {course.name} / {assignment.title}</p>
+        <h1 id="monitor-context-heading">{assignment.title}</h1>
         <p>
-          Tracking <strong>{assignment.title}</strong> in <strong>{course.name}</strong>.
+          {course.classCode} · Submission: {formatDateTime(assignment.submissionDeadline)} · Review: {formatDateTime(assignment.reviewDeadline)}
         </p>
-        <div className="monitor-context-card__identity">
-          <div>
-            <span>Course</span>
-            <strong>{course.name}</strong>
-          </div>
-          <div>
-            <span>Class code</span>
-            <strong>{course.classCode}</strong>
-          </div>
-          <div>
-            <span>Assignment</span>
-            <strong>{assignment.title}</strong>
-          </div>
-        </div>
       </div>
-
-      <div className="monitor-context-card__actions">
-        <AttentionMenu
-          insights={insights}
-          isOpen={isAttentionOpen}
-          onToggle={onToggleAttention}
-        />
-      </div>
-
-      <div className="monitor-context-card__deadlines" aria-label="Selected assignment deadlines">
-        <div>
-          <FileClock size={18} aria-hidden="true" />
-          <span>Submission deadline</span>
-          <strong>{formatDateTime(assignment.submissionDeadline)}</strong>
-          <small>{getDeadlineLabel(assignment.submissionDeadline)}</small>
-        </div>
-        <div>
-          <ClipboardList size={18} aria-hidden="true" />
-          <span>Review deadline</span>
-          <strong>{formatDateTime(assignment.reviewDeadline)}</strong>
-          <small>{getDeadlineLabel(assignment.reviewDeadline)}</small>
-        </div>
-      </div>
-
-      <p className="monitor-context-card__note">
-        Use the course progress dashboard to choose another assignment.
-      </p>
     </section>
   )
 }
@@ -335,8 +186,8 @@ function getAttentionItems(group) {
   const items = []
 
   if (isMissingSubmission(group)) items.push('Missing submission')
-  if (group.late || group.submissionStatus === 'LATE') items.push('Late')
-  if (group.incompleteReviewCount > 0) items.push('Review pending')
+  if (group.late || group.submissionStatus === 'LATE') items.push('Late submission')
+  if (group.incompleteReviewCount > 0) items.push('Incomplete reviews')
   if (!group.hasReceivedReview) items.push('No received review')
 
   return items
@@ -366,7 +217,7 @@ function GroupProgressTable({ groups, isFiltering, onViewDetails }) {
           <tr>
             <th scope="col">Group</th>
             <th scope="col">Submission</th>
-            <th scope="col">Assigned Reviews</th>
+            <th scope="col">Review Tasks</th>
             <th scope="col">Received Review</th>
             <th scope="col">Attention</th>
             <th scope="col">Action</th>
@@ -375,8 +226,10 @@ function GroupProgressTable({ groups, isFiltering, onViewDetails }) {
         <tbody>
           {groups.map((group) => {
             const attentionItems = getAttentionItems(group)
+            const visibleAttentionItems = attentionItems.slice(0, 2)
+            const hiddenAttentionCount = Math.max(0, attentionItems.length - visibleAttentionItems.length)
             const reviewLabel = group.assignedReviewCount === 0
-              ? 'No assigned review'
+              ? 'No review task'
               : `${group.completedReviewCount}/${group.assignedReviewCount} completed`
 
             return (
@@ -391,11 +244,15 @@ function GroupProgressTable({ groups, isFiltering, onViewDetails }) {
                   </span>
                   <small>{group.submittedAt ? formatDateTime(group.submittedAt) : 'No submission time'}</small>
                 </td>
-                <td data-label="Assigned Reviews">
+                <td data-label="Review Tasks">
                   <span className={`monitor-badge monitor-badge--${getReviewTone(group)}`}>
                     {reviewLabel}
                   </span>
-                  <small>{group.incompleteReviewCount} unfinished</small>
+                  <small>
+                    {group.incompleteReviewCount > 0
+                      ? `${group.incompleteReviewCount} incomplete ${group.incompleteReviewCount === 1 ? 'review' : 'reviews'}`
+                      : 'No review issue'}
+                  </small>
                 </td>
                 <td data-label="Received Review">
                   <span className={`monitor-badge monitor-badge--${getReceivedReviewTone(group)}`}>
@@ -408,9 +265,12 @@ function GroupProgressTable({ groups, isFiltering, onViewDetails }) {
                     <span className="attention-summary attention-summary--clear">On track</span>
                   ) : (
                     <div className="attention-summary-list">
-                      {attentionItems.map((item) => (
+                      {visibleAttentionItems.map((item) => (
                         <span className="attention-summary" key={item}>{item}</span>
                       ))}
+                      {hiddenAttentionCount > 0 && (
+                        <span className="attention-summary">+{hiddenAttentionCount} more</span>
+                      )}
                     </div>
                   )}
                 </td>
@@ -445,7 +305,6 @@ function MonitorProgressPage() {
   const [groupDetail, setGroupDetail] = useState(null)
   const [detailError, setDetailError] = useState('')
   const [isDetailLoading, setIsDetailLoading] = useState(false)
-  const [isAttentionOpen, setIsAttentionOpen] = useState(false)
 
   const handleUnauthorized = useCallback((error) => {
     if (error instanceof ApiError && error.status === 401) {
@@ -464,7 +323,7 @@ function MonitorProgressPage() {
       .then((data) => {
         if (!active) return
         setDashboard(data)
-        setGroups(data.groups)
+        setGroups(sortGroupsByAttention(data.groups))
       })
       .catch((error) => {
         if (!active || handleUnauthorized(error)) return
@@ -488,7 +347,7 @@ function MonitorProgressPage() {
 
     try {
       const response = await getFilteredProgressGroups(courseId, assignmentId, filter, token)
-      setGroups(response.groups)
+      setGroups(sortGroupsByAttention(response.groups))
     } catch (error) {
       if (!handleUnauthorized(error)) setFilterError(error.message)
     } finally {
@@ -531,7 +390,6 @@ function MonitorProgressPage() {
       return counts
     }, {})
   }, [dashboard?.groups])
-  const insights = useMemo(() => buildInsights(statistics), [statistics])
   const attentionGroupCount = useMemo(() => {
     const sourceGroups = dashboard?.groups ?? []
     return sourceGroups.filter(hasAttentionSignal).length
@@ -571,27 +429,9 @@ function MonitorProgressPage() {
               <MonitoringContextCard
                 assignment={dashboard.assignment}
                 course={dashboard.course}
-                insights={insights}
-                isAttentionOpen={isAttentionOpen}
-                onToggleAttention={() => setIsAttentionOpen((current) => !current)}
               />
 
               <section className="monitor-decision-grid" aria-label="Progress decision summary">
-                <DecisionKpiCard icon={AlertCircle} title="Needs Attention" tone={attentionGroupCount > 0 ? 'attention' : 'positive'}>
-                  <div className="decision-kpi-card__main">
-                    <div>
-                      <strong>{attentionGroupCount}</strong>
-                      <span>{attentionGroupCount === 1 ? 'group needs' : 'groups need'} lecturer follow-up</span>
-                    </div>
-                  </div>
-                  <div className="metric-pill-row">
-                    <MetricPill label="missing" value={statistics.pendingCount} tone={statistics.pendingCount > 0 ? 'warning' : 'positive'} />
-                    <MetricPill label="late" value={statistics.lateCount} tone={statistics.lateCount > 0 ? 'danger' : 'positive'} />
-                    <MetricPill label="reviews" value={statistics.groupsWithIncompleteAssignedReviews} tone={statistics.groupsWithIncompleteAssignedReviews > 0 ? 'warning' : 'positive'} />
-                    <MetricPill label="uncovered" value={statistics.groupsWithNoReceivedReview} tone={statistics.groupsWithNoReceivedReview > 0 ? 'danger' : 'positive'} />
-                  </div>
-                </DecisionKpiCard>
-
                 <ProgressKpiCard
                   title="Submission Status"
                   rate={statistics.submissionCompletionRate}
@@ -613,13 +453,27 @@ function MonitorProgressPage() {
                   <MetricPill label="incomplete" value={statistics.incompleteReviews} tone={statistics.incompleteReviews > 0 ? 'warning' : 'positive'} />
                   <MetricPill label="total" value={statistics.totalReviewAssignments} tone="blue" />
                 </ProgressKpiCard>
+
+                <DecisionKpiCard icon={AlertCircle} title="Needs Attention" tone={attentionGroupCount > 0 ? 'attention' : 'positive'}>
+                  <div className="decision-kpi-card__main">
+                    <div>
+                      <strong>{attentionGroupCount}</strong>
+                      <span>{attentionGroupCount === 1 ? 'group needs' : 'groups need'} follow-up</span>
+                    </div>
+                  </div>
+                  <div className="metric-pill-row">
+                    <MetricPill label="missing submissions" value={statistics.pendingCount} tone={statistics.pendingCount > 0 ? 'warning' : 'positive'} />
+                    <MetricPill label="late" value={statistics.lateCount} tone={statistics.lateCount > 0 ? 'danger' : 'positive'} />
+                    <MetricPill label="incomplete reviews" value={statistics.groupsWithIncompleteAssignedReviews} tone={statistics.groupsWithIncompleteAssignedReviews > 0 ? 'warning' : 'positive'} />
+                    <MetricPill label="no received review" value={statistics.groupsWithNoReceivedReview} tone={statistics.groupsWithNoReceivedReview > 0 ? 'danger' : 'positive'} />
+                  </div>
+                </DecisionKpiCard>
               </section>
 
               <section className="monitor-groups-section" aria-labelledby="group-progress-heading">
                 <div className="monitor-section-heading">
                   <div>
-                    <p className="eyebrow">Group progress</p>
-                    <h2 id="group-progress-heading">Groups to monitor</h2>
+                    <h2 id="group-progress-heading">Group progress</h2>
                   </div>
                   <span className="monitor-group-count">
                     {isFiltering ? <span className="mini-spinner" aria-hidden="true" /> : groups.length}
@@ -629,37 +483,18 @@ function MonitorProgressPage() {
 
                 <div className="monitor-filter-panel" aria-label="Progress filters">
                   <div className="monitor-filter-group">
-                    <span className="monitor-filter-group__label">Quick filters</span>
+                    <span className="monitor-filter-group__label">Filters</span>
                     <div className="monitor-filter-bar">
-                      {PRIMARY_FILTERS.map(([value, label]) => (
+                      {FILTERS.map(([value, label]) => (
                         <button
-                          className={`monitor-filter-chip ${activeFilter === value ? 'monitor-filter-chip--active' : ''}`}
+                          className={`monitor-filter-chip ${SECONDARY_FILTERS.some(([secondaryValue]) => secondaryValue === value) ? 'monitor-filter-chip--secondary' : ''} ${activeFilter === value ? 'monitor-filter-chip--active' : ''}`}
                           type="button"
                           key={value}
                           aria-pressed={activeFilter === value}
                           disabled={isFiltering}
                           onClick={() => handleFilterChange(value)}
                         >
-                          <ListFilter size={14} aria-hidden="true" />
-                          <span>{label}</span>
-                          <strong>{filterCounts[value] ?? 0}</strong>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="monitor-filter-group monitor-filter-group--secondary">
-                    <span className="monitor-filter-group__label">More filters</span>
-                    <div className="monitor-filter-bar">
-                      {SECONDARY_FILTERS.map(([value, label]) => (
-                        <button
-                          className={`monitor-filter-chip monitor-filter-chip--secondary ${activeFilter === value ? 'monitor-filter-chip--active' : ''}`}
-                          type="button"
-                          key={value}
-                          aria-pressed={activeFilter === value}
-                          disabled={isFiltering}
-                          onClick={() => handleFilterChange(value)}
-                        >
+                          {value === 'ALL' && <ListFilter size={14} aria-hidden="true" />}
                           <span>{label}</span>
                           <strong>{filterCounts[value] ?? 0}</strong>
                         </button>

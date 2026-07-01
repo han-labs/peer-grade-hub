@@ -85,6 +85,14 @@ function AssignPeerReviewPage() {
   const assignment = pageData?.assignment
   const groups = useMemo(() => pageData?.groups ?? [], [pageData?.groups])
 
+  function navigateBackToPeerReviewWorkspace() {
+    if (assignment?.courseId) {
+      navigate(`/lecturer/peer-review-assignments/courses/${assignment.courseId}`)
+      return
+    }
+    navigate('/lecturer/peer-review-assignments')
+  }
+
   function handleApiError(error) {
     if (error instanceof ApiError && error.status === 401) {
       logout()
@@ -184,9 +192,9 @@ function AssignPeerReviewPage() {
         <AccessRestricted />
       ) : (
         <main className="peer-review-main">
-          <button className="back-link" type="button" onClick={() => navigate('/dashboard')}>
+          <button className="back-link" type="button" onClick={navigateBackToPeerReviewWorkspace}>
             <ArrowLeft size={17} aria-hidden="true" />
-            Dashboard
+            Assign Peer Review
           </button>
 
           {isLoading ? (
@@ -216,7 +224,7 @@ function AssignPeerReviewPage() {
                   <p className="eyebrow">{assignment.classCode} · {assignment.courseName}</p>
                   <h1>{assignment.title}</h1>
                   <p className="peer-assignment-header__summary">
-                    Create deliberate reviewer-to-target group pairs and keep review coverage visible.
+                    Assign reviewer groups and check which groups still need reviews.
                   </p>
                 </div>
                 <div className="deadline-panel">
@@ -243,7 +251,7 @@ function AssignPeerReviewPage() {
                       <div>
                         <p className="eyebrow">New review task</p>
                         <h2>Assign groups</h2>
-                        <p>Select who will review and whose submission they will receive.</p>
+                        <p>Choose who reviews and whose submission they review.</p>
                       </div>
                     </div>
 
@@ -302,7 +310,7 @@ function AssignPeerReviewPage() {
                     <div className="section-heading section-heading--aligned">
                       <div>
                         <p className="eyebrow">Current pairings</p>
-                        <h2 id="review-list-heading">Peer review assignments</h2>
+                        <h2 id="review-list-heading">Current pairings</h2>
                       </div>
                       <span className="count-badge">{pageData.peerReviewAssignments.length} tasks</span>
                     </div>
@@ -360,8 +368,8 @@ function AssignPeerReviewPage() {
                       <AlertCircle size={20} aria-hidden="true" />
                     </span>
                     <div>
-                      <p className="eyebrow">Coverage check</p>
-                      <h2 id="coverage-heading">Groups without received reviews</h2>
+                      <p className="eyebrow">Review check</p>
+                      <h2 id="coverage-heading">Groups still needing reviewers</h2>
                     </div>
                   </div>
 
@@ -374,7 +382,7 @@ function AssignPeerReviewPage() {
                   ) : (
                     <>
                       <p className="coverage-panel__intro">
-                        These groups still need at least one incoming review assignment.
+                        These groups still need at least one incoming review.
                       </p>
                       <div className="uncovered-group-list">
                         {pageData.groupsWithoutReceivedReviews.map((group) => (

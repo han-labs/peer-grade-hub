@@ -6,7 +6,6 @@ import {
   FileText,
   MessageSquareText,
   RefreshCw,
-  Scale,
   Send,
   ShieldCheck,
   TimerReset,
@@ -24,6 +23,11 @@ function formatDateTime(value) {
 
 function humanize(value, fallback = 'Not started') {
   return value?.replaceAll('_', ' ').toLowerCase() ?? fallback
+}
+
+function humanizeReviewStatus(value) {
+  if (value === 'ASSIGNED') return 'not reviewed'
+  return humanize(value, 'not reviewed')
 }
 
 function EmptyEvidence({ title, description }) {
@@ -49,11 +53,11 @@ function getDetailAttentionItems(detail) {
 
   const incompleteReviews = detail.outgoingReviews.filter((review) => review.reviewStatus !== 'SUBMITTED')
   if (incompleteReviews.length > 0) {
-    items.push(`${incompleteReviews.length} unfinished review${incompleteReviews.length === 1 ? '' : 's'}`)
+    items.push(`${incompleteReviews.length} incomplete ${incompleteReviews.length === 1 ? 'review' : 'reviews'}`)
   }
 
   if (detail.receivedReviewEvidence.length === 0) {
-    items.push('No received evidence')
+    items.push('No received review')
   }
 
   return items
@@ -85,7 +89,6 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
             <div className="detail-loading-state" aria-live="polite">
               <span className="loading-spinner" aria-hidden="true" />
               <strong>Loading group evidence</strong>
-              <p>Collecting submission and peer review records.</p>
             </div>
           ) : error ? (
             <div className="detail-error-state">
@@ -104,9 +107,9 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
                   <p className="eyebrow">Overview</p>
                   <h3 id="detail-overview-heading">{detail.group.name}</h3>
                   <p>
-                    {attentionItems.length > 0
-                      ? 'Review these signals before making grading decisions.'
-                      : 'This group has no immediate monitoring alerts.'}
+                    Status: {attentionItems.length === 0 ? 'On track' : 'Needs attention'}
+                    {' · '}
+                    Reason: {attentionItems.length === 0 ? 'No issues found' : attentionItems.join(', ')}
                   </p>
                 </div>
                 <div className="detail-overview-card__metrics">
@@ -116,7 +119,7 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
                   </span>
                   <span>
                     <strong>{detail.outgoingReviews.length}</strong>
-                    Assigned reviews
+                    Review tasks
                   </span>
                   <span>
                     <strong>{detail.receivedReviewEvidence.length}</strong>
@@ -171,7 +174,7 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
                 ) : (
                   <EmptyEvidence
                     title="No submission recorded"
-                    description="This group has not submitted work for the selected assignment."
+                    description="No work has been submitted for this assignment."
                   />
                 )}
               </section>
@@ -180,16 +183,16 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
                 <div className="detail-section__heading">
                   <span><ShieldCheck size={18} aria-hidden="true" /></span>
                   <div>
-                    <p className="eyebrow">Assigned review work</p>
-                    <h3 id="outgoing-reviews-heading">Reviewer tasks</h3>
+                    <p className="eyebrow">Review tasks</p>
+                    <h3 id="outgoing-reviews-heading">Review work</h3>
                   </div>
                   <span className="detail-count">{detail.outgoingReviews.length}</span>
                 </div>
 
                 {detail.outgoingReviews.length === 0 ? (
                   <EmptyEvidence
-                    title="No assigned review tasks"
-                    description="This group has no review tasks for the selected assignment."
+                    title="No review tasks"
+                    description="No review tasks are currently recorded for this group."
                   />
                 ) : (
                   <div className="evidence-list">
@@ -201,11 +204,11 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
                             <strong>{review.targetGroupName}</strong>
                           </div>
                           <span className={`monitor-badge monitor-badge--review-${(review.reviewStatus ?? review.assignmentStatus).toLowerCase()}`}>
-                            {humanize(review.reviewStatus ?? review.assignmentStatus)}
+                            {humanizeReviewStatus(review.reviewStatus ?? review.assignmentStatus)}
                           </span>
                         </div>
                         <div className="review-timeline-grid">
-                          <span><CalendarClock size={14} /> Assigned {formatDateTime(review.assignedAt)}</span>
+                          <span><CalendarClock size={14} /> Started {formatDateTime(review.assignedAt)}</span>
                           <span><TimerReset size={14} /> Due {formatDateTime(review.dueAt)}</span>
                           <span><CheckCircle2 size={14} /> Submitted {formatDateTime(review.submittedAt)}</span>
                         </div>
@@ -228,7 +231,7 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
                 {detail.receivedReviewEvidence.length === 0 ? (
                   <EmptyEvidence
                     title="No received review evidence"
-                    description="No submitted peer review evidence is available for this group."
+                    description="No submitted review evidence is available."
                   />
                 ) : (
                   <div className="evidence-list">
@@ -256,29 +259,6 @@ function GroupDetailPanel({ groupName, detail, isLoading, error, onClose, onRetr
                 )}
               </section>
 
-              <section className="detail-section detail-section--decisions" aria-labelledby="decisions-heading">
-                <div className="detail-section__heading">
-                  <span><Scale size={18} aria-hidden="true" /></span>
-                  <div>
-                    <p className="eyebrow">Decisions</p>
-                    <h3 id="decisions-heading">Lecturer actions</h3>
-                  </div>
-                </div>
-                <div className="deferred-action-grid">
-                  <div>
-                    <TimerReset size={19} aria-hidden="true" />
-                    <strong>Deadline extension</strong>
-                    <p>Coming after schema approval</p>
-                    <span>Deferred</span>
-                  </div>
-                  <div>
-                    <Scale size={19} aria-hidden="true" />
-                    <strong>Grade penalty</strong>
-                    <p>Coming after grading policy approval</p>
-                    <span>Deferred</span>
-                  </div>
-                </div>
-              </section>
             </>
           ) : null}
         </div>
