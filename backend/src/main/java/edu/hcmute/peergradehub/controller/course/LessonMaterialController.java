@@ -59,4 +59,46 @@ public class LessonMaterialController {
         lessonMaterialService.deleteLessonMaterial(courseId, lessonId, materialId, currentUserId(principal));
         return ApiResponse.success("Lesson material deleted successfully.", null);
     }
+
+    @PostMapping("/courses/{courseId}/lessons/{lessonId}/materials/files")
+    public ResponseEntity<ApiResponse<LessonMaterialResponse>> uploadLessonMaterialFile(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "label", required = false) String label,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        LessonMaterialResponse response = lessonMaterialService.uploadLessonMaterialFile(courseId, lessonId, file, title, label, currentUserId(principal));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("File material uploaded successfully.", response));
+    }
+
+    @PutMapping("/courses/{courseId}/lessons/{lessonId}/materials/{materialId}/file")
+    public ResponseEntity<ApiResponse<LessonMaterialResponse>> updateLessonMaterialFile(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId,
+            @PathVariable Long materialId,
+            @RequestParam(value = "file", required = false) org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "label", required = false) String label,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        LessonMaterialResponse response = lessonMaterialService.updateLessonMaterialFile(courseId, lessonId, materialId, file, title, label, currentUserId(principal));
+        return ResponseEntity.ok(ApiResponse.success("Lesson material updated successfully.", response));
+    }
+
+    @GetMapping("/courses/{courseId}/lessons/{lessonId}/materials/{materialId}/download")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadLessonMaterialFile(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId,
+            @PathVariable Long materialId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        LessonMaterialService.DownloadedLessonMaterialFile downloadedFile = lessonMaterialService.downloadLessonMaterialFile(courseId, lessonId, materialId, currentUserId(principal));
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadedFile.fileName() + "\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, downloadedFile.contentType())
+                .body(downloadedFile.resource());
+    }
 }

@@ -67,7 +67,7 @@ const ROLE_CONTENT = {
             status: 'Available',
             meta: 'Course workspace',
             action: 'Manage Groups',
-            path: '/lecturer/courses',
+            path: '/lecturer/manage-groups',
             icon: UsersRound,
             tone: 'yellow',
           },

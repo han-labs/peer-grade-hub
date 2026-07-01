@@ -11,6 +11,9 @@ import {
   updateLesson,
   archiveCourse,
   unarchiveCourse,
+  uploadLessonMaterialFile,
+  updateLessonMaterialFile,
+  downloadLessonMaterialFile,
 } from '../api/courseApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
@@ -31,6 +34,8 @@ import {
   Trash2,
   Archive,
   RotateCcw,
+  Download,
+  UploadCloud,
 } from 'lucide-react'
 
 function CourseWorkspacePage() {
@@ -74,6 +79,7 @@ function CourseWorkspacePage() {
   const [materialFilePath, setMaterialFilePath] = useState('')
   const [materialFileSizeMb, setMaterialFileSizeMb] = useState('')
   const [materialFileType, setMaterialFileType] = useState('')
+  const [materialFile, setMaterialFile] = useState(null)
   const [materialLoading, setMaterialLoading] = useState(false)
   const [materialError, setMaterialError] = useState(null)
   const [deletingMaterialId, setDeletingMaterialId] = useState(null)
@@ -86,6 +92,7 @@ function CourseWorkspacePage() {
   const [editMaterialFilePath, setEditMaterialFilePath] = useState('')
   const [editMaterialFileSizeMb, setEditMaterialFileSizeMb] = useState('')
   const [editMaterialFileType, setEditMaterialFileType] = useState('')
+  const [editMaterialFile, setEditMaterialFile] = useState(null)
   const [editMaterialLoading, setEditMaterialLoading] = useState(false)
   const [isStatusChanging, setIsStatusChanging] = useState(false)
 
@@ -184,7 +191,6 @@ function CourseWorkspacePage() {
     e.preventDefault()
     setMaterialError(null)
     setSuccessMessage(null)
-    let requestPayload = { materialType, title: materialTitle }
 
     if (materialType === 'LINK') {
       const trimmedUrl = materialUrl.trim()
@@ -193,45 +199,55 @@ function CourseWorkspacePage() {
         return
       }
 
-      requestPayload = {
-        ...requestPayload,
+      const requestPayload = {
+        materialType,
+        title: materialTitle,
         url: trimmedUrl,
         label: materialLabel,
       }
+
+      setMaterialLoading(true)
+      try {
+        await createLessonMaterial(courseId, lessonId, requestPayload, token)
+        setMaterialTitle('')
+        setMaterialUrl('')
+        setMaterialLabel('')
+        setAddingMaterialForLesson(null)
+        await fetchWorkspace()
+        setSuccessMessage('Link material added successfully.')
+      } catch (err) {
+        setMaterialError(err.message || 'Failed to add material')
+      } finally {
+        setMaterialLoading(false)
+      }
     } else {
-      if (!materialFileName || !materialFilePath || !materialFileSizeMb || !materialFileType) {
-        setMaterialError('All file material fields (File Name, File Path, File Size MB, File Type) are required.')
+      if (!materialFile) {
+        setMaterialError('Please select a file to upload.')
         return
       }
 
-      requestPayload = {
-        ...requestPayload,
-        fileName: materialFileName,
-        filePath: materialFilePath,
-        fileSizeMb: parseFloat(materialFileSizeMb),
-        fileType: materialFileType,
+      const formData = new FormData()
+      formData.append('file', materialFile)
+      if (materialTitle) {
+        formData.append('title', materialTitle)
       }
-    }
+      if (materialLabel) {
+        formData.append('label', materialLabel)
+      }
 
-    setMaterialLoading(true)
-    try {
-
-      await createLessonMaterial(courseId, lessonId, requestPayload, token)
-
-      setMaterialTitle('')
-      setMaterialUrl('')
-      setMaterialLabel('')
-      setMaterialFileName('')
-      setMaterialFilePath('')
-      setMaterialFileSizeMb('')
-      setMaterialFileType('')
-      setAddingMaterialForLesson(null)
-      await fetchWorkspace()
-      setSuccessMessage(materialType === 'LINK' ? 'Link material added successfully.' : 'File material added successfully.')
-    } catch (err) {
-      setMaterialError(err.message || 'Failed to add material')
-    } finally {
-      setMaterialLoading(false)
+      setMaterialLoading(true)
+      try {
+        await uploadLessonMaterialFile(courseId, lessonId, formData, token)
+        setMaterialTitle('')
+        setMaterialFile(null)
+        setAddingMaterialForLesson(null)
+        await fetchWorkspace()
+        setSuccessMessage('File material uploaded successfully.')
+      } catch (err) {
+        setMaterialError(err.message || 'Failed to upload material')
+      } finally {
+        setMaterialLoading(false)
+      }
     }
   }
 
@@ -239,8 +255,6 @@ function CourseWorkspacePage() {
     e.preventDefault()
     setMaterialError(null)
     setSuccessMessage(null)
-    let requestPayload = { materialType: editMaterialType, title: editMaterialTitle }
-
     if (editMaterialType === 'LINK') {
       const trimmedUrl = editMaterialUrl.trim()
       if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
@@ -248,36 +262,48 @@ function CourseWorkspacePage() {
         return
       }
 
-      requestPayload = {
-        ...requestPayload,
+      const requestPayload = {
+        materialType: editMaterialType,
+        title: editMaterialTitle,
         url: trimmedUrl,
         label: editMaterialLabel,
       }
+
+      setEditMaterialLoading(true)
+      try {
+        await updateLessonMaterial(courseId, lessonId, materialId, requestPayload, token)
+        setEditingMaterialId(null)
+        await fetchWorkspace()
+        setSuccessMessage('Lesson material updated successfully.')
+      } catch (err) {
+        setMaterialError(err.message || 'Failed to update material')
+      } finally {
+        setEditMaterialLoading(false)
+      }
     } else {
-      if (!editMaterialFileName || !editMaterialFilePath || !editMaterialFileSizeMb || !editMaterialFileType) {
-        setMaterialError('All file material fields (File Name, File Path, File Size MB, File Type) are required.')
-        return
+      const formData = new FormData()
+      if (editMaterialTitle) {
+        formData.append('title', editMaterialTitle)
+      }
+      if (editMaterialLabel) {
+        formData.append('label', editMaterialLabel)
+      }
+      if (editMaterialFile) {
+        formData.append('file', editMaterialFile)
       }
 
-      requestPayload = {
-        ...requestPayload,
-        fileName: editMaterialFileName,
-        filePath: editMaterialFilePath,
-        fileSizeMb: parseFloat(editMaterialFileSizeMb),
-        fileType: editMaterialFileType,
+      setEditMaterialLoading(true)
+      try {
+        await updateLessonMaterialFile(courseId, lessonId, materialId, formData, token)
+        setEditingMaterialId(null)
+        setEditMaterialFile(null)
+        await fetchWorkspace()
+        setSuccessMessage('Lesson material updated successfully.')
+      } catch (err) {
+        setMaterialError(err.message || 'Failed to update material')
+      } finally {
+        setEditMaterialLoading(false)
       }
-    }
-
-    setEditMaterialLoading(true)
-    try {
-      await updateLessonMaterial(courseId, lessonId, materialId, requestPayload, token)
-      setEditingMaterialId(null)
-      await fetchWorkspace()
-      setSuccessMessage('Lesson material updated successfully.')
-    } catch (err) {
-      setMaterialError(err.message || 'Failed to update material')
-    } finally {
-      setEditMaterialLoading(false)
     }
   }
 
@@ -294,6 +320,22 @@ function CourseWorkspacePage() {
       setMaterialError(err.message || 'Failed to delete material')
     } finally {
       setDeletingMaterialId(null)
+    }
+  }
+
+  const handleDownloadMaterial = async (lessonId, materialId) => {
+    try {
+      const { blob, fileName } = await downloadLessonMaterialFile(courseId, lessonId, materialId, token)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      alert(err.message || 'File is not available for download.')
     }
   }
 
@@ -642,23 +684,47 @@ function CourseWorkspacePage() {
                               </>
                             ) : (
                               <>
-                                <label className="form-field">
-                                  File Name *
-                                  <input type="text" placeholder="e.g. syllabus.pdf" value={materialFileName} onChange={e => setMaterialFileName(e.target.value)} disabled={materialLoading} />
-                                </label>
-                                <label className="form-field">
-                                  File Path *
-                                  <input type="text" placeholder="e.g. /storage/course/file.pdf" value={materialFilePath} onChange={e => setMaterialFilePath(e.target.value)} disabled={materialLoading} />
-                                </label>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                  <label className="form-field">
-                                    File Size (MB) *
-                                    <input type="number" step="0.01" placeholder="e.g. 2.5" value={materialFileSizeMb} onChange={e => setMaterialFileSizeMb(e.target.value)} disabled={materialLoading} />
-                                  </label>
-                                  <label className="form-field">
-                                    File Type *
-                                    <input type="text" placeholder="e.g. application/pdf" value={materialFileType} onChange={e => setMaterialFileType(e.target.value)} disabled={materialLoading} />
-                                  </label>
+                                <div className="form-field">
+                                  <label style={{ marginBottom: '8px', display: 'block', fontSize: '0.9rem', fontWeight: '500', color: 'var(--text)' }}>File *</label>
+                                  <div style={{ position: 'relative' }}>
+                                    <input 
+                                      type="file" 
+                                      id="add-material-file-upload"
+                                      required 
+                                      onChange={e => { setMaterialFile(e.target.files[0]); setMaterialError(null); }} 
+                                      disabled={materialLoading}
+                                      style={{ position: 'absolute', width: '0.1px', height: '0.1px', opacity: 0, overflow: 'hidden', zIndex: -1 }}
+                                    />
+                                    <label 
+                                      htmlFor="add-material-file-upload" 
+                                      style={{
+                                        display: 'flex', alignItems: 'center', gap: '12px', padding: '16px',
+                                        border: '2px dashed var(--border-subtle)', borderRadius: '8px',
+                                        cursor: materialLoading ? 'not-allowed' : 'pointer',
+                                        background: materialFile ? 'var(--page-bg)' : 'transparent',
+                                        opacity: materialLoading ? 0.6 : 1, transition: 'all 0.2s'
+                                      }}
+                                    >
+                                      <div style={{ display: 'grid', placeItems: 'center', width: '36px', height: '36px', borderRadius: '50%', background: 'var(--purple-soft)', color: 'var(--purple)' }}>
+                                        <UploadCloud size={18} />
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        {materialFile ? (
+                                          <div style={{ fontSize: '0.9rem', fontWeight: '500', color: 'var(--text)' }}>
+                                            {materialFile.name}
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: '500', color: 'var(--text)' }}>Choose File</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--neutral-text)' }}>No file selected</div>
+                                          </>
+                                        )}
+                                      </div>
+                                    </label>
+                                  </div>
+                                  <p style={{ fontSize: '0.75rem', color: 'var(--neutral-text)', marginTop: '6px' }}>
+                                    Allowed file types: PDF, DOC, DOCX, PPT, PPTX, TXT, PNG, JPG, JPEG, ZIP, RAR.
+                                  </p>
                                 </div>
                               </>
                             )}
@@ -707,23 +773,49 @@ function CourseWorkspacePage() {
                                         </>
                                       ) : (
                                         <>
-                                          <label className="form-field">
-                                            File Name *
-                                            <input required type="text" value={editMaterialFileName} onChange={e => setEditMaterialFileName(e.target.value)} disabled={editMaterialLoading} />
-                                          </label>
-                                          <label className="form-field">
-                                            File Path *
-                                            <input required type="text" value={editMaterialFilePath} onChange={e => setEditMaterialFilePath(e.target.value)} disabled={editMaterialLoading} />
-                                          </label>
-                                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                            <label className="form-field">
-                                              File Size (MB) *
-                                              <input required type="number" step="0.01" value={editMaterialFileSizeMb} onChange={e => setEditMaterialFileSizeMb(e.target.value)} disabled={editMaterialLoading} />
-                                            </label>
-                                            <label className="form-field">
-                                              File Type *
-                                              <input required type="text" value={editMaterialFileType} onChange={e => setEditMaterialFileType(e.target.value)} disabled={editMaterialLoading} />
-                                            </label>
+                                          <div style={{ marginBottom: '8px', fontSize: '0.85rem', color: 'var(--neutral-text)' }}>
+                                            <strong>Current File:</strong> {editMaterialFileName} ({editMaterialFileSizeMb} MB, {editMaterialFileType})
+                                          </div>
+                                          <div className="form-field">
+                                            <label style={{ marginBottom: '8px', display: 'block', fontSize: '0.9rem', fontWeight: '500', color: 'var(--text)' }}>Replace file (optional)</label>
+                                            <div style={{ position: 'relative' }}>
+                                              <input 
+                                                type="file" 
+                                                id={`edit-material-file-upload-${material.id}`}
+                                                onChange={e => { setEditMaterialFile(e.target.files[0]); setMaterialError(null); }} 
+                                                disabled={editMaterialLoading}
+                                                style={{ position: 'absolute', width: '0.1px', height: '0.1px', opacity: 0, overflow: 'hidden', zIndex: -1 }}
+                                              />
+                                              <label 
+                                                htmlFor={`edit-material-file-upload-${material.id}`}
+                                                style={{
+                                                  display: 'flex', alignItems: 'center', gap: '12px', padding: '16px',
+                                                  border: '2px dashed var(--border-subtle)', borderRadius: '8px',
+                                                  cursor: editMaterialLoading ? 'not-allowed' : 'pointer',
+                                                  background: editMaterialFile ? 'var(--page-bg)' : 'transparent',
+                                                  opacity: editMaterialLoading ? 0.6 : 1, transition: 'all 0.2s'
+                                                }}
+                                              >
+                                                <div style={{ display: 'grid', placeItems: 'center', width: '36px', height: '36px', borderRadius: '50%', background: 'var(--purple-soft)', color: 'var(--purple)' }}>
+                                                  <UploadCloud size={18} />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                  {editMaterialFile ? (
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: '500', color: 'var(--text)' }}>
+                                                      {editMaterialFile.name}
+                                                    </div>
+                                                  ) : (
+                                                    <>
+                                                      <div style={{ fontSize: '0.9rem', fontWeight: '500', color: 'var(--text)' }}>Choose File</div>
+                                                      <div style={{ fontSize: '0.75rem', color: 'var(--neutral-text)' }}>Leave empty to keep the current file.</div>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              </label>
+                                            </div>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--neutral-text)', marginTop: '6px' }}>
+                                              Allowed file types: PDF, DOC, DOCX, PPT, PPTX, TXT, PNG, JPG, JPEG, ZIP, RAR.
+                                            </p>
                                           </div>
                                         </>
                                       )}
@@ -763,6 +855,15 @@ function CourseWorkspacePage() {
                                     </div>
                                     {workspace.course.courseStatus === 'ACTIVE' && (
                                       <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+                                        {material.materialType === 'FILE' && (
+                                          <button
+                                            className="icon-button"
+                                            onClick={() => handleDownloadMaterial(lesson.id, material.id)}
+                                            title="Download material"
+                                          >
+                                            <Download size={16} />
+                                          </button>
+                                        )}
                                         <button
                                           className="icon-button"
                                           onClick={() => {
@@ -777,6 +878,7 @@ function CourseWorkspacePage() {
                                               setEditMaterialFilePath(material.filePath || '')
                                               setEditMaterialFileSizeMb(material.fileSizeMb || '')
                                               setEditMaterialFileType(material.fileType || '')
+                                              setEditMaterialFile(null)
                                             }
                                             setMaterialError(null)
                                           }}
