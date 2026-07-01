@@ -3,14 +3,11 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
-  BookOpen,
   CalendarClock,
-  ClipboardList,
   RefreshCw,
   ShieldAlert,
-  TrendingUp,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getProgressDashboard } from '../api/progressApi.js'
 import { getCourseProgressWorkspace } from '../api/progressWorkspaceApi.js'
@@ -32,9 +29,15 @@ function formatPercent(value) {
   return `${Number(value ?? 0).toFixed(2)}%`
 }
 
-function isFutureDate(value) {
-  if (!value) return false
-  return new Date(value).getTime() >= Date.now()
+function getNextDeadlineTime(assignment) {
+  const now = Date.now()
+  const dates = [assignment.submissionDeadline, assignment.reviewDeadline]
+    .filter(Boolean)
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()) && date.getTime() >= now)
+    .sort((first, second) => first.getTime() - second.getTime())
+
+  return dates[0]?.getTime() ?? Number.POSITIVE_INFINITY
 }
 
 function hasProgressAttention(progress) {
@@ -44,6 +47,36 @@ function hasProgressAttention(progress) {
     || statistics.lateCount > 0
     || statistics.incompleteReviews > 0
     || statistics.groupsWithNoReceivedReview > 0
+}
+
+function getAttentionSummary(statistics) {
+  const items = []
+
+  if (statistics.pendingCount > 0) {
+    items.push(`${statistics.pendingCount} missing submission${statistics.pendingCount === 1 ? '' : 's'}`)
+  }
+  if (statistics.lateCount > 0) {
+    items.push(`${statistics.lateCount} late`)
+  }
+  if (statistics.groupsWithIncompleteAssignedReviews > 0) {
+    items.push(`${statistics.groupsWithIncompleteAssignedReviews} review issue${statistics.groupsWithIncompleteAssignedReviews === 1 ? '' : 's'}`)
+  }
+  if (statistics.groupsWithNoReceivedReview > 0) {
+    items.push(`${statistics.groupsWithNoReceivedReview} no received review`)
+  }
+
+  return items
+}
+
+function sortAssignmentsForMonitoring(assignments) {
+  return [...assignments].sort((first, second) => {
+    const firstNeedsAttention = hasProgressAttention(first.progress)
+    const secondNeedsAttention = hasProgressAttention(second.progress)
+
+    if (firstNeedsAttention !== secondNeedsAttention) return firstNeedsAttention ? -1 : 1
+
+    return getNextDeadlineTime(first) - getNextDeadlineTime(second)
+  })
 }
 
 function AccessRestricted() {
@@ -56,26 +89,11 @@ function AccessRestricted() {
       </span>
       <p className="eyebrow">Lecturer workspace</p>
       <h1>Access restricted</h1>
-      <p>Course progress dashboards are available only to lecturers.</p>
+      <p>Progress monitoring is available only to lecturers.</p>
       <button className="secondary-action" type="button" onClick={() => navigate('/dashboard')}>
         Back to dashboard
       </button>
     </main>
-  )
-}
-
-function CourseSummaryCard({ icon: Icon, label, value, detail, tone = 'neutral' }) {
-  return (
-    <article className={`progress-overview-metric progress-overview-metric--${tone}`}>
-      <span>
-        <Icon size={18} aria-hidden="true" />
-      </span>
-      <div>
-        <strong>{value}</strong>
-        <p>{label}</p>
-        {detail && <small>{detail}</small>}
-      </div>
-    </article>
   )
 }
 
@@ -100,6 +118,7 @@ function CourseAssignmentRow({ assignment, courseId, onOpenProgress }) {
   const statistics = progress?.statistics
   const isUnavailable = !progress
   const attention = hasProgressAttention(progress)
+  const attentionItems = statistics ? getAttentionSummary(statistics) : []
 
   return (
     <article className={`course-assignment-progress-row ${attention ? 'course-assignment-progress-row--attention' : ''}`}>
@@ -107,7 +126,6 @@ function CourseAssignmentRow({ assignment, courseId, onOpenProgress }) {
         <div>
           <p className="eyebrow">{assignment.lessonTitle}</p>
           <h3>{assignment.title}</h3>
-          {assignment.description && <p>{assignment.description}</p>}
         </div>
         <div className="course-assignment-progress-row__deadlines">
           <span>
@@ -130,7 +148,7 @@ function CourseAssignmentRow({ assignment, courseId, onOpenProgress }) {
         ) : (
           <>
             <InlineProgressBar
-              label="Submission"
+              label="Submissions"
               rate={statistics.submissionCompletionRate}
               tone="green"
             />
@@ -143,9 +161,7 @@ function CourseAssignmentRow({ assignment, courseId, onOpenProgress }) {
               <span className={`monitor-badge monitor-badge--${attention ? 'warning' : 'positive'}`}>
                 {attention ? 'Needs attention' : 'On track'}
               </span>
-              <small>
-                {statistics.pendingCount} pending · {statistics.lateCount} late · {statistics.incompleteReviews} unfinished reviews
-              </small>
+              <small>{attentionItems.length > 0 ? attentionItems.join(' · ') : 'No issues found'}</small>
             </div>
           </>
         )}
@@ -207,10 +223,10 @@ function CourseProgressDashboardPage() {
       )
 
       setCourseWorkspace(workspace)
-      setAssignments(progressAssignments)
+      setAssignments(sortAssignmentsForMonitoring(progressAssignments))
     } catch (loadError) {
       if (!handleUnauthorized(loadError)) {
-        setError(loadError.message || 'Course progress dashboard could not be loaded.')
+        setError(loadError.message || 'Course progress could not be loaded.')
       }
     } finally {
       setLoading(false)
@@ -222,26 +238,19 @@ function CourseProgressDashboardPage() {
     return () => window.clearTimeout(timer)
   }, [loadCourseDashboard])
 
-  const summary = useMemo(() => {
-    const assignmentsWithProgress = assignments.filter((assignment) => assignment.progress)
-    const attentionCount = assignmentsWithProgress.filter((assignment) => hasProgressAttention(assignment.progress)).length
-    const openForSubmission = assignments.filter((assignment) => isFutureDate(assignment.submissionDeadline)).length
-    const reviewInProgress = assignmentsWithProgress.filter((assignment) => (
-      assignment.progress.statistics.totalReviewAssignments > 0
-      && assignment.progress.statistics.incompleteReviews > 0
-    )).length
-
-    return {
-      attentionCount,
-      openForSubmission,
-      reviewInProgress,
-      assignmentsWithProgress: assignmentsWithProgress.length,
-    }
-  }, [assignments])
-
   function openAssignmentProgress(selectedCourseId, assignmentId) {
     navigate(`/lecturer/courses/${selectedCourseId}/assignments/${assignmentId}/progress`)
   }
+
+  const courseMetaItems = courseWorkspace
+    ? [
+      courseWorkspace.course.classCode,
+      courseWorkspace.course.courseStatus,
+      `${courseWorkspace.lessons.length} ${courseWorkspace.lessons.length === 1 ? 'lesson' : 'lessons'}`,
+      `${assignments.length} ${assignments.length === 1 ? 'assignment' : 'assignments'}`,
+      `${courseWorkspace.groupCount ?? 0} ${(courseWorkspace.groupCount ?? 0) === 1 ? 'group' : 'groups'}`,
+    ]
+    : []
 
   if (!isLecturer) {
     return (
@@ -276,68 +285,22 @@ function CourseProgressDashboardPage() {
           </section>
         ) : courseWorkspace ? (
           <>
-            <section className="progress-course-dashboard-hero">
+            <section className="progress-breadcrumb-header">
               <div>
-                <p className="eyebrow">Course progress dashboard</p>
+                <p className="progress-breadcrumb">Monitor Progress / {courseWorkspace.course.courseName}</p>
                 <h1>{courseWorkspace.course.courseName}</h1>
-                <p>{courseWorkspace.course.description || 'Review assignment progress for this course.'}</p>
+                <div className="progress-course-meta-chip-row">
+                  {courseMetaItems.map((item) => (
+                    <span key={item}>{item}</span>
+                  ))}
+                </div>
               </div>
-              <div className="progress-course-dashboard-hero__facts">
-                <span>
-                  <strong>{courseWorkspace.course.classCode}</strong>
-                  class code
-                </span>
-                <span>
-                  <strong>{courseWorkspace.course.courseStatus}</strong>
-                  status
-                </span>
-                <span>
-                  <strong>{courseWorkspace.lessons.length}</strong>
-                  lessons
-                </span>
-                <span>
-                  <strong>{assignments.length}</strong>
-                  assignments
-                </span>
-              </div>
-            </section>
-
-            <section className="progress-overview-grid" aria-label="Course progress summary">
-              <CourseSummaryCard
-                icon={ClipboardList}
-                label="Assignments"
-                value={assignments.length}
-                detail={`${summary.assignmentsWithProgress} with progress data`}
-                tone="blue"
-              />
-              <CourseSummaryCard
-                icon={CalendarClock}
-                label="Open for submission"
-                value={summary.openForSubmission}
-                detail="based on submission deadlines"
-                tone={summary.openForSubmission > 0 ? 'green' : 'neutral'}
-              />
-              <CourseSummaryCard
-                icon={TrendingUp}
-                label="Review in progress"
-                value={summary.reviewInProgress}
-                detail="assignments with unfinished review tasks"
-                tone={summary.reviewInProgress > 0 ? 'warning' : 'green'}
-              />
-              <CourseSummaryCard
-                icon={AlertCircle}
-                label="Needs attention"
-                value={summary.attentionCount}
-                detail="assignments with pending, late, or review issues"
-                tone={summary.attentionCount > 0 ? 'warning' : 'green'}
-              />
             </section>
 
             <section className="course-assignment-progress-section" aria-labelledby="course-assignment-progress-heading">
               <div className="monitor-section-heading">
                 <div>
-                  <p className="eyebrow">Assignment report</p>
-                  <h2 id="course-assignment-progress-heading">Progress by assignment</h2>
+                  <h2 id="course-assignment-progress-heading">Assignments</h2>
                 </div>
               </div>
 

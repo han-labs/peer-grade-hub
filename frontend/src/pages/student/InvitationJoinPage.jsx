@@ -21,38 +21,40 @@ export default function InvitationJoinPage() {
 
   useEffect(() => {
     let mounted = true
+    const timer = window.setTimeout(() => {
+      if (!mounted) return
 
-    if (!invitationCode) {
-      setPreview(null)
-      setError('')
-      setLoading(false)
-      return () => {
-        mounted = false
+      if (!invitationCode) {
+        setPreview(null)
+        setError('')
+        setLoading(false)
+        return
       }
-    }
 
-    setLoading(true)
-    setError('')
+      setLoading(true)
+      setError('')
 
-    previewInvitation(invitationCode, token)
-      .then((response) => {
-        if (!mounted) return
-        setPreview(response.data)
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) {
-          logout()
-          navigate('/login', { replace: true })
-          return
-        }
-        if (mounted) setError(err.message || 'Invitation could not be loaded.')
-      })
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
+      previewInvitation(invitationCode, token)
+        .then((response) => {
+          if (!mounted) return
+          setPreview(response.data)
+        })
+        .catch((err) => {
+          if (err instanceof ApiError && err.status === 401) {
+            logout()
+            navigate('/login', { replace: true })
+            return
+          }
+          if (mounted) setError(err.message || 'Invitation could not be loaded.')
+        })
+        .finally(() => {
+          if (mounted) setLoading(false)
+        })
+    }, 0)
 
     return () => {
       mounted = false
+      window.clearTimeout(timer)
     }
   }, [invitationCode, token, logout, navigate])
 

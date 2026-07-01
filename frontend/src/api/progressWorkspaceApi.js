@@ -1,4 +1,5 @@
 import { getLecturerCourses, getCourseWorkspace } from './courseApi.js'
+import { getCourseGroups } from './groupApi.js'
 import { getLessonAssignments } from './lessonApi.js'
 
 function unwrapApiResponse(response) {
@@ -43,18 +44,25 @@ async function loadLessonAssignments(lesson, token) {
 }
 
 export async function getCourseProgressWorkspace(courseId, token) {
-  const workspaceResponse = await getCourseWorkspace(courseId, token)
+  const [workspaceResponse, groupResponse] = await Promise.all([
+    getCourseWorkspace(courseId, token),
+    getCourseGroups(courseId, token),
+  ])
   const workspace = unwrapApiResponse(workspaceResponse)
+  const groupData = unwrapApiResponse(groupResponse)
   const course = normalizeCourse(workspace.course ?? { id: Number(courseId) })
   const lessons = await Promise.all(
     (workspace.lessons || []).map((lesson) => loadLessonAssignments(lesson, token)),
   )
   const assignments = lessons.flatMap((lesson) => lesson.assignments)
+  const groups = groupData.groups ?? []
 
   return {
     course,
     lessons,
     assignments,
+    groups,
+    groupCount: groups.length,
   }
 }
 
@@ -70,12 +78,16 @@ export async function getLecturerProgressWorkspace(token) {
           ...workspace.course,
           lessons: workspace.lessons,
           assignments: workspace.assignments,
+          groups: workspace.groups,
+          groupCount: workspace.groupCount,
         }
       } catch (error) {
         return {
           ...normalizeCourse(course),
           lessons: [],
           assignments: [],
+          groups: [],
+          groupCount: 0,
           error: error.message || 'Assignments could not be loaded for this course.',
         }
       }

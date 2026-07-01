@@ -3,6 +3,8 @@ import ProtectedRoute from './auth/ProtectedRoute.jsx'
 import { useAuth } from './auth/useAuth.js'
 import LoadingScreen from './components/LoadingScreen.jsx'
 import AssignPeerReviewPage from './pages/AssignPeerReviewPage.jsx'
+import AssignPeerReviewCoursePage from './pages/AssignPeerReviewCoursePage.jsx'
+import AssignPeerReviewLandingPage from './pages/AssignPeerReviewLandingPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import ManageCoursesPage from './pages/ManageCoursesPage.jsx'
@@ -110,9 +112,27 @@ function App() {
 
       {/* UC-14: Assign Peer Review */}
       <Route
+        path="/lecturer/peer-review-assignments"
+        element={
+          <ProtectedRoute allowedRoles={['LECTURER']}>
+            <AssignPeerReviewLandingPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/lecturer/peer-review-assignments/courses/:courseId"
+        element={
+          <ProtectedRoute allowedRoles={['LECTURER']}>
+            <AssignPeerReviewCoursePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/lecturer/assignments/:assignmentId/peer-review-assignments"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['LECTURER']}>
             <AssignPeerReviewPage />
           </ProtectedRoute>
         }
