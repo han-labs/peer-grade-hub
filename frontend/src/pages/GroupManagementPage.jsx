@@ -372,20 +372,20 @@ function GroupManagementPage() {
                     const canDelete = isEmpty && !isLocked && courseDetails?.courseStatus !== 'ARCHIVED'
                     
                     return (
-                    <article key={gId || group.groupName} className="demo-feature" style={{ padding: '20px' }}>
-                      <div className="demo-feature__copy" style={{ marginBottom: '16px' }}>
-                        <div className="demo-feature__meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <article key={gId || group.groupName} className="demo-feature" style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <div style={{ flexShrink: 0, marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                           <span className="status-badge" style={{ margin: 0 }}>
                             <span aria-hidden="true" />
                             {group.groupStatus}
                           </span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <small>{group.memberCount} / {group.maxMembers} members</small>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <small style={{ fontWeight: 500, color: 'var(--neutral-text)' }}>{group.memberCount} / {group.maxMembers} members</small>
                             {canDelete && (
                               <button
                                 type="button"
                                 className="icon-button"
-                                style={{ color: 'var(--danger)', opacity: deletingGroupId === gId ? 0.5 : 1, padding: 0 }}
+                                style={{ color: 'var(--danger)', opacity: deletingGroupId === gId ? 0.5 : 1, padding: '4px' }}
                                 onClick={() => handleDeleteGroup(gId)}
                                 disabled={deletingGroupId !== null}
                                 title="Delete Group"
@@ -395,53 +395,68 @@ function GroupManagementPage() {
                             )}
                           </div>
                         </div>
-                        <h3 style={{ margin: '0 0 12px 0', fontSize: '1.2rem' }}>{group.groupName}</h3>
+                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-color)' }}>{group.groupName}</h3>
                       </div>
                       
-                      <div style={{ background: 'var(--page-bg)', padding: '12px', borderRadius: '8px', border: '1px solid #eef0eb' }}>
-                        <h4 style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--neutral-text)' }}>Members</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                         {isLocked && (
-                          <div style={{ marginBottom: '8px', padding: '6px 8px', background: 'var(--yellow-soft)', color: 'var(--yellow)', borderRadius: '4px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Lock size={12} />
-                            <span>Groups are locked. Roster modifications are not allowed.</span>
+                          <div style={{ marginBottom: '12px', padding: '8px 10px', background: 'var(--yellow-soft)', color: 'var(--yellow)', borderRadius: '6px', fontSize: '0.75rem', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                            <Lock size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <span style={{ lineHeight: 1.4 }}>Groups are locked. Roster modifications are not allowed.</span>
                           </div>
                         )}
-                        {group.members && group.members.length > 0 ? (
-                          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '6px' }}>
-                            {group.members.map((member) => {
+                        <div style={{ 
+                          maxHeight: '220px', 
+                          overflowY: 'auto', 
+                          paddingRight: '4px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px'
+                        }}>
+                          {group.members && group.members.length > 0 ? (
+                            group.members.map((member) => {
                               const mId = member.groupMemberId
                               const mName = member.studentName || member.fullName || member.username || `Student ${member.userId}`
                               const mSub = member.userId || member.email
                               
                               return (
-                              <li key={mId || `${gId}-${mName}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                                  <div style={{ background: 'var(--blue-soft)', color: 'var(--blue)', width: '24px', height: '24px', borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                                    <User size={12} />
+                                <div key={mId || `${gId}-${mName}`} style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'space-between', 
+                                  padding: '10px 12px',
+                                  background: 'var(--page-bg)',
+                                  border: '1px solid var(--border-subtle)',
+                                  borderRadius: '8px'
+                                }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                                    <div style={{ background: 'var(--blue-soft)', color: 'var(--blue)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                      <User size={16} />
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                                      <span style={{ fontWeight: 500, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mName}</span>
+                                      {mSub && <span style={{ fontSize: '0.75rem', color: 'var(--neutral-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mSub}</span>}
+                                    </div>
                                   </div>
-                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <span style={{ fontWeight: 500 }}>{mName}</span>
-                                    {mSub && <span style={{ fontSize: '0.7rem', color: 'var(--neutral-text)' }}>{mSub}</span>}
-                                  </div>
+                                  {!isLocked && (
+                                    <button
+                                      type="button"
+                                      className="icon-button"
+                                      style={{ color: 'var(--danger)', opacity: removingMemberId === mId ? 0.5 : 1, padding: '4px', flexShrink: 0, marginLeft: '8px' }}
+                                      onClick={() => handleRemoveMember(gId, mId)}
+                                      disabled={removingMemberId !== null}
+                                      title="Remove Member"
+                                    >
+                                      {removingMemberId === mId ? <Loader2 size={16} className="button-spinner" /> : <Trash2 size={16} />}
+                                    </button>
+                                  )}
                                 </div>
-                                {!isLocked && (
-                                  <button
-                                    type="button"
-                                    className="icon-button"
-                                    style={{ color: 'var(--danger)', opacity: removingMemberId === mId ? 0.5 : 1 }}
-                                    onClick={() => handleRemoveMember(gId, mId)}
-                                    disabled={removingMemberId !== null}
-                                    title="Remove Member"
-                                  >
-                                    {removingMemberId === mId ? <Loader2 size={16} className="button-spinner" /> : <Trash2 size={16} />}
-                                  </button>
-                                )}
-                              </li>
-                            )})}
-                          </ul>
-                        ) : (
-                          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--neutral-text)', fontStyle: 'italic' }}>No members yet</p>
-                        )}
+                              )
+                            })
+                          ) : (
+                            <p style={{ margin: '8px 0', fontSize: '0.85rem', color: 'var(--neutral-text)', fontStyle: 'italic' }}>No members yet</p>
+                          )}
+                        </div>
                       </div>
                     </article>
                   )})}
