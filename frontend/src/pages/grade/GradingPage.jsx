@@ -42,12 +42,16 @@ export default function GradingPage() {
 
   // Hàm điều hướng back
   const handleBack = () => {
-    if (courseId && lessonId) {
-      navigate(`/lecturer/courses/${courseId}/lessons/${lessonId}/assignments`)
-    } else {
-      navigate('/dashboard')
-    }
+  
+  // Nếu chỉ có courseId → quay lại trang lessons của course
+  if (courseId) {
+    navigate(`/lecturer/courses/${courseId}/lessons`)
+    return
   }
+  
+  // Fallback: quay về trang danh sách course của Manage Final Grades
+  navigate('/lecturer/my-courses')
+}
 
   const fetchGradingData = useCallback(async () => {
     try {
@@ -385,7 +389,7 @@ export default function GradingPage() {
       <main className="grading-page">
         <button className="back-link" type="button" onClick={handleBack}>
           <ArrowLeft size={17} aria-hidden="true" />
-          {courseId && lessonId ? 'Back to assignments' : 'Dashboard'}
+          {courseId ? 'Back to lessons' : 'Dashboard'}
         </button>
 
         {/* Header */}

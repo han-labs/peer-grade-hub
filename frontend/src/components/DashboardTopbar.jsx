@@ -74,7 +74,7 @@ const ROLE_NAV_GROUPS = {
           activeLabels: ['Group Management', 'Manage Groups'],
         },
         {
-          label: 'Manage Assignments',
+          label: 'Manage Final Grades',
           to: '/lecturer/my-courses',
           icon: GraduationCap,
           status: 'Available',
@@ -101,13 +101,7 @@ const ROLE_NAV_GROUPS = {
           activeLabels: ['Monitor Progress', 'Monitor progress'],
           activeMatcher: (pathname) => pathname === '/lecturer/progress' || pathname.includes('/progress'),
         },
-        {
-          label: 'Manage Final Grades',
-          to: '/lecturer/my-courses',
-          icon: Gauge,
-          status: 'Available',
-          activeLabels: ['Manage Final Grades'],
-        },
+        
       ],
     },
   ],
