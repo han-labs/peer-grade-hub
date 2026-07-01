@@ -15,8 +15,12 @@ import {
   updateLessonMaterialFile,
   downloadLessonMaterialFile,
 } from '../api/courseApi.js'
+import { getLessonAssignments } from '../api/lessonApi.js'
+import { deleteAssignment } from '../api/assignmentApi.js'
 import { useAuth } from '../auth/useAuth.js'
 import DashboardTopbar from '../components/DashboardTopbar.jsx'
+import AssignmentForm from '../components/assignment/AssignmentForm.jsx'
+import AssignmentCard from '../components/assignment/AssignmentCard.jsx'
 import {
   BookOpen,
   Loader2,
@@ -36,6 +40,7 @@ import {
   RotateCcw,
   Download,
   UploadCloud,
+  ClipboardList,
 } from 'lucide-react'
 
 function CourseWorkspacePage() {
@@ -93,6 +98,11 @@ function CourseWorkspacePage() {
 
   const [copySuccess, setCopySuccess] = useState('')
 
+  // Add Assignment State
+  const [lessonsAssignments, setLessonsAssignments] = useState({}) // lessonId -> assignments array
+  const [addingAssignmentForLesson, setAddingAssignmentForLesson] = useState(null)
+  const [editingAssignment, setEditingAssignment] = useState(null)
+
   const fetchWorkspace = async () => {
     try {
       setLoading(true)
@@ -110,6 +120,25 @@ function CourseWorkspacePage() {
         semester: data?.course?.semester || '',
         description: data?.course?.description || '',
       })
+
+      // Fetch assignments for all lessons in parallel
+      if (data?.lessons) {
+        const assignmentsPromises = data.lessons.map(async (lesson) => {
+          try {
+            const resp = await getLessonAssignments(lesson.id, token)
+            return { lessonId: lesson.id, assignments: resp.data.assignments || [] }
+          } catch (e) {
+            console.error(`Failed to load assignments for lesson ${lesson.id}`, e)
+            return { lessonId: lesson.id, assignments: [] }
+          }
+        })
+        const results = await Promise.all(assignmentsPromises)
+        const assignmentsMap = {}
+        results.forEach(r => {
+          assignmentsMap[r.lessonId] = r.assignments
+        })
+        setLessonsAssignments(assignmentsMap)
+      }
     } catch (err) {
       setError(err.message || 'Failed to load course workspace')
     } finally {
@@ -331,6 +360,34 @@ function CourseWorkspacePage() {
       window.URL.revokeObjectURL(url)
     } catch (err) {
       alert(err.message || 'File is not available for download.')
+    }
+  }
+
+  const fetchAssignmentsForLesson = async (lessonId) => {
+    try {
+      const resp = await getLessonAssignments(lessonId, token)
+      setLessonsAssignments(prev => ({
+        ...prev,
+        [lessonId]: resp.data.assignments || []
+      }))
+    } catch (e) {
+      console.error(`Failed to load assignments for lesson ${lessonId}`, e)
+    }
+  }
+
+  const handleDeleteAssignment = async (lessonId, assignmentId) => {
+    if (!window.confirm('Are you sure you want to delete this assignment?')) {
+      return
+    }
+    
+    try {
+      setError(null)
+      setSuccessMessage(null)
+      await deleteAssignment(assignmentId, token)
+      setSuccessMessage('Assignment deleted successfully.')
+      fetchAssignmentsForLesson(lessonId)
+    } catch (err) {
+      setError(err.message || 'Failed to delete assignment')
     }
   }
 
@@ -631,9 +688,23 @@ function CourseWorkspacePage() {
                               onClick={() => {
                                 setAddingMaterialForLesson(addingMaterialForLesson === lesson.id ? null : lesson.id)
                                 setMaterialError(null)
+                                setAddingAssignmentForLesson(null)
+                                setEditingAssignment(null)
                               }}
                             >
                               <Plus size={14} /> Add Material
+                            </button>
+                            <button
+                              className="logout-button"
+                              style={{ padding: '0 10px', minHeight: '30px', fontSize: '0.7rem' }}
+                              onClick={() => {
+                                setAddingAssignmentForLesson(addingAssignmentForLesson === lesson.id ? null : lesson.id)
+                                setEditingAssignment(null)
+                                setMaterialError(null)
+                                setAddingMaterialForLesson(null)
+                              }}
+                            >
+                              <Plus size={14} /> Add Assignment
                             </button>
                           </div>
                         )}
@@ -734,6 +805,25 @@ function CourseWorkspacePage() {
                             </button>
                           </div>
                         </form>
+                      )}
+
+                      {addingAssignmentForLesson === lesson.id && (
+                        <AssignmentForm
+                          lessonId={lesson.id}
+                          assignment={editingAssignment}
+                          token={token}
+                          onSaveSuccess={(msg) => {
+                            setSuccessMessage(msg)
+                            setAddingAssignmentForLesson(null)
+                            setEditingAssignment(null)
+                            fetchWorkspace()
+                            fetchAssignmentsForLesson(lesson.id)
+                          }}
+                          onCancel={() => {
+                            setAddingAssignmentForLesson(null)
+                            setEditingAssignment(null)
+                          }}
+                        />
                       )}
 
                       <div style={{ padding: '12px 20px' }}>
@@ -900,6 +990,39 @@ function CourseWorkspacePage() {
                           <p style={{ margin: '8px 0', fontSize: '0.85rem', color: 'var(--neutral-text)' }}>No materials added yet.</p>
                         )}
                       </div>
+
+                      {/* Assignments Section */}
+                      <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-subtle)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                          <ClipboardList size={16} style={{ color: 'var(--blue)' }} />
+                          <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Assignments</h4>
+                        </div>
+                        {lessonsAssignments[lesson.id] && lessonsAssignments[lesson.id].length > 0 ? (
+                          <div className="assignment-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                            {lessonsAssignments[lesson.id].map(assignment => (
+                              <AssignmentCard
+                                key={assignment.id}
+                                assignment={assignment}
+                                active={workspace.course.courseStatus === 'ACTIVE'}
+                                onSelect={() => navigate(`/lecturer/assignments/${assignment.id}/grading`, {
+                                  state: { 
+                                    courseId: parseInt(courseId), 
+                                    lessonId: parseInt(lesson.id) 
+                                  }
+                                })}
+                                onEdit={(assignmentObj) => {
+                                  setAddingAssignmentForLesson(lesson.id)
+                                  setEditingAssignment(assignmentObj)
+                                  setAddingMaterialForLesson(null) // Close material form
+                                }}
+                                onDelete={(assignmentId) => handleDeleteAssignment(lesson.id, assignmentId)}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <p style={{ margin: '8px 0', fontSize: '0.85rem', color: 'var(--neutral-text)' }}>No assignments added yet.</p>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -936,7 +1059,7 @@ function CourseWorkspacePage() {
                   <Users size={16} /> Manage Groups
                 </button>
                 <div style={{ padding: '16px', background: 'var(--page-bg)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--neutral-text)' }}>
-                  Assignments configuration will be available in upcoming modules.
+                  Assignments are managed directly within each lesson below.
                 </div>
               </div>
             </aside>

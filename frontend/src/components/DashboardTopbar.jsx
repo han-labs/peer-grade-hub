@@ -73,6 +73,7 @@ const ROLE_NAV_GROUPS = {
           status: 'Available',
           activeLabels: ['Group Management', 'Manage Groups'],
         },
+        /*
         {
           label: 'Manage Assignments',
           to: '/lecturer/my-courses',
@@ -80,6 +81,7 @@ const ROLE_NAV_GROUPS = {
           status: 'Available',
           activeLabels: ['My Courses', 'Course Lessons', 'Lesson Assignments'],
         },
+        */
       ],
     },
     {
@@ -101,6 +103,7 @@ const ROLE_NAV_GROUPS = {
           activeLabels: ['Monitor Progress', 'Monitor progress'],
           activeMatcher: (pathname) => pathname === '/lecturer/progress' || pathname.includes('/progress'),
         },
+        /*
         {
           label: 'Manage Final Grades',
           to: '/lecturer/my-courses',
@@ -108,6 +111,7 @@ const ROLE_NAV_GROUPS = {
           status: 'Available',
           activeLabels: ['Manage Final Grades'],
         },
+        */
       ],
     },
   ],
