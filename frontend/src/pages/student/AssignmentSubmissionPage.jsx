@@ -184,32 +184,36 @@ export default function AssignmentSubmissionPage() {
 
   useEffect(() => {
     let mounted = true
-    setLoading(true)
+    const timer = window.setTimeout(() => {
+      if (!mounted) return
+      setLoading(true)
 
-    getSubmissionPage(assignmentId, token)
-      .then((response) => {
-        if (!mounted) return
-        const data = response.data
-        const currentSubmission = data?.currentSubmission
-        setPageData(data)
-        setNote(currentSubmission?.note || '')
-        setLinks(normalizeLinkRows(currentSubmission?.attachments))
-        setFiles([])
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) {
-          logout()
-          navigate('/login', { replace: true })
-          return
-        }
-        if (mounted) setError(err.message || 'Submission page could not be loaded.')
-      })
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
+      getSubmissionPage(assignmentId, token)
+        .then((response) => {
+          if (!mounted) return
+          const data = response.data
+          const currentSubmission = data?.currentSubmission
+          setPageData(data)
+          setNote(currentSubmission?.note || '')
+          setLinks(normalizeLinkRows(currentSubmission?.attachments))
+          setFiles([])
+        })
+        .catch((err) => {
+          if (err instanceof ApiError && err.status === 401) {
+            logout()
+            navigate('/login', { replace: true })
+            return
+          }
+          if (mounted) setError(err.message || 'Submission page could not be loaded.')
+        })
+        .finally(() => {
+          if (mounted) setLoading(false)
+        })
+    }, 0)
 
     return () => {
       mounted = false
+      window.clearTimeout(timer)
     }
   }, [assignmentId, token, logout, navigate])
 

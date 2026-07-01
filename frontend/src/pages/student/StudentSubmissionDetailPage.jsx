@@ -133,31 +133,35 @@ export default function StudentSubmissionDetailPage() {
 
   useEffect(() => {
     let mounted = true
-    setLoading(true)
+    const timer = window.setTimeout(() => {
+      if (!mounted) return
+      setLoading(true)
 
-    Promise.all([
-      getSubmissionDetail(courseId, assignmentId, submissionId, token),
-      getSubmissionPage(assignmentId, token),
-    ])
-      .then(([detailResponse, pageResponse]) => {
-        if (!mounted) return
-        setSubmission(detailResponse.data)
-        setDeadlinePassed(Boolean(pageResponse.data?.deadlinePassed))
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) {
-          logout()
-          navigate('/login', { replace: true })
-          return
-        }
-        if (mounted) setError(err.message || 'Submission detail could not be loaded.')
-      })
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
+      Promise.all([
+        getSubmissionDetail(courseId, assignmentId, submissionId, token),
+        getSubmissionPage(assignmentId, token),
+      ])
+        .then(([detailResponse, pageResponse]) => {
+          if (!mounted) return
+          setSubmission(detailResponse.data)
+          setDeadlinePassed(Boolean(pageResponse.data?.deadlinePassed))
+        })
+        .catch((err) => {
+          if (err instanceof ApiError && err.status === 401) {
+            logout()
+            navigate('/login', { replace: true })
+            return
+          }
+          if (mounted) setError(err.message || 'Submission detail could not be loaded.')
+        })
+        .finally(() => {
+          if (mounted) setLoading(false)
+        })
+    }, 0)
 
     return () => {
       mounted = false
+      window.clearTimeout(timer)
     }
   }, [assignmentId, courseId, logout, navigate, submissionId, token])
 

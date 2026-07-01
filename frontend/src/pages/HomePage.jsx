@@ -94,7 +94,7 @@ const ROLE_CONTENT = {
             status: 'Available',
             meta: 'Peer review assignment',
             action: 'Assign Peer Review',
-            path: '/lecturer/assignments/1/peer-review-assignments',
+            path: '/lecturer/peer-review-assignments',
             icon: ClipboardCheck,
             tone: 'green',
           },
@@ -459,7 +459,7 @@ function LecturerWorkboard({ dashboardData, onOpen }) {
 
       <WorkboardCard meta="Actions" title="Assessment Actions">
         <div className="quick-action-stack">
-          <button type="button" onClick={() => onOpen('/lecturer/assignments/1/peer-review-assignments')}>
+          <button type="button" onClick={() => onOpen('/lecturer/peer-review-assignments')}>
             Assign Peer Review
             <ArrowUpRight size={15} aria-hidden="true" />
           </button>

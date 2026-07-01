@@ -45,26 +45,30 @@ export default function GroupSelectionPage() {
 
   useEffect(() => {
     let mounted = true
-    setLoading(true)
+    const timer = window.setTimeout(() => {
+      if (!mounted) return
+      setLoading(true)
 
-    getGroupSelection(courseId, token)
-      .then((response) => {
-        if (mounted) setData(response.data)
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) {
-          logout()
-          navigate('/login', { replace: true })
-          return
-        }
-        if (mounted) setError(err.message || 'Groups could not be loaded.')
-      })
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
+      getGroupSelection(courseId, token)
+        .then((response) => {
+          if (mounted) setData(response.data)
+        })
+        .catch((err) => {
+          if (err instanceof ApiError && err.status === 401) {
+            logout()
+            navigate('/login', { replace: true })
+            return
+          }
+          if (mounted) setError(err.message || 'Groups could not be loaded.')
+        })
+        .finally(() => {
+          if (mounted) setLoading(false)
+        })
+    }, 0)
 
     return () => {
       mounted = false
+      window.clearTimeout(timer)
     }
   }, [courseId, token, logout, navigate])
 
