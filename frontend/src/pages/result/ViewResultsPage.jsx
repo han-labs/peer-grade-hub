@@ -1,6 +1,6 @@
 // frontend/src/pages/result/ViewResultsPage.jsx
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';  // ← THÊM useLocation
 import {
   ArrowLeft,
   AlertCircle,
@@ -29,7 +29,7 @@ import '../../styles/result.css';
  */
 function AccessRestricted() {
   const navigate = useNavigate();
-
+  
   return (
     <main className="restricted-state">
       <span className="restricted-state__icon">
@@ -38,9 +38,9 @@ function AccessRestricted() {
       <p className="eyebrow">Student workspace</p>
       <h1>Access restricted</h1>
       <p>Results can only be viewed by students.</p>
-      <button className="secondary-action" type="button" onClick={() => navigate('/dashboard')}>
+      <button className="secondary-action" type="button" onClick={() => navigate('/student/courses')}>
         <ArrowLeft size={17} aria-hidden="true" />
-        Back to dashboard
+        Back to courses
       </button>
     </main>
   );
@@ -100,13 +100,26 @@ function LoadingState() {
 export default function ViewResultsPage() {
   const { assignmentId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();  // ← THÊM
   const { user, token, logout } = useAuth();
   const isStudent = user?.role === 'STUDENT';
+
+  // Lấy courseId từ state (truyền từ trang StudentCourseDetailPage)
+  const { courseId } = location.state || {};
 
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('personal');
+
+  // Hàm back về lessons
+  const handleBack = () => {
+    if (courseId) {
+      navigate(`/student/courses/${courseId}/lessons`);
+    } else {
+      navigate('/student/courses');
+    }
+  };
 
   const fetchResults = useCallback(async () => {
     if (!token) return;
@@ -187,9 +200,9 @@ export default function ViewResultsPage() {
       <div className="dashboard-shell">
         <DashboardTopbar icon={Eye} label="View Results" />
         <main className="result-page">
-          <button className="back-link" type="button" onClick={() => navigate('/dashboard')}>
+          <button className="back-link" type="button" onClick={handleBack}>
             <ArrowLeft size={17} aria-hidden="true" />
-            Dashboard
+            Back to lessons
           </button>
           <NotPublishedState message={data.message} />
         </main>
@@ -206,10 +219,10 @@ export default function ViewResultsPage() {
       <DashboardTopbar icon={Eye} label="View Results" />
 
       <main className="result-page">
-        {/* Back Button */}
-        <button className="back-link" type="button" onClick={() => navigate('/dashboard')}>
+        {/* Back Button - SỬA Ở ĐÂY */}
+        <button className="back-link" type="button" onClick={handleBack}>
           <ArrowLeft size={17} aria-hidden="true" />
-          Dashboard
+          Back to lessons
         </button>
 
         {/* Page Header */}

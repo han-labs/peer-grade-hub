@@ -1,13 +1,12 @@
 // frontend/src/pages/student/StudentCourseDetailPage.jsx
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, 
   BookOpen, 
   ChevronDown, 
   ChevronRight, 
   FileText, 
-  CheckCircle2, 
   Eye,
   CalendarClock,
   Clock
@@ -30,8 +29,12 @@ function formatDate(value) {
 export default function StudentCourseDetailPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { token, logout } = useAuth();
-  const [courseName, setCourseName] = useState('');
+  
+  // Lấy courseName từ state (truyền từ trang trước)
+  const stateCourseName = location.state?.courseName;
+  const [courseName, setCourseName] = useState(stateCourseName || '');
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -65,9 +68,13 @@ export default function StudentCourseDetailPage() {
         
         if (mounted) {
           setLessons(lessonsWithAssignments);
-          setCourseName(lessonsWithAssignments.length > 0 
-            ? lessonsWithAssignments[0].courseName || `Course ${courseId}` 
-            : `Course ${courseId}`);
+          
+          // Nếu chưa có courseName từ state, lấy từ API
+          if (!stateCourseName) {
+            setCourseName(lessonsWithAssignments.length > 0 
+              ? lessonsWithAssignments[0].courseName || `Course ${courseId}` 
+              : `Course ${courseId}`);
+          }
           
           // Mở rộng tất cả lessons mặc định
           const initialExpand = {};
@@ -93,7 +100,7 @@ export default function StudentCourseDetailPage() {
     return () => {
       mounted = false;
     };
-  }, [courseId, token, logout, navigate]);
+  }, [courseId, token, logout, navigate, stateCourseName]);
 
   const toggleLesson = (lessonId) => {
     setExpandedLessons(prev => ({
@@ -193,66 +200,62 @@ export default function StudentCourseDetailPage() {
                       {assignments.length === 0 ? (
                         <p className="lesson-detail__empty">No assignments in this lesson.</p>
                       ) : (
-                        assignments.map((assignment) => {
-                          const isPublished = assignment.isPublished || false;
-                          
-                          return (
-                            <div className="assignment-detail-card" key={assignment.id}>
-                              <div className="assignment-detail-card__info">
-                                <div className="assignment-detail-card__icon">
-                                  <FileText size={18} />
-                                </div>
-                                <div>
-                                  <div className="assignment-detail-card__title-row">
-                                    <h4 className="assignment-detail-card__title">
-                                      {assignment.title}
-                                    </h4>
-                                    {isPublished && (
-                                      <span className="assignment-detail-card__badge assignment-detail-card__badge--published">
-                                        <CheckCircle2 size={14} />
-                                        Đã chấm
-                                      </span>
-                                    )}
-                                  </div>
-                                  {assignment.description && (
-                                    <p className="assignment-detail-card__description">
-                                      {assignment.description}
-                                    </p>
-                                  )}
-                                  <div className="assignment-detail-card__meta">
-                                    <span>
-                                      <CalendarClock size={13} />
-                                      Submission: {formatDate(assignment.submissionDeadline)}
-                                    </span>
-                                    <span>
-                                      <Clock size={13} />
-                                      Review: {formatDate(assignment.reviewDeadline)}
-                                    </span>
-                                  </div>
-                                </div>
+                        assignments.map((assignment) => (
+                          <div className="assignment-detail-card" key={assignment.id}>
+                            <div className="assignment-detail-card__info">
+                              <div className="assignment-detail-card__icon">
+                                <FileText size={18} />
                               </div>
-
-                              <div className="assignment-detail-card__actions">
-                                <button
-                                  className="assignment-detail-card__btn assignment-detail-card__btn--submit"
-                                  type="button"
-                                  onClick={() => navigate(`/student/assignments/${assignment.id}/submission`)}
-                                >
-                                  <FileText size={16} />
-                                  Submit Assignment
-                                </button>
-                                <button
-                                  className="assignment-detail-card__btn"
-                                  type="button"
-                                  onClick={() => navigate(`/student/assignments/${assignment.id}/results`)}
-                                >
-                                  <Eye size={16} />
-                                  View Results
-                                </button>
+                              <div>
+                                <div className="assignment-detail-card__title-row">
+                                  <h4 className="assignment-detail-card__title">
+                                    {assignment.title}
+                                  </h4>
+                                  
+                                </div>
+                                {assignment.description && (
+                                  <p className="assignment-detail-card__description">
+                                    {assignment.description}
+                                  </p>
+                                )}
+                                <div className="assignment-detail-card__meta">
+                                  <span>
+                                    <CalendarClock size={13} />
+                                    Submission: {formatDate(assignment.submissionDeadline)}
+                                  </span>
+                                  <span>
+                                    <Clock size={13} />
+                                    Review: {formatDate(assignment.reviewDeadline)}
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          );
-                        })
+
+                            <div className="assignment-detail-card__actions">
+                              <button
+                                className="assignment-detail-card__btn assignment-detail-card__btn--submit"
+                                type="button"
+                                onClick={() => navigate(`/student/assignments/${assignment.id}/submission`)}
+                              >
+                                <FileText size={16} />
+                                Submit Assignment
+                              </button>
+                              <button
+                                className="assignment-detail-card__btn"
+                                type="button"
+                                onClick={() => navigate(`/student/assignments/${assignment.id}/results`, {
+                                  state: { 
+                                    courseId: parseInt(courseId)
+                                    
+                                  }
+                                })}
+                              >
+                                <Eye size={16} />
+                                View Results
+                              </button>
+                            </div>
+                          </div>
+                        ))
                       )}
                     </div>
                   )}
