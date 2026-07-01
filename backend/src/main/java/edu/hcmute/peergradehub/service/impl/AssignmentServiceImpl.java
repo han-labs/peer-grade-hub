@@ -28,6 +28,18 @@ import edu.hcmute.peergradehub.mapper.LessonMapper;
 import edu.hcmute.peergradehub.mapper.CourseMapper;
 import edu.hcmute.peergradehub.dto.response.course.LessonMaterialResponse;
 import edu.hcmute.peergradehub.dao.UserDao;    
+import edu.hcmute.peergradehub.entity.User;
+import edu.hcmute.peergradehub.enumeration.UserRole;
+import edu.hcmute.peergradehub.enumeration.UserStatus;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
+import java.util.Locale;
+import org.springframework.util.StringUtils;    
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +53,9 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final UserDao userDao;
     private final LessonMapper lessonMapper;
     private final CourseMapper courseMapper;
+
+    @Value("${app.file.upload-dir:uploads}")
+    private String uploadDir;
     @Override
     @Transactional
     public Assignment createAssignment(String title, String description, LocalDateTime submissionDeadline,
@@ -351,5 +366,82 @@ public class AssignmentServiceImpl implements AssignmentService {
         }
 
         assignmentRepository.delete(assignment);
+    }
+
+    @Override
+    @Transactional
+    public LessonMaterialResponse uploadAssignmentFile(MultipartFile file, Long actorId) {
+        User actor = userDao.findById(actorId)
+                .orElseThrow(() -> new NotFoundException("Actor not found."));
+
+        if (actor.getUserRole() != UserRole.LECTURER || actor.getStatus() != UserStatus.ACTIVE) {
+            throw new ForbiddenException("You are not authorized to perform this action.");
+        }
+
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("File is missing or empty.");
+        }
+
+        String originalFileName = cleanDisplayFileName(file.getOriginalFilename());
+        String mimeType = file.getContentType();
+
+        // Validate file type (must be in the ALLOWED_FILE_TYPES set)
+        if (mimeType == null || !ALLOWED_FILE_TYPES.contains(mimeType)) {
+            throw new BadRequestException("File upload failed. Please check the file size and format, then try again. If the problem persists, contact the administrator.");
+        }
+
+        long maxBytes = (long) (MAX_FILE_SIZE_MB * 1024L * 1024L);
+        if (file.getSize() <= 0 || file.getSize() > maxBytes) {
+            throw new BadRequestException("File upload failed. Please check the file size and format, then try again. If the problem persists, contact the administrator.");
+        }
+
+        Path uploadRoot = Path.of(uploadDir).toAbsolutePath().normalize();
+        String safeFileName = sanitizeFilename(originalFileName);
+        Path relativePath = Path.of("assignment-guidelines")
+                .resolve(UUID.randomUUID() + "_" + safeFileName)
+                .normalize();
+
+        Path targetPath = uploadRoot.resolve(relativePath).normalize();
+
+        try {
+            Files.createDirectories(targetPath.getParent());
+            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException exception) {
+            throw new BadRequestException("File could not be saved. Please try again.");
+        }
+
+        double fileSizeMb = Math.max(0.01, Math.round((file.getSize() * 100.0) / (1024.0 * 1024.0)) / 100.0);
+
+        return new LessonMaterialResponse(
+                null, // id is null
+                originalFileName,
+                "FILE",
+                originalFileName,
+                relativePath.toString().replace("\\", "/"),
+                fileSizeMb,
+                mimeType,
+                null,
+                "File"
+        );
+    }
+
+    private String cleanDisplayFileName(String originalFileName) {
+        String cleaned = StringUtils.cleanPath(
+                originalFileName == null || originalFileName.isBlank()
+                        ? "material-file"
+                        : originalFileName
+        ).replace("\\", "/");
+        int slashIndex = cleaned.lastIndexOf('/');
+        if (slashIndex >= 0) {
+            cleaned = cleaned.substring(slashIndex + 1);
+        }
+        if (cleaned.isBlank() || cleaned.equals(".") || cleaned.equals("..")) {
+            return "material-file";
+        }
+        return cleaned;
+    }
+
+    private String sanitizeFilename(String filename) {
+        return filename.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 }

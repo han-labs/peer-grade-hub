@@ -7,7 +7,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react'
-import { createAssignment, updateAssignment } from '../../api/assignmentApi'
+import { createAssignment, updateAssignment, uploadAssignmentFile } from '../../api/assignmentApi'
 
 // Constants for validation
 const MAX_FILE_SIZE_MB = 20.0
@@ -54,6 +54,7 @@ export default function AssignmentForm({ lessonId, assignment, token, onSaveSucc
   const [matUrl, setMatUrl] = useState('')
   const [matLabel, setMatLabel] = useState('')
   const [materialFormError, setMaterialFormError] = useState('')
+  const [uploadingFile, setUploadingFile] = useState(false)
 
   // Initialize form fields when assignment changes or on mount
   useEffect(() => {
@@ -75,6 +76,48 @@ export default function AssignmentForm({ lessonId, assignment, token, onSaveSucc
     setFormError('')
   }, [assignment])
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setMaterialFormError('')
+    setMatFileName('')
+    setMatFilePath('')
+    setMatFileSize('')
+    setMatFileType('')
+
+    // Client-side validations
+    const sizeMb = file.size / (1024 * 1024)
+    if (sizeMb > MAX_FILE_SIZE_MB) {
+      setMaterialFormError(`File size exceeds the allowed limit of ${MAX_FILE_SIZE_MB}MB.`)
+      e.target.value = '' // Clear input
+      return
+    }
+
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      setMaterialFormError('Invalid file type. Please upload only the allowed file types (PDF, Word, PowerPoint, TXT, PNG, JPEG).')
+      e.target.value = '' // Clear input
+      return
+    }
+
+    try {
+      setUploadingFile(true)
+      const res = await uploadAssignmentFile(file, token)
+      if (res && res.data) {
+        const fileData = res.data
+        setMatFileName(fileData.fileName || file.name)
+        setMatFilePath(fileData.filePath)
+        setMatFileSize(String(fileData.fileSizeMb || Math.round(sizeMb * 100) / 100))
+        setMatFileType(fileData.fileType || file.type)
+      }
+    } catch (err) {
+      setMaterialFormError(err.message || 'File upload failed. Please try again.')
+      e.target.value = '' // Clear input
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
   const handleAddMaterial = (e) => {
     e.preventDefault()
     setMaterialFormError('')
@@ -91,7 +134,7 @@ export default function AssignmentForm({ lessonId, assignment, token, onSaveSucc
 
     if (matType === 'FILE') {
       if (!matFileName.trim() || !matFilePath.trim() || !matFileSize.trim() || !matFileType.trim()) {
-        setMaterialFormError('All file material fields (File Name, File Path, File Size MB, File Type) are required.')
+        setMaterialFormError('Please select and upload a valid file first.')
         return
       }
       const sizeMb = parseFloat(matFileSize)
@@ -320,32 +363,77 @@ export default function AssignmentForm({ lessonId, assignment, token, onSaveSucc
                     </label>
                   </>
                 ) : (
-                  <>
+                  <div style={{ gridColumn: 'span 2', display: 'grid', gap: '16px' }}>
                     <label className="form-field">
-                      File Name *
-                      <input type="text" placeholder="rubric.pdf" value={matFileName} onChange={e => setMatFileName(e.target.value)} />
+                      Choose File
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                        <input
+                          type="file"
+                          accept={ALLOWED_FILE_TYPES.join(',')}
+                          onChange={handleFileChange}
+                          disabled={uploadingFile}
+                          style={{ display: 'none' }}
+                          id="guideline-file-picker"
+                        />
+                        <label
+                          htmlFor="guideline-file-picker"
+                          className="secondary-action"
+                          style={{
+                            padding: '8px 16px',
+                            cursor: uploadingFile ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            margin: 0
+                          }}
+                        >
+                          {uploadingFile ? <Loader2 size={16} className="button-spinner" /> : null}
+                          Browse...
+                        </label>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                          {matFileName ? matFileName : 'No file selected'}
+                        </span>
+                      </div>
                     </label>
-                    <label className="form-field" style={{ gridColumn: 'span 2' }}>
-                      File Path *
-                      <input type="text" placeholder="/storage/oose/rubric.pdf" value={matFilePath} onChange={e => setMatFilePath(e.target.value)} />
-                    </label>
-                    <label className="form-field">
-                      File Size (MB) *
-                      <input type="number" step="0.01" placeholder="2.5" value={matFileSize} onChange={e => setMatFileSize(e.target.value)} />
-                    </label>
-                    <label className="form-field">
-                      File Type *
-                      <input type="text" placeholder="application/pdf" value={matFileType} onChange={e => setMatFileType(e.target.value)} />
-                    </label>
-                  </>
+
+                    {matFileName && (
+                      <div style={{ background: 'var(--page-bg)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                        <h4 style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected File</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '6px', fontSize: '0.9rem' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Name:</span>
+                          <strong>{matFileName}</strong>
+                          <span style={{ color: 'var(--text-secondary)' }}>Size:</span>
+                          <span>{matFileSize} MB</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>Type:</span>
+                          <span>{matFileType}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                <button type="button" className="primary-button" onClick={handleAddMaterial} style={{ maxWidth: '160px' }}>
+                <button 
+                  type="button" 
+                  className="primary-button" 
+                  onClick={handleAddMaterial} 
+                  style={{ maxWidth: '160px' }} 
+                  disabled={uploadingFile || (matType === 'FILE' && !matFilePath)}
+                >
                   Confirm Material
                 </button>
-                <button type="button" className="logout-button" onClick={() => setShowMaterialForm(false)}>
+                <button type="button" className="logout-button" onClick={() => {
+                  setMatTitle('')
+                  setMatFileName('')
+                  setMatFilePath('')
+                  setMatFileSize('')
+                  setMatFileType('')
+                  setMatUrl('')
+                  setMatLabel('')
+                  setUploadingFile(false)
+                  setShowMaterialForm(false)
+                }} disabled={uploadingFile}>
                   Cancel
                 </button>
               </div>

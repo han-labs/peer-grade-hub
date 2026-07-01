@@ -1,5 +1,5 @@
 // frontend/src/api/assignmentApi.js
-import { apiRequest } from './httpClient';
+import { apiRequest, API_BASE_URL, ApiError } from './httpClient';
 
 const ASSIGNMENT_BASE = '/assignments';
 
@@ -44,4 +44,32 @@ export const deleteAssignment = async (assignmentId, token) => {
         method: 'DELETE',
         token,
     });
+};
+
+/**
+ * Upload an assignment guideline file
+ * POST /api/assignments/files/upload
+ */
+export const uploadAssignmentFile = async (file, token) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/assignments/files/upload`, {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+    });
+
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.success === false) {
+        throw new ApiError(payload?.message ?? `File upload failed.`, {
+            status: response.status,
+            code: payload?.code ?? 'REQUEST_FAILED',
+            payload,
+        });
+    }
+    return payload;
 };

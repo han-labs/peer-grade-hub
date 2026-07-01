@@ -30,4 +30,6 @@ public interface AssignmentService {
     edu.hcmute.peergradehub.dto.response.lesson.AssignmentDetailResponse getAssignmentDetail(Long assignmentId, Long actorId);
 
     void deleteAssignment(Long assignmentId, Long actorId);
+
+    edu.hcmute.peergradehub.dto.response.course.LessonMaterialResponse uploadAssignmentFile(org.springframework.web.multipart.MultipartFile file, Long actorId);
 }

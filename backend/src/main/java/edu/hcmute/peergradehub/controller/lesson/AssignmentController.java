@@ -4,10 +4,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 import edu.hcmute.peergradehub.common.response.ApiResponse;
 import edu.hcmute.peergradehub.dto.request.course.CreateAssignmentRequest;
 import edu.hcmute.peergradehub.dto.response.lesson.AssignmentDetailResponse;
+import edu.hcmute.peergradehub.dto.response.course.LessonMaterialResponse;
 import edu.hcmute.peergradehub.entity.Assignment;
 import edu.hcmute.peergradehub.exception.UnauthorizedException;
 import edu.hcmute.peergradehub.security.CustomUserPrincipal;
@@ -62,6 +64,16 @@ public class AssignmentController {
     ) {
         assignmentService.deleteAssignment(assignmentId, currentUserId(principal));
         return ApiResponse.success("Assignment deleted successfully.", null);
+    }
+
+    @PostMapping("/assignments/files/upload")
+    public ResponseEntity<ApiResponse<LessonMaterialResponse>> uploadAssignmentFile(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        LessonMaterialResponse response = assignmentService.uploadAssignmentFile(file, currentUserId(principal));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("File uploaded successfully.", response));
     }
 
     private Long currentUserId(CustomUserPrincipal principal) {
