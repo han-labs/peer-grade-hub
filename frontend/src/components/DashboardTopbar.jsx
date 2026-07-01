@@ -123,6 +123,13 @@ const ROLE_NAV_GROUPS = {
           activePaths: ['/dashboard', '/student', '/student/dashboard'],
         },
         {
+        label: 'My Courses',
+        to: '/student/courses',        
+        icon: Gauge,                   
+        status: 'Available',           
+        activeMatcher: (pathname) => pathname.includes('/results') || pathname.includes('/student/courses'),
+        },
+        {
           label: 'Join Course / Group',
           to: '/join',
           icon: UsersRound,
@@ -132,7 +139,7 @@ const ROLE_NAV_GROUPS = {
             || /^\/student\/courses\/[^/]+\/groups$/.test(pathname),
         },
         {
-          label: 'Submit Assignment',
+          label: 'My Assignments',
           to: '/student/assignments',
           icon: FileText,
           status: 'Available',
@@ -149,13 +156,7 @@ const ROLE_NAV_GROUPS = {
           activeLabels: ['Submit Peer Review'],
           activeMatcher: (pathname) => pathname.startsWith('/peer-review-tasks'),
         },
-        {
-        label: 'View Results',
-        to: '/student/courses',        
-        icon: Gauge,                   
-        status: 'Available',           
-        activeMatcher: (pathname) => pathname.includes('/results') || pathname.includes('/student/courses'),
-        }
+        
       ],
     },
   ],

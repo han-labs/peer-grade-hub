@@ -1,12 +1,31 @@
 // frontend/src/pages/student/StudentCourseDetailPage.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, ChevronRight } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  BookOpen, 
+  ChevronDown, 
+  ChevronRight, 
+  FileText, 
+  CheckCircle2, 
+  Eye,
+  CalendarClock,
+  Clock
+} from 'lucide-react';
 import { useAuth } from '../../auth/useAuth';
-import { getStudentLessons } from '../../api/studentApi';
+import { getStudentLessons, getStudentAssignments } from '../../api/studentApi';
 import { ApiError } from '../../api/httpClient';
 import DashboardTopbar from '../../components/DashboardTopbar';
 import LoadingScreen from '../../components/LoadingScreen';
+
+function formatDate(value) {
+  if (!value) return 'No deadline set';
+  return new Date(value).toLocaleDateString('en', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+}
 
 export default function StudentCourseDetailPage() {
   const { courseId } = useParams();
@@ -16,38 +35,72 @@ export default function StudentCourseDetailPage() {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedLessons, setExpandedLessons] = useState({});
+
   useEffect(() => {
     let mounted = true;
-    const loadingTimer = window.setTimeout(() => {
-      if (mounted) setLoading(true);
-    }, 0);
 
-    getStudentLessons(courseId, token)
-      .then((response) => {
+    const fetchLessonsWithAssignments = async () => {
+      try {
+        setLoading(true);
+        
+        // 1. Lấy danh sách lessons
+        const lessonsResponse = await getStudentLessons(courseId, token);
+        const lessonsData = lessonsResponse.data || [];
+        
+        // 2. Lấy assignments cho từng lesson
+        const lessonsWithAssignments = await Promise.all(
+          lessonsData.map(async (lesson) => {
+            try {
+              const assignmentResponse = await getStudentAssignments(lesson.id, token);
+              return {
+                ...lesson,
+                assignments: assignmentResponse.data?.assignments || []
+              };
+            } catch {
+              return { ...lesson, assignments: [] };
+            }
+          })
+        );
+        
         if (mounted) {
-        const lessonsData = response.data || [];
-        setLessons(lessonsData);
-        // Course name có thể lấy từ param hoặc từ item đầu tiên
-        setCourseName(lessonsData.length > 0 ? lessonsData[0].courseName : 'Course');
+          setLessons(lessonsWithAssignments);
+          setCourseName(lessonsWithAssignments.length > 0 
+            ? lessonsWithAssignments[0].courseName || `Course ${courseId}` 
+            : `Course ${courseId}`);
+          
+          // Mở rộng tất cả lessons mặc định
+          const initialExpand = {};
+          lessonsWithAssignments.forEach(lesson => {
+            initialExpand[lesson.id] = true;
+          });
+          setExpandedLessons(initialExpand);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           logout();
           navigate('/login', { replace: true });
           return;
         }
         setError(err.message || 'Failed to load lessons');
-      })
-      .finally(() => {
+      } finally {
         if (mounted) setLoading(false);
-      });
+      }
+    };
+
+    fetchLessonsWithAssignments();
 
     return () => {
       mounted = false;
-      window.clearTimeout(loadingTimer);
     };
   }, [courseId, token, logout, navigate]);
+
+  const toggleLesson = (lessonId) => {
+    setExpandedLessons(prev => ({
+      ...prev,
+      [lessonId]: !prev[lessonId]
+    }));
+  };
 
   if (loading) return <LoadingScreen label="Loading lessons..." />;
 
@@ -85,7 +138,7 @@ export default function StudentCourseDetailPage() {
           <div>
             <p className="eyebrow">Course</p>
             <h1>{courseName}</h1>
-            <p>Select a lesson to view its assignments and results.</p>
+            <p>Browse lessons and assignments for this course.</p>
           </div>
           <div className="lessons-page__stats">
             <span className="stat-chip">
@@ -102,26 +155,110 @@ export default function StudentCourseDetailPage() {
             <p>This course does not have any lessons yet.</p>
           </div>
         ) : (
-          <div className="lesson-list">
-            {lessons.map((lesson, index) => (
-              <div
-                className="lesson-item"
-                key={lesson.id}
-                onClick={() => navigate(`/student/courses/${courseId}/lessons/${lesson.id}/assignments`)}
-              >
-                <div className="lesson-item__number">
-                  <span>{String(index + 1).padStart(2, '0')}</span>
-                </div>
-                <div className="lesson-item__content">
-                  <div className="lesson-item__info">
-                    <h3 className="lesson-item__title">{lesson.title}</h3>
+          <div className="lesson-detail-list">
+            {lessons.map((lesson, index) => {
+              const isExpanded = expandedLessons[lesson.id] !== false;
+              const assignments = lesson.assignments || [];
+
+              return (
+                <div className="lesson-detail-item" key={lesson.id}>
+                  {/* Lesson Header */}
+                  <div 
+                    className="lesson-detail-header"
+                    onClick={() => toggleLesson(lesson.id)}
+                  >
+                    <div className="lesson-detail-header__left">
+                      <span className="lesson-detail__number">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <div>
+                        <h3 className="lesson-detail__title">{lesson.title}</h3>
+                        <span className="lesson-detail__count">
+                          {assignments.length} {assignments.length === 1 ? 'assignment' : 'assignments'}
+                        </span>
+                      </div>
+                    </div>
+                    <button 
+                      className="lesson-detail__toggle"
+                      type="button"
+                      aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                    >
+                      {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                    </button>
                   </div>
-                  <button className="lesson-item__action" type="button">
-                    View Assignments <ChevronRight size={18} />
-                  </button>
+
+                  {/* Assignments List */}
+                  {isExpanded && (
+                    <div className="lesson-detail-assignments">
+                      {assignments.length === 0 ? (
+                        <p className="lesson-detail__empty">No assignments in this lesson.</p>
+                      ) : (
+                        assignments.map((assignment) => {
+                          const isPublished = assignment.isPublished || false;
+                          
+                          return (
+                            <div className="assignment-detail-card" key={assignment.id}>
+                              <div className="assignment-detail-card__info">
+                                <div className="assignment-detail-card__icon">
+                                  <FileText size={18} />
+                                </div>
+                                <div>
+                                  <div className="assignment-detail-card__title-row">
+                                    <h4 className="assignment-detail-card__title">
+                                      {assignment.title}
+                                    </h4>
+                                    {isPublished && (
+                                      <span className="assignment-detail-card__badge assignment-detail-card__badge--published">
+                                        <CheckCircle2 size={14} />
+                                        Đã chấm
+                                      </span>
+                                    )}
+                                  </div>
+                                  {assignment.description && (
+                                    <p className="assignment-detail-card__description">
+                                      {assignment.description}
+                                    </p>
+                                  )}
+                                  <div className="assignment-detail-card__meta">
+                                    <span>
+                                      <CalendarClock size={13} />
+                                      Submission: {formatDate(assignment.submissionDeadline)}
+                                    </span>
+                                    <span>
+                                      <Clock size={13} />
+                                      Review: {formatDate(assignment.reviewDeadline)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="assignment-detail-card__actions">
+                                <button
+                                  className="assignment-detail-card__btn assignment-detail-card__btn--submit"
+                                  type="button"
+                                  onClick={() => navigate(`/student/assignments/${assignment.id}/submission`)}
+                                >
+                                  <FileText size={16} />
+                                  Submit Assignment
+                                </button>
+                                <button
+                                  className="assignment-detail-card__btn"
+                                  type="button"
+                                  onClick={() => navigate(`/student/assignments/${assignment.id}/results`)}
+                                >
+                                  <Eye size={16} />
+                                  View Results
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
