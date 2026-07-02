@@ -13,7 +13,7 @@ export default function ClassGallery({ gallery, currentGroupId }) {
       <div className="class-gallery__empty">
         <UsersRound size={40} className="class-gallery__empty-icon" />
         <h3>Gallery not available</h3>
-        <p>Class Gallery is not enabled for this assignment.</p>
+        <p>Class Gallery data could not be loaded. Please try again later.</p>
       </div>
     );
   }

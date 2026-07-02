@@ -1,7 +1,7 @@
 // frontend/src/pages/grade/GradingPage.jsx
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'  // ✅ Thêm useLocation vào import
-import { ArrowLeft, AlertCircle, RefreshCw } from 'lucide-react'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'  
+import { ArrowLeft, AlertCircle, RefreshCw, CheckCircle2, Gauge } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth'
 import { getGradingData, publishGrades, saveDraft, unpublishGrade, toggleShowcase } from '../../api/gradeApi'
 import { ApiError } from '../../api/httpClient'
@@ -11,7 +11,6 @@ import GradingStats from '../../components/grade/GradingStats'
 import GroupGradeCard from '../../components/grade/GroupGradeCard'
 import ShowcaseToggle from '../../components/grade/ShowcaseToggle'
 import PublishConfirmationModal from '../../components/grade/PublishConfirmationModal'
-import { Gauge } from 'lucide-react'
 import '../../styles/grade.css'
 
 export default function GradingPage() {
@@ -33,12 +32,36 @@ export default function GradingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showcaseEnabled, setShowcaseEnabled] = useState(false)
   const [showcaseError, setShowcaseError] = useState(null)
+  const [successMessage, setSuccessMessage] = useState(null);
   // Publish confirmation
   const [confirmModal, setConfirmModal] = useState(null)
 
   // State cho lỗi - lưu theo groupId
   const [saveErrors, setSaveErrors] = useState({})
   const [publishError, setPublishError] = useState(null)
+  const [timeoutId, setTimeoutId] = useState(null); 
+// ===== HÀM AUTO-CLEAR SUCCESS MESSAGE =====
+  const setAutoClearSuccess = (message) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      setTimeoutId(null);
+    }
+    setSuccessMessage(message);
+    const id = setTimeout(() => {
+      setSuccessMessage(null);
+      setTimeoutId(null);
+    }, 5000);
+    setTimeoutId(id);
+  };
+
+  // ===== CLEANUP TIMEOUT =====
+  useEffect(() => {
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [timeoutId]);
 
   // Hàm điều hướng back
   const handleBack = () => {
@@ -241,7 +264,7 @@ export default function GradingPage() {
             return
         }
         
-        let errorMessage = err.message || 'Failed to publish grades'
+        let errorMessage = err.message || 'Final grade could not be saved due to a system error. Please try again.'
         if (err.payload?.fieldErrors && err.payload.fieldErrors.length > 0) {
             errorMessage = err.payload.fieldErrors[0].message
         }
@@ -257,20 +280,22 @@ export default function GradingPage() {
   const handleSaveDraft = async (groupId) => {
     try {
         setIsSubmitting(true)
-        // Xóa lỗi của group này
         setSaveErrors(prev => ({ ...prev, [groupId]: null }))
+        setSuccessMessage(null);
         
         const entry = gradeEntries[groupId]
-        
-        // Nếu score rỗng → gửi null (không lưu điểm)
         const scoreValue = entry?.score?.trim() !== '' ? parseFloat(entry.score) : null
         
-        await saveDraft({
+        
+        const response = await saveDraft({
             assignmentId: parseInt(assignmentId),
             groupId,
             score: scoreValue,  
             comment: entry?.comment || ''
         }, token)
+        
+        
+        setAutoClearSuccess(response.data?.message || 'Grades have been saved as draft. Students cannot view them until they are published.');
         await fetchGradingData()
     } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
@@ -284,7 +309,6 @@ export default function GradingPage() {
             errorMessage = err.payload.fieldErrors[0].message
         }
         
-        // Lưu lỗi theo groupId
         setSaveErrors(prev => ({ ...prev, [groupId]: errorMessage }))
         setTimeout(() => {
             setSaveErrors(prev => ({ ...prev, [groupId]: null }))
@@ -294,23 +318,27 @@ export default function GradingPage() {
     }
   }
 
-  const handleUnpublish = async (groupId) => {
+ const handleUnpublish = async (groupId) => {
     try {
-      setIsSubmitting(true)
-      await unpublishGrade({
-        assignmentId: parseInt(assignmentId),
-        groupId
-      }, token)
-      await fetchGradingData()
+        setIsSubmitting(true)
+        setSuccessMessage(null);
+        
+        const response = await unpublishGrade({
+            assignmentId: parseInt(assignmentId),
+            groupId
+        }, token)
+        
+        setAutoClearSuccess(response.data?.message || 'Grade has been unpublished. Students can no longer view it.');
+        await fetchGradingData()
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        logout()
-        navigate('/login', { replace: true })
-        return
-      }
-      setError(err.message || 'Failed to unpublish grade')
+        if (err instanceof ApiError && err.status === 401) {
+            logout()
+            navigate('/login', { replace: true })
+            return
+        }
+        setError(err.message || 'Failed to unpublish grade')
     } finally {
-      setIsSubmitting(false)
+        setIsSubmitting(false)
     }
   }
 
@@ -419,6 +447,18 @@ export default function GradingPage() {
           onToggle={handleToggleShowcase}
           isLoading={isSubmitting}
         />
+        {successMessage && (
+                <div className="form-alert" style={{ 
+                    background: 'var(--positive-bg)', 
+                    color: 'var(--positive-text)', 
+                    border: '1px solid #c3e6cb',
+                    marginBottom: '16px'
+                }}>
+                    <CheckCircle2 size={18} />
+                    <span>{successMessage}</span>
+                </div>
+          )}
+
         {showcaseError && (
           <div className="grading-page__error">
             <AlertCircle size={16} />

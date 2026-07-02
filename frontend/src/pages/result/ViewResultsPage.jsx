@@ -136,7 +136,7 @@ export default function ViewResultsPage() {
         navigate('/login', { replace: true });
         return;
       }
-      setError(err.message || 'Failed to load results. Please try again.');
+      setError(err.message || 'Result data could not be loaded. Please try again later.');
     } finally {
       setIsLoading(false);
     }
