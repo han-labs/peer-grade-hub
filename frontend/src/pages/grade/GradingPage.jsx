@@ -32,7 +32,7 @@ export default function GradingPage() {
   const [selectedGroups, setSelectedGroups] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showcaseEnabled, setShowcaseEnabled] = useState(false)
-
+  const [showcaseError, setShowcaseError] = useState(null)
   // Publish confirmation
   const [confirmModal, setConfirmModal] = useState(null)
 
@@ -317,6 +317,7 @@ export default function GradingPage() {
   const handleToggleShowcase = async (enabled) => {
     try {
       setIsSubmitting(true)
+      setShowcaseError(null)
       await toggleShowcase({
         assignmentId: parseInt(assignmentId),
         enabled
@@ -329,7 +330,7 @@ export default function GradingPage() {
         navigate('/login', { replace: true })
         return
       }
-      setError(err.message || 'Failed to toggle showcase mode')
+      setShowcaseError(err.message || 'Could not change Showcase Mode due to a system error. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -418,7 +419,12 @@ export default function GradingPage() {
           onToggle={handleToggleShowcase}
           isLoading={isSubmitting}
         />
-
+        {showcaseError && (
+          <div className="grading-page__error">
+            <AlertCircle size={16} />
+            <span>{showcaseError}</span>
+          </div>
+        )}
         {/* Group Cards */}
         <div className="grading-page__groups">
           {allGroups.map(group => (
